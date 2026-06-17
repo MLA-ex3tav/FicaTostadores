@@ -1,0 +1,196 @@
+@import "tailwindcss";
+@import "react-phone-number-input/style.css";
+
+:root {
+  --background: #16181c;
+  --foreground: #eef0f3;
+  --panel: #1e2127;
+  --surface: #252930;
+  --orange: #e85d04;
+  --orange-hover: #ff6b0a;
+  --steel-dark: #8a9099;
+  --steel-mid: #b8bec6;
+  --steel-light: #e8eaed;
+  --input-bg: #121418;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-panel: var(--panel);
+  --color-surface: var(--surface);
+  --color-orange: var(--orange);
+  --color-orange-hover: var(--orange-hover);
+  --color-steel-dark: var(--steel-dark);
+  --color-steel-mid: var(--steel-mid);
+  --color-steel-light: var(--steel-light);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-oswald);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Steel texture panel */
+.steel-texture {
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(145deg, #32363e 0%, #252930 40%, #3a3f48 100%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.04) 2px,
+      rgba(255, 255, 255, 0.04) 4px
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.steel-border {
+  border: 1px solid rgba(200, 205, 212, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+}
+
+.rivet-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rivet-divider::before,
+.rivet-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--steel-dark) 20%,
+    var(--steel-mid) 50%,
+    var(--steel-dark) 80%,
+    transparent
+  );
+}
+
+.rivet-divider span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--steel-light), var(--steel-dark));
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+/* Industrial input styles */
+.industrial-input {
+  width: 100%;
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  border: 1px solid rgba(200, 205, 212, 0.25);
+  color: var(--foreground);
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.industrial-input:focus {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 2px rgba(232, 93, 4, 0.2);
+}
+
+.industrial-input::placeholder {
+  color: var(--steel-dark);
+}
+
+/* Phone input overrides */
+.PhoneInput {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.PhoneInputCountry {
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  border: 1px solid rgba(200, 205, 212, 0.25);
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  transition: border-color 0.2s;
+}
+
+.PhoneInputCountrySelect {
+  background: var(--input-bg);
+  color: var(--foreground);
+  border: none;
+  cursor: pointer;
+}
+
+.PhoneInputCountrySelect:focus {
+  outline: none;
+}
+
+.PhoneInputCountryIcon {
+  width: 1.5rem;
+  height: 1rem;
+}
+
+.PhoneInputCountryIcon--border {
+  box-shadow: none;
+  background: transparent;
+}
+
+.PhoneInputInput {
+  flex: 1;
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  border: 1px solid rgba(200, 205, 212, 0.25);
+  color: var(--foreground);
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.PhoneInputInput:focus {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 2px rgba(232, 93, 4, 0.2);
+}
+
+.PhoneInputInput::placeholder {
+  color: var(--steel-dark);
+}
+
+@keyframes hero-corridor-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.hero-corridor-track {
+  width: max-content;
+  animation: hero-corridor-scroll 45s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-corridor-track {
+    animation: none;
+  }
+}
