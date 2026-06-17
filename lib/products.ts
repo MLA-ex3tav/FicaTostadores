@@ -191,6 +191,7 @@ export const products: Product[] = [
   },
   {
     id: "comercial-5kg-gas",
+    catalog: "frutos",
     category: "comercial",
     name: "Tostador Comercial 5 KG",
     capacity: "5 kg por lote",
@@ -214,6 +215,7 @@ export const products: Product[] = [
   },
   {
     id: "comercial-10kg-gas",
+    catalog: "frutos",
     category: "comercial",
     name: "Tostador Comercial 10 KG",
     capacity: "10 kg por lote",
@@ -238,6 +240,7 @@ export const products: Product[] = [
   },
   {
     id: "comercial-30kg-gas",
+    catalog: "frutos",
     category: "comercial",
     name: "Tostador Comercial 30 KG",
     capacity: "30 kg por lote",
@@ -263,6 +266,7 @@ export const products: Product[] = [
   // --- COMERCIAL LEÑA ---
   {
     id: "comercial-5kg-lena",
+    catalog: "frutos",
     category: "comercial",
     name: "Tostador Comercial 5 KG (Leña)",
     capacity: "5 kg por lote",
@@ -286,6 +290,7 @@ export const products: Product[] = [
   },
   {
     id: "comercial-10kg-lena",
+    catalog: "frutos",
     category: "comercial",
     name: "Tostador Comercial 10 KG (Leña)",
     capacity: "10 kg por lote",
@@ -309,6 +314,7 @@ export const products: Product[] = [
   },
   {
     id: "comercial-30kg-lena",
+    catalog: "frutos",
     category: "comercial",
     name: "Tostador Comercial 30 KG (Leña)",
     capacity: "30 kg por lote",
@@ -365,6 +371,7 @@ export const products: Product[] = [
   },
   {
     id: "industrial-100",
+    catalog: "frutos",
     category: "industrial",
     name: "Tostador Industrial 100 KG",
     capacity: "100 kg por lote",
@@ -388,6 +395,7 @@ export const products: Product[] = [
   },
   {
     id: "industrial-200",
+    catalog: "frutos",
     category: "industrial",
     name: "Tostador Industrial 200 KG",
     capacity: "200 kg por lote",
@@ -410,6 +418,7 @@ export const products: Product[] = [
   },
   {
     id: "industrial-300",
+    catalog: "frutos",
     category: "industrial",
     name: "Tostador Industrial 300 KG",
     capacity: "300 kg por lote",
@@ -432,6 +441,7 @@ export const products: Product[] = [
   },
   {
     id: "industrial-500",
+    catalog: "frutos",
     category: "industrial",
     name: "Tostador Industrial 500 KG",
     capacity: "500 kg por lote",
@@ -481,6 +491,7 @@ export const products: Product[] = [
   },
   {
     id: "partidor-seleccionador",
+    catalog: "frutos",
     category: "procesamiento",
     name: "Partidor y Seleccionador de Avellanas",
     capacity: "4 sacos / hora",
@@ -504,6 +515,7 @@ export const products: Product[] = [
   },
   {
     id: "molino-martillo",
+    catalog: "frutos",
     category: "procesamiento",
     name: "Molino a Martillo",
     capacity: "60 kg / hora",
@@ -528,6 +540,7 @@ export const products: Product[] = [
   },
   {
     id: "molino-piedra",
+    catalog: "frutos",
     category: "procesamiento",
     name: "Molino de Piedra",
     capacity: "80 kg / hora",
@@ -552,6 +565,7 @@ export const products: Product[] = [
   },
   {
     id: "descascarador-europea",
+    catalog: "frutos",
     category: "procesamiento",
     name: "Descascarador de Avellana Europea",
     capacity: "50 kg / hora",

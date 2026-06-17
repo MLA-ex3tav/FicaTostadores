@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Oswald } from "next/font/google";
 import Footer from "@/components/Footer";
-import AuthProvider from "@/components/AuthProvider";
 import MainWithQuotePadding from "@/components/MainWithQuotePadding";
 import Navbar from "@/components/Navbar";
 import QuoteSelectionSidebar from "@/components/QuoteSelectionSidebar";
@@ -34,15 +33,13 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} ${oswald.variable} h-full`}>
       <body className="flex min-h-full flex-col antialiased">
-        <AuthProvider>
-          <QuoteSelectionProvider>
-            <PageLoadingBar />
-            <Navbar />
-            <QuoteSelectionSidebar />
-            <MainWithQuotePadding>{children}</MainWithQuotePadding>
-            <Footer />
-          </QuoteSelectionProvider>
-        </AuthProvider>
+        <QuoteSelectionProvider>
+          <PageLoadingBar />
+          <Navbar />
+          <QuoteSelectionSidebar />
+          <MainWithQuotePadding>{children}</MainWithQuotePadding>
+          <Footer />
+        </QuoteSelectionProvider>
       </body>
     </html>
   );
