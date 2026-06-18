@@ -61,10 +61,11 @@ Solo las variables `NEXT_PUBLIC_FIREBASE_*` en `.env.local` (config web de Fireb
 
 No se requiere service account ni claves privadas.
 
-## Vercel
+## Vercel Blob
 
-- Variables `NEXT_PUBLIC_FIREBASE_*`
-- `BLOB_READ_WRITE_TOKEN` para guardar cambios del catálogo en producción
+Conecte **Storage → Blob** al proyecto. Vercel agrega `BLOB_STORE_ID` (OIDC; recomendado) o puede usar `BLOB_READ_WRITE_TOKEN` (legacy).
+
+En local: `vercel env pull` para obtener credenciales de Blob.
 
 ## Notas
 

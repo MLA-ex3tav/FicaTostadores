@@ -1,17 +1,17 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { head, put } from "@vercel/blob";
+import {
+  canPersistWithBlob,
+  isVercelBlobConfigured,
+} from "@/lib/blob-storage";
 import { defaultProducts, type Product } from "@/lib/products";
 
 const BLOB_PATHNAME = "products.json";
 const LOCAL_FILE = path.join(process.cwd(), "data", "products.json");
 
-function isBlobConfigured(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
-}
-
 async function readFromBlob(): Promise<Product[] | null> {
-  if (!isBlobConfigured()) {
+  if (!isVercelBlobConfigured()) {
     return null;
   }
 
@@ -74,7 +74,7 @@ export async function loadProducts(): Promise<Product[]> {
 }
 
 export async function saveProducts(products: Product[]): Promise<void> {
-  if (isBlobConfigured()) {
+  if (isVercelBlobConfigured()) {
     await writeToBlob(products);
     return;
   }
@@ -83,5 +83,5 @@ export async function saveProducts(products: Product[]): Promise<void> {
 }
 
 export function canPersistProducts(): boolean {
-  return isBlobConfigured() || process.env.NODE_ENV !== "production";
+  return canPersistWithBlob();
 }

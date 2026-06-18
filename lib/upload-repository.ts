@@ -2,6 +2,10 @@ import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { put } from "@vercel/blob";
+import {
+  canPersistWithBlob,
+  isVercelBlobConfigured,
+} from "@/lib/blob-storage";
 
 const LOCAL_UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "products");
 
@@ -23,10 +27,7 @@ function extensionFromName(filename: string): string | null {
 }
 
 export function canUploadFiles(): boolean {
-  return (
-    Boolean(process.env.BLOB_READ_WRITE_TOKEN) ||
-    process.env.NODE_ENV !== "production"
-  );
+  return canPersistWithBlob();
 }
 
 export async function saveUploadedImage(
@@ -40,7 +41,7 @@ export async function saveUploadedImage(
     "jpg";
   const filename = `${randomUUID()}.${extension}`;
 
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
+  if (isVercelBlobConfigured()) {
     const blob = await put(`product-images/${filename}`, buffer, {
       access: "public",
       contentType,

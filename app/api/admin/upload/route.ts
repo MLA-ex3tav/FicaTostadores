@@ -5,6 +5,7 @@ import {
   canUploadFiles,
   saveUploadedImage,
 } from "@/lib/upload-repository";
+import { BLOB_NOT_CONFIGURED_MESSAGE } from "@/lib/blob-storage";
 
 export async function POST(request: Request) {
   const session = await requireAdminSession(request);
@@ -16,8 +17,7 @@ export async function POST(request: Request) {
   if (!canUploadFiles()) {
     return NextResponse.json(
       {
-        error:
-          "En producción configure BLOB_READ_WRITE_TOKEN en Vercel para subir imágenes.",
+        error: BLOB_NOT_CONFIGURED_MESSAGE,
       },
       { status: 503 },
     );

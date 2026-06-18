@@ -2,6 +2,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { head, put } from "@vercel/blob";
 import {
+  canPersistWithBlob,
+  isVercelBlobConfigured,
+} from "@/lib/blob-storage";
+import {
   defaultCatalogConfig,
   type CatalogConfig,
 } from "@/lib/catalog-config";
@@ -9,12 +13,8 @@ import {
 const BLOB_PATHNAME = "catalog-config.json";
 const LOCAL_FILE = path.join(process.cwd(), "data", "catalog-config.json");
 
-function isBlobConfigured(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
-}
-
 async function readFromBlob(): Promise<CatalogConfig | null> {
-  if (!isBlobConfigured()) {
+  if (!isVercelBlobConfigured()) {
     return null;
   }
 
@@ -77,7 +77,7 @@ export async function loadCatalogConfig(): Promise<CatalogConfig> {
 }
 
 export async function saveCatalogConfig(config: CatalogConfig): Promise<void> {
-  if (isBlobConfigured()) {
+  if (isVercelBlobConfigured()) {
     await writeToBlob(config);
     return;
   }
@@ -86,5 +86,5 @@ export async function saveCatalogConfig(config: CatalogConfig): Promise<void> {
 }
 
 export function canPersistCatalogConfig(): boolean {
-  return isBlobConfigured() || process.env.NODE_ENV !== "production";
+  return canPersistWithBlob();
 }

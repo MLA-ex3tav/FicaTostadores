@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/admin-session";
 import { canPersistProducts } from "@/lib/products-repository";
+import { BLOB_NOT_CONFIGURED_MESSAGE } from "@/lib/blob-storage";
 import {
   deleteProduct,
   getProductById,
@@ -46,8 +47,7 @@ export async function PUT(request: Request, context: RouteContext) {
   if (!canPersistProducts()) {
     return NextResponse.json(
       {
-        error:
-          "En producción configure BLOB_READ_WRITE_TOKEN en Vercel para guardar cambios.",
+        error: BLOB_NOT_CONFIGURED_MESSAGE,
       },
       { status: 503 },
     );
@@ -77,8 +77,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
   if (!canPersistProducts()) {
     return NextResponse.json(
       {
-        error:
-          "En producción configure BLOB_READ_WRITE_TOKEN en Vercel para guardar cambios.",
+        error: BLOB_NOT_CONFIGURED_MESSAGE,
       },
       { status: 503 },
     );

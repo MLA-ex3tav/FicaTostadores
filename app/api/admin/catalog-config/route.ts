@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/admin-session";
 import type { CatalogConfig } from "@/lib/catalog-config";
 import { canPersistCatalogConfig } from "@/lib/catalog-config-repository";
+import { BLOB_NOT_CONFIGURED_MESSAGE } from "@/lib/blob-storage";
 import {
   getCatalogConfig,
   updateCatalogConfig,
@@ -41,8 +42,7 @@ export async function PUT(request: Request) {
   if (!canPersistCatalogConfig()) {
     return NextResponse.json(
       {
-        error:
-          "En producción configure BLOB_READ_WRITE_TOKEN en Vercel para guardar cambios.",
+        error: BLOB_NOT_CONFIGURED_MESSAGE,
       },
       { status: 503 },
     );
