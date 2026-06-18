@@ -1,6 +1,6 @@
 /** WhatsApp solo para envío de cotizaciones desde el formulario */
 export const QUOTE_WHATSAPP = {
-  e164: "56949959571",
+  e164: "56950718852",
 } as const;
 
 export interface QuoteProductContext {

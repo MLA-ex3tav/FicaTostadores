@@ -1,5 +1,9 @@
 import { Suspense } from "react";
 import ProductsCatalog from "@/components/ProductsCatalog";
+import { getCatalogConfig } from "@/lib/catalog-config-server";
+import { getProducts } from "@/lib/products-server";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Productos | Fica Tostadores",
@@ -15,7 +19,12 @@ function ProductsCatalogFallback() {
   );
 }
 
-export default function ProductosPage() {
+export default async function ProductosPage() {
+  const [products, catalogConfig] = await Promise.all([
+    getProducts(),
+    getCatalogConfig(),
+  ]);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
       <div className="mb-12">
@@ -36,7 +45,7 @@ export default function ProductosPage() {
       </div>
 
       <Suspense fallback={<ProductsCatalogFallback />}>
-        <ProductsCatalog />
+        <ProductsCatalog products={products} catalogConfig={catalogConfig} />
       </Suspense>
     </div>
   );

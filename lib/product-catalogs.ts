@@ -1,19 +1,12 @@
-export type ProductCatalog = "cafe" | "frutos";
+export type ProductCatalog = string;
 
-export const productCatalogs: {
-  id: ProductCatalog;
-  label: string;
-}[] = [
-  {
-    id: "cafe",
-    label: "Tostadores de café",
-  },
-  {
-    id: "frutos",
-    label: "Frutos secos y trigo",
-  },
-];
+export {
+  defaultCatalogConfig,
+  getCatalogLabel,
+  type CatalogConfig,
+  type CatalogDefinition,
+} from "@/lib/catalog-config";
 
-export function getCatalogLabel(id: ProductCatalog) {
-  return productCatalogs.find((catalog) => catalog.id === id)?.label ?? id;
-}
+import { defaultCatalogConfig } from "@/lib/catalog-config";
+
+export const productCatalogs = defaultCatalogConfig.catalogs;

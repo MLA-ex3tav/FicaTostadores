@@ -4,7 +4,6 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import es from "react-phone-number-input/locale/es";
-import { getProductById } from "@/lib/products";
 import { useQuoteSelection } from "@/lib/quote-selection";
 import {
   buildQuoteWhatsAppUrl,
@@ -27,14 +26,19 @@ export default function ContactForm() {
       return;
     }
 
-    const product = getProductById(productId);
-    if (product) {
-      addProduct({
-        id: product.id,
-        name: product.name,
-        capacity: product.capacity,
+    void fetch(`/api/products/${productId}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { product?: { id: string; name: string; capacity: string } } | null) => {
+        if (!data?.product) {
+          return;
+        }
+
+        addProduct({
+          id: data.product.id,
+          name: data.product.name,
+          capacity: data.product.capacity,
+        });
       });
-    }
   }, [productId, addProduct]);
 
   const isPhoneValid = Boolean(phone && isValidPhoneNumber(phone));

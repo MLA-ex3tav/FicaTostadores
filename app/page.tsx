@@ -5,6 +5,9 @@ import RoastablesSection from "@/components/RoastablesSection";
 import ServicesSection from "@/components/ServicesSection";
 import StatsSection from "@/components/StatsSection";
 import SteelPanel from "@/components/SteelPanel";
+import { getHeroProductBanners } from "@/lib/hero-images-server";
+
+export const dynamic = "force-dynamic";
 
 const features: {
   title: string;
@@ -31,10 +34,12 @@ const features: {
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const banners = await getHeroProductBanners();
+
   return (
     <>
-      <HeroSection />
+      <HeroSection banners={banners} />
       <StatsSection />
       <RoastablesSection />
       <ServicesSection />

@@ -174,23 +174,13 @@ body {
   color: var(--steel-dark);
 }
 
-@keyframes hero-corridor-scroll {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-50%);
-  }
+.hero-corridor-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.hero-corridor-track {
-  width: max-content;
-  animation: hero-corridor-scroll 45s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-corridor-track {
-    animation: none;
-  }
+.hero-corridor-scroll::-webkit-scrollbar {
+  display: none;
 }

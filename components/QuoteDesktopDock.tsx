@@ -38,34 +38,33 @@ export default function QuoteDesktopDock() {
         onMouseLeave={() => setOpen(false)}
         aria-hidden={!open}
       >
-        <div className="mr-3 flex max-h-[min(70vh,32rem)] flex-col rounded-xl border border-steel-dark/25 bg-panel/95 py-5 pl-5 pr-4 shadow-xl backdrop-blur-md">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-steel-dark">
-            Cotización
-          </p>
-          <p className="mt-1 font-display text-lg tracking-wide text-steel-light">
+        <div className="mr-3 flex max-h-[min(70vh,32rem)] flex-col rounded-xl border border-white/[0.06] bg-[var(--input-bg)] px-4 py-4 shadow-lg">
+          <p className="text-[11px] text-steel-dark">
             {products.length}{" "}
             {products.length === 1 ? "producto" : "productos"}
           </p>
 
-          <ul className="mt-5 flex-1 space-y-0 overflow-y-auto pr-1">
+          <ul className="mt-2 flex-1 divide-y divide-white/[0.06] overflow-y-auto">
             {products.map((product) => (
               <li
                 key={product.id}
-                className="flex items-start justify-between gap-3 border-b border-steel-dark/20 py-3.5 last:border-b-0"
+                className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
               >
                 <div className="min-w-0">
-                  <p className="font-display text-base tracking-wide text-steel-light">
+                  <p className="truncate text-sm text-steel-light">
                     {product.name}
                   </p>
-                  <p className="mt-1 text-sm text-orange">{product.capacity}</p>
+                  <p className="mt-0.5 text-xs text-steel-dark">
+                    {product.capacity}
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => removeProduct(product.id)}
-                  className="shrink-0 rounded-md p-1.5 text-steel-dark transition-colors hover:text-orange"
+                  className="shrink-0 p-0.5 text-steel-dark transition-colors hover:text-orange"
                   aria-label={`Quitar ${product.name} de la cotización`}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               </li>
             ))}
@@ -73,7 +72,7 @@ export default function QuoteDesktopDock() {
 
           <Link
             href="/contacto"
-            className="mt-5 flex w-full shrink-0 items-center justify-center rounded-xl bg-orange px-5 py-3.5 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover"
+            className="mt-3 flex w-full shrink-0 items-center justify-center border border-white/[0.08] py-2.5 text-xs text-steel-mid transition-colors hover:border-orange/40 hover:text-orange"
           >
             Ir a cotizar
           </Link>

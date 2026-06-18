@@ -69,8 +69,8 @@ export default function QuoteMobileSheet() {
   return (
     <div
       ref={sheetRef}
-      className={`fixed bottom-0 left-0 right-0 z-40 border-t border-steel-dark/30 bg-panel/95 backdrop-blur-sm motion-reduce:transition-none md:hidden ${
-        expanded ? "shadow-[0_-12px_40px_rgba(0,0,0,0.35)]" : "shadow-[0_-4px_20px_rgba(0,0,0,0.2)]"
+      className={`fixed bottom-0 left-0 right-0 z-40 border-t border-white/[0.06] bg-[var(--input-bg)] motion-reduce:transition-none md:hidden ${
+        expanded ? "shadow-[0_-8px_24px_rgba(0,0,0,0.4)]" : "shadow-[0_-2px_12px_rgba(0,0,0,0.25)]"
       }`}
       style={{
         transition: `box-shadow 0.5s ${sheetEase}`,
@@ -129,14 +129,13 @@ export default function QuoteMobileSheet() {
                 : "translate-y-0 opacity-100 delay-75"
             }`}
           >
-            <p className="truncate text-xs uppercase tracking-widest text-steel-mid">
-              {products.length === 1
-                ? "1 producto en cotización"
-                : `${products.length} productos en cotización`}
+            <p className="truncate text-[11px] text-steel-dark">
+              {products.length}{" "}
+              {products.length === 1 ? "producto" : "productos"}
             </p>
             <Link
               href="/contacto"
-              className="shrink-0 rounded-lg bg-orange px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover"
+              className="shrink-0 border border-white/[0.08] px-3 py-1 text-[10px] text-steel-mid transition-colors hover:border-orange/40 hover:text-orange"
             >
               Cotizar
             </Link>

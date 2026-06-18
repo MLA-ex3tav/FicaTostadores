@@ -4,19 +4,23 @@ import { notFound } from "next/navigation";
 import ProductDetailHero from "@/components/ProductDetailHero";
 import ProductQuoteActions from "@/components/ProductQuoteActions";
 import SteelPanel from "@/components/SteelPanel";
-import { getProductById, products } from "@/lib/products";
+import { getCatalogConfig } from "@/lib/catalog-config-server";
+import { getProductById, getProducts } from "@/lib/products-server";
+
+export const dynamic = "force-dynamic";
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;
 }
 
 export async function generateStaticParams() {
+  const products = await getProducts();
   return products.map((product) => ({ id: product.id }));
 }
 
 export async function generateMetadata({ params }: ProductPageProps) {
   const { id } = await params;
-  const product = getProductById(id);
+  const product = await getProductById(id);
 
   if (!product) {
     return { title: "Producto no encontrado | Fica Tostadores" };
@@ -30,7 +34,10 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { id } = await params;
-  const product = getProductById(id);
+  const [product, catalogConfig] = await Promise.all([
+    getProductById(id),
+    getCatalogConfig(),
+  ]);
 
   if (!product) {
     notFound();
@@ -46,7 +53,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         Volver al catálogo
       </Link>
 
-      <ProductDetailHero product={product} />
+      <ProductDetailHero product={product} catalogConfig={catalogConfig} />
 
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
         <div>

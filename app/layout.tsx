@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import MainWithQuotePadding from "@/components/MainWithQuotePadding";
 import Navbar from "@/components/Navbar";
 import QuoteSelectionSidebar from "@/components/QuoteSelectionSidebar";
+import { FirebaseAuthProvider } from "@/lib/firebase-auth";
 import { QuoteSelectionProvider } from "@/lib/quote-selection";
 import PageLoadingBar from "@/components/PageLoadingBar";
 import "./globals.css";
@@ -33,13 +34,15 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} ${oswald.variable} h-full`}>
       <body className="flex min-h-full flex-col antialiased">
-        <QuoteSelectionProvider>
-          <PageLoadingBar />
-          <Navbar />
-          <QuoteSelectionSidebar />
-          <MainWithQuotePadding>{children}</MainWithQuotePadding>
-          <Footer />
-        </QuoteSelectionProvider>
+        <FirebaseAuthProvider>
+          <QuoteSelectionProvider>
+            <PageLoadingBar />
+            <Navbar />
+            <QuoteSelectionSidebar />
+            <MainWithQuotePadding>{children}</MainWithQuotePadding>
+            <Footer />
+          </QuoteSelectionProvider>
+        </FirebaseAuthProvider>
       </body>
     </html>
   );

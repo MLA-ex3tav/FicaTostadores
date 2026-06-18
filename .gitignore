@@ -39,3 +39,8 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# catálogo editado en local (dev)
+/data/products.json
+/data/catalog-config.json
+/public/uploads/

@@ -19,6 +19,7 @@ export interface Product {
   features: string[];
   technicalDetails: { label: string; value: string }[];
   addOns: ProductAddOn[];
+  images?: string[];
 }
 
 const commercialDescription =
@@ -27,7 +28,7 @@ const commercialDescription =
 const woodRoasterDescription =
   "Tostador comercial a leña, desarrollado principalmente para trigo y avellanas, preservando la tradición y el sabor de la harina tostada. Diseño económico en el uso de leña con chamiza o leña delgada.";
 
-export const products: Product[] = [
+export const defaultProducts: Product[] = [
   // --- CAFÉ ---
   {
     id: "tlc-700g",
@@ -589,14 +590,5 @@ export const products: Product[] = [
   },
 ];
 
-export function getProductById(id: string): Product | undefined {
-  return products.find((product) => product.id === id);
-}
-
-export function getProductsByCategory(category: ProductCategory) {
-  return products.filter((product) => product.category === category);
-}
-
-export function getProductsByCatalog(catalog: ProductCatalog) {
-  return products.filter((product) => product.catalog === catalog);
-}
+/** @deprecated Usar getProducts() async desde lib/products-server.ts */
+export const products = defaultProducts;

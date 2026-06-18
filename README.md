@@ -5,7 +5,8 @@ Sitio web corporativo para **Fica Tostadores**, empresa de maquinaria industrial
 ## Stack
 
 - Next.js 16 (App Router), TypeScript, Tailwind CSS 4
-- Lucide React, react-phone-number-input
+- Firebase Auth (Google) + Firestore (`clientes` con `role`)
+- Vercel Blob para persistir el catálogo editado
 
 ## Páginas
 
@@ -15,19 +16,57 @@ Sitio web corporativo para **Fica Tostadores**, empresa de maquinaria industrial
 | `/productos` | Catálogo (café / frutos secos) |
 | `/productos/[id]` | Ficha técnica |
 | `/contacto` | Formulario de contacto |
+| `/iniciar-sesion` | Login con Google |
+| `/admin/productos` | Panel CRUD de productos (solo `role: admin`) |
 
 ## Desarrollo
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-## Catálogos PDF
+## Firebase
 
-Los PDF de referencia están en `public/docs/`.
+### 1. Authentication
+
+- Activar **Google** en Firebase Console → Authentication → Sign-in method.
+- En **Configuración → Dominios autorizados**, agregar:
+  - `localhost`
+  - Su IP local si entra por red (ej. `192.168.3.107`)
+  - Su dominio de producción en Vercel (ej. `fica-tostadores.vercel.app`)
+
+### 2. Reglas de Firestore
+
+Firebase Console → Firestore → **Reglas** → pegar [`firestore.rules`](firestore.rules) → **Publicar**.
+
+### 3. Colección `clientes`
+
+Al iniciar sesión con Google se crea o actualiza un documento en `clientes/{uid}`.
+
+| Campo | Origen |
+|-------|--------|
+| `uid`, `email`, `displayName`, `photoURL` | Automático al login |
+| `role` | `"cliente"` al crear; editable manualmente |
+| `createdAt`, `lastLoginAt` | Automático |
+
+**Hacer admin a alguien:** Firestore → `clientes` → documento del usuario → cambiar `role` de `"cliente"` a `"admin"`.
+
+El login **no sobrescribe** el `role` si el documento ya existe.
+
+### 4. Variables de entorno
+
+Solo las variables `NEXT_PUBLIC_FIREBASE_*` en `.env.local` (config web de Firebase).
+
+No se requiere service account ni claves privadas.
+
+## Vercel
+
+- Variables `NEXT_PUBLIC_FIREBASE_*`
+- `BLOB_READ_WRITE_TOKEN` para guardar cambios del catálogo en producción
 
 ## Notas
 
-- El formulario de contacto abre WhatsApp directamente (sin guardar en base de datos).
-- El catálogo de productos está en `lib/products.ts`.
+- El formulario de contacto abre WhatsApp directamente.
+- El catálogo base está en `lib/products.ts`; las ediciones del admin se guardan en Blob/archivo local.

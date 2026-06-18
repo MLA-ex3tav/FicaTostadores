@@ -7,6 +7,7 @@ import { Mail, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { logoPath } from "@/lib/images";
 import { useQuoteSelection } from "@/lib/quote-selection";
+import AuthNavButton from "@/components/AuthNavButton";
 
 const navLinks = [
   { href: "/", label: "Inicio" },
@@ -84,6 +85,9 @@ export default function Navbar() {
             );
           })}
           <li>
+            <AuthNavButton />
+          </li>
+          <li>
             <CotizarButton />
           </li>
         </ul>
@@ -125,6 +129,9 @@ export default function Navbar() {
                 </li>
               );
             })}
+            <li className="py-3">
+              <AuthNavButton className="block" onAction={() => setMenuOpen(false)} />
+            </li>
             <li className="pt-2">
               <CotizarButton
                 className="w-full py-3"
