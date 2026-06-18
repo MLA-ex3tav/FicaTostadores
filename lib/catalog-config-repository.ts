@@ -3,6 +3,7 @@ import path from "node:path";
 import { head, put } from "@vercel/blob";
 import {
   canPersistWithBlob,
+  getBlobCommandOptions,
   isVercelBlobConfigured,
 } from "@/lib/blob-storage";
 import {
@@ -19,7 +20,7 @@ async function readFromBlob(): Promise<CatalogConfig | null> {
   }
 
   try {
-    const blob = await head(BLOB_PATHNAME);
+    const blob = await head(BLOB_PATHNAME, getBlobCommandOptions());
 
     if (!blob) {
       return null;
@@ -48,6 +49,7 @@ async function readFromLocalFile(): Promise<CatalogConfig | null> {
 
 async function writeToBlob(config: CatalogConfig): Promise<void> {
   await put(BLOB_PATHNAME, JSON.stringify(config, null, 2), {
+    ...getBlobCommandOptions(),
     access: "public",
     addRandomSuffix: false,
     allowOverwrite: true,

@@ -41,16 +41,23 @@ export default function ProductImagesField({
         const data = (await response.json()) as { url?: string; error?: string };
 
         if (!response.ok || !data.url) {
-          setError(data.error ?? "No se pudo subir una imagen.");
-          break;
+          setError(
+            data.error ??
+              `No se pudo subir una imagen (${response.status}).`,
+          );
+          return;
         }
 
         nextImages.push(data.url);
       }
 
       onChange(nextImages);
-    } catch {
-      setError("Error de conexión al subir imágenes.");
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Error de conexión al subir imágenes.",
+      );
     } finally {
       setUploading(false);
       if (inputRef.current) {

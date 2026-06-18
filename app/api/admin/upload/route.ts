@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/admin-session";
+import { getBlobErrorMessage } from "@/lib/blob-storage";
 import {
   canUploadFiles,
+  isAllowedImageUpload,
+  normalizeImageContentType,
   saveUploadedImage,
 } from "@/lib/upload-repository";
-import { BLOB_NOT_CONFIGURED_MESSAGE } from "@/lib/blob-storage";
 
 export async function POST(request: Request) {
   const session = await requireAdminSession(request);
@@ -17,7 +19,8 @@ export async function POST(request: Request) {
   if (!canUploadFiles()) {
     return NextResponse.json(
       {
-        error: BLOB_NOT_CONFIGURED_MESSAGE,
+        error:
+          "En producción conecte Vercel Blob Storage al proyecto (Storage → Blob → Connect to Project) y redeploy.",
       },
       { status: 503 },
     );
@@ -34,9 +37,12 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!file.type.startsWith("image/")) {
+    if (!isAllowedImageUpload(file)) {
       return NextResponse.json(
-        { error: "Solo se permiten archivos de imagen." },
+        {
+          error:
+            "Formato no permitido. Use JPG, PNG, WebP, GIF, HEIC o AVIF.",
+        },
         { status: 400 },
       );
     }
@@ -49,14 +55,19 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const url = await saveUploadedImage(buffer, file.type, file.name);
+    const contentType = normalizeImageContentType(file.type, file.name);
+    const url = await saveUploadedImage(buffer, contentType, file.name);
 
     revalidatePath("/");
 
     return NextResponse.json({ url });
-  } catch {
+  } catch (error) {
+    console.error("Upload failed:", error);
+
     return NextResponse.json(
-      { error: "No se pudo subir la imagen." },
+      {
+        error: `No se pudo subir la imagen. ${getBlobErrorMessage(error)}`,
+      },
       { status: 400 },
     );
   }
