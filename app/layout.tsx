@@ -4,10 +4,17 @@ import Footer from "@/components/Footer";
 import MainWithQuotePadding from "@/components/MainWithQuotePadding";
 import Navbar from "@/components/Navbar";
 import QuoteSelectionSidebar from "@/components/QuoteSelectionSidebar";
+import { companyInfo } from "@/lib/company";
 import { FirebaseAuthProvider } from "@/lib/firebase-auth";
 import { QuoteSelectionProvider } from "@/lib/quote-selection";
 import PageLoadingBar from "@/components/PageLoadingBar";
+import TermsConsentBanner from "@/components/TermsConsentBanner";
 import "./globals.css";
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  companyInfo.website ||
+  "http://localhost:3000";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -21,9 +28,18 @@ const oswald = Oswald({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Fica Tostadores | Maquinaria Industrial de Tostado",
   description:
     "Tostadores de café TLC, tostadores comerciales e industriales, molinos y equipos de procesamiento. Fabricación chilena, IX Región.",
+  openGraph: {
+    type: "website",
+    locale: "es_CL",
+    siteName: companyInfo.brand,
+    title: "Fica Tostadores | Maquinaria Industrial de Tostado",
+    description:
+      "Tostadores de café TLC, tostadores comerciales e industriales, molinos y equipos de procesamiento. Fabricación chilena, IX Región.",
+  },
 };
 
 export default function RootLayout({
@@ -37,6 +53,7 @@ export default function RootLayout({
         <FirebaseAuthProvider>
           <QuoteSelectionProvider>
             <PageLoadingBar />
+            <TermsConsentBanner />
             <Navbar />
             <QuoteSelectionSidebar />
             <MainWithQuotePadding>{children}</MainWithQuotePadding>

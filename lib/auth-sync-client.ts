@@ -2,11 +2,13 @@
 
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
+import { CLIENTES_COLLECTION } from "@/lib/firestore-collections";
 import {
-  CLIENTES_COLLECTION,
-  isAdminRole,
+  canManageUsers,
+  isStaffRole,
+  isSuperAdminRole,
   type UserRole,
-} from "@/lib/firestore-collections";
+} from "@/lib/permissions";
 import { getFirebaseFirestore } from "@/lib/firebase/client";
 
 interface ClienteRecord {
@@ -64,16 +66,34 @@ export async function upsertClienteClient(user: User): Promise<void> {
   );
 }
 
-export async function isAdminClient(uid: string): Promise<boolean> {
+export async function isStaffClient(uid: string): Promise<boolean> {
   const role = await getClienteRole(uid);
-  return isAdminRole(role);
+  return isStaffRole(role);
+}
+
+export async function isSuperAdminClient(uid: string): Promise<boolean> {
+  const role = await getClienteRole(uid);
+  return isSuperAdminRole(role);
+}
+
+/** @deprecated Use isSuperAdminClient */
+export async function isAdminClient(uid: string): Promise<boolean> {
+  return isSuperAdminClient(uid);
 }
 
 export async function syncAuthSessionClient(
   user: User,
-): Promise<{ isAdmin: boolean }> {
+): Promise<{ role: UserRole | null; isStaff: boolean; isAdmin: boolean }> {
   await upsertClienteClient(user);
-  const isAdmin = await isAdminClient(user.uid);
+  const role = await getClienteRole(user.uid);
 
-  return { isAdmin };
+  return {
+    role,
+    isStaff: isStaffRole(role),
+    isAdmin: isSuperAdminRole(role),
+  };
+}
+
+export function canManageUsersClient(role: UserRole | null): boolean {
+  return canManageUsers(role);
 }

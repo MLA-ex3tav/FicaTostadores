@@ -1,83 +1,77 @@
 "use client";
 
 import Link from "next/link";
-import { X } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { useQuoteSelection } from "@/lib/quote-selection";
+import QuoteProductList from "./QuoteProductList";
 
 const panelEase = "cubic-bezier(0.32, 0.72, 0, 1)";
 
 export default function QuoteDesktopDock() {
-  const { products, removeProduct } = useQuoteSelection();
+  const { products } = useQuoteSelection();
   const [open, setOpen] = useState(false);
 
   if (products.length === 0) {
     return null;
   }
 
-  return (
-    <div className="fixed inset-y-0 right-0 z-40 hidden md:block">
-      {!open && (
-        <div
-          className="absolute inset-y-0 right-0 w-1.5"
-          onMouseEnter={() => setOpen(true)}
-          aria-hidden
-        />
-      )}
+  const productLabel =
+    products.length === 1 ? "1 producto" : `${products.length} productos`;
 
+  return (
+    <div className="fixed bottom-6 right-6 z-40 hidden md:flex md:flex-col md:items-end md:gap-2">
       <aside
-        className={`fixed right-0 top-1/2 w-80 -translate-y-1/2 motion-reduce:transition-none ${
+        className={`w-80 max-h-[min(60vh,28rem)] overflow-hidden rounded-xl border border-white/[0.06] bg-[var(--input-bg)] shadow-lg motion-reduce:transition-none ${
           open
-            ? "pointer-events-auto translate-x-0 opacity-100"
-            : "pointer-events-none translate-x-full opacity-0"
+            ? "pointer-events-auto translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-2 opacity-0"
         }`}
         style={{
-          transition: `transform 0.45s ${panelEase}, opacity 0.35s ease`,
+          transition: `transform 0.35s ${panelEase}, opacity 0.3s ease`,
         }}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
         aria-hidden={!open}
       >
-        <div className="mr-3 flex max-h-[min(70vh,32rem)] flex-col rounded-xl border border-white/[0.06] bg-[var(--input-bg)] px-4 py-4 shadow-lg">
-          <p className="text-[11px] text-steel-dark">
-            {products.length}{" "}
-            {products.length === 1 ? "producto" : "productos"}
-          </p>
-
-          <ul className="mt-2 flex-1 divide-y divide-white/[0.06] overflow-y-auto">
-            {products.map((product) => (
-              <li
-                key={product.id}
-                className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm text-steel-light">
-                    {product.name}
-                  </p>
-                  <p className="mt-0.5 text-xs text-steel-dark">
-                    {product.capacity}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeProduct(product.id)}
-                  className="shrink-0 p-0.5 text-steel-dark transition-colors hover:text-orange"
-                  aria-label={`Quitar ${product.name} de la cotización`}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          <Link
-            href="/contacto"
-            className="mt-3 flex w-full shrink-0 items-center justify-center border border-white/[0.08] py-2.5 text-xs text-steel-mid transition-colors hover:border-orange/40 hover:text-orange"
-          >
-            Ir a cotizar
-          </Link>
+        <div className="flex max-h-[min(60vh,28rem)] flex-col px-4 py-4">
+          <QuoteProductList
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            showCta={false}
+          />
         </div>
       </aside>
+
+      <div className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-[var(--input-bg)] px-3 py-2 shadow-lg">
+        <button
+          type="button"
+          onClick={() => setOpen((current) => !current)}
+          className="flex items-center gap-2 rounded-lg px-2 py-1 text-left transition-colors hover:text-orange"
+          aria-expanded={open}
+          aria-label={
+            open ? "Contraer lista de cotización" : "Expandir lista de cotización"
+          }
+        >
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-orange">
+            Cotización
+          </span>
+          <span className="text-[11px] font-medium text-steel-light">
+            {productLabel}
+          </span>
+          {open ? (
+            <ChevronDown className="h-3.5 w-3.5 text-steel-mid" strokeWidth={2.25} />
+          ) : (
+            <ChevronUp className="h-3.5 w-3.5 text-steel-mid" strokeWidth={2.25} />
+          )}
+        </button>
+
+        <span className="h-4 w-px bg-white/[0.08]" aria-hidden="true" />
+
+        <Link
+          href="/contacto"
+          className="shrink-0 rounded-lg border border-white/[0.08] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-steel-mid transition-colors hover:border-orange/40 hover:text-orange"
+        >
+          Cotizar
+        </Link>
+      </div>
     </div>
   );
 }

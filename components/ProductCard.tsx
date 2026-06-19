@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Factory } from "lucide-react";
 import {
   getCatalogLabel,
   getCategoryLabel,
@@ -9,8 +8,10 @@ import {
   type CatalogConfig,
 } from "@/lib/catalog-config";
 import type { Product } from "@/lib/products";
+import { focusToObjectPosition } from "@/lib/product-images";
 import { useQuoteSelection } from "@/lib/quote-selection";
 import MediaImage from "./MediaImage";
+import ProductPlaceholder from "./ProductPlaceholder";
 import QuoteSelectedLabel, { quoteSelectedPanelClass } from "./QuoteSelectedBadge";
 import SteelPanel from "./SteelPanel";
 
@@ -38,25 +39,24 @@ export default function ProductCard({ product, catalogConfig }: ProductCardProps
           isSelected ? quoteSelectedPanelClass : ""
         }`}
       >
-        {primaryImage ? (
-          <div className="relative -mx-5 -mt-5 mb-4 h-44 md:-mx-6 md:-mt-6">
+        <div className="relative -mx-6 -mt-6 mb-4 h-44 overflow-hidden rounded-t-xl md:-mx-8 md:-mt-8">
+          {primaryImage ? (
             <MediaImage
-              src={primaryImage}
+              src={primaryImage.src}
               alt={product.name}
-              className="h-44 w-full"
-              fallbackClassName="h-44 w-full"
+              className="h-44 w-full rounded-t-xl"
+              fallbackClassName="h-44 w-full rounded-t-xl"
+              objectPosition={focusToObjectPosition(primaryImage.product)}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
             />
-          </div>
-        ) : null}
+          ) : (
+            <ProductPlaceholder className="h-44 w-full rounded-t-xl" />
+          )}
+        </div>
 
         <div className="flex flex-1 flex-col">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              {!primaryImage && (
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-steel-dark/40 bg-background/40">
-                  <Factory className="h-5 w-5 text-orange" strokeWidth={1.75} />
-                </span>
-              )}
               <div>
                 <p className="text-xs uppercase tracking-widest text-steel-dark">
                   {getCatalogLabel(product.catalog, catalogConfig)}

@@ -17,13 +17,20 @@ import {
   type ReactNode,
 } from "react";
 import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase/client";
-import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
+import {
+  getFirebaseAuthErrorMessage,
+  isAuthFlowCancelled,
+} from "@/lib/firebase-auth-errors";
 import { syncAuthSession } from "@/lib/auth-sync";
+import type { UserRole } from "@/lib/permissions";
 
 interface FirebaseAuthContextValue {
   configured: boolean;
   user: User | null;
+  role: UserRole | null;
+  isStaff: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -35,6 +42,8 @@ const FirebaseAuthContext = createContext<FirebaseAuthContextValue | null>(null)
 export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const configured = isFirebaseConfigured();
   const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<UserRole | null>(null);
+  const [isStaff, setIsStaff] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(configured);
 
@@ -51,6 +60,8 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
         setUser(nextUser);
 
         if (!nextUser) {
+          setRole(null);
+          setIsStaff(false);
           setIsAdmin(false);
           setLoading(false);
           return;
@@ -58,6 +69,8 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
         setLoading(true);
         const session = await syncAuthSession(nextUser);
+        setRole(session.role);
+        setIsStaff(session.isStaff);
         setIsAdmin(session.isAdmin);
         setLoading(false);
       })();
@@ -79,6 +92,10 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     try {
       await signInWithPopup(auth, provider);
     } catch (error) {
+      if (isAuthFlowCancelled(error)) {
+        return;
+      }
+
       throw new Error(getFirebaseAuthErrorMessage(error));
     }
   }, []);
@@ -90,6 +107,8 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       await firebaseSignOut(auth);
     }
 
+    setRole(null);
+    setIsStaff(false);
     setIsAdmin(false);
     setUser(null);
   }, []);
@@ -122,13 +141,16 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     () => ({
       configured,
       user,
+      role,
+      isStaff,
       isAdmin,
+      isSuperAdmin: isAdmin,
       loading,
       signInWithGoogle,
       signOut,
       adminFetch,
     }),
-    [configured, user, isAdmin, loading, signInWithGoogle, signOut, adminFetch],
+    [configured, user, role, isStaff, isAdmin, loading, signInWithGoogle, signOut, adminFetch],
   );
 
   return (

@@ -1,79 +1,245 @@
 /** WhatsApp solo para envío de cotizaciones desde el formulario */
+
+import { sanitizeText } from "@/lib/sanitize";
+
+
+
 export const QUOTE_WHATSAPP = {
+
   e164: "56950718852",
+
 } as const;
 
-export interface QuoteProductContext {
+
+
+export interface QuoteProductAddOnContext {
+
+  id: string;
+
   name: string;
-  capacity: string;
+
 }
+
+
+
+export interface QuoteProductContext {
+
+  name: string;
+
+  capacity: string;
+
+  selectedAddOns?: QuoteProductAddOnContext[];
+
+}
+
+
+
+function formatAddOnsLine(
+
+  addOns?: QuoteProductAddOnContext[],
+
+): string | null {
+
+  if (!addOns || addOns.length === 0) {
+
+    return null;
+
+  }
+
+
+
+  return `Agregados: ${addOns.map((addOn) => addOn.name).join(", ")}`;
+
+}
+
+
 
 function buildQuoteText(
+
   name: string,
+
   phone: string,
+
   message?: string,
+
   products?: QuoteProductContext[],
+
 ): string {
+
   const lines = [
+
     "Hola, solicito cotización — Fica Tostadores",
+
     `Nombre: ${name}`,
+
     `Teléfono: ${phone}`,
+
   ];
 
+
+
   if (products && products.length > 0) {
+
     if (products.length === 1) {
+
       lines.push(`Producto: ${products[0].name}`);
+
       lines.push(`Capacidad: ${products[0].capacity}`);
+
+      const addOnsLine = formatAddOnsLine(products[0].selectedAddOns);
+
+      if (addOnsLine) {
+
+        lines.push(addOnsLine);
+
+      }
+
     } else {
+
       lines.push("Productos:");
+
       products.forEach((product, index) => {
+
         lines.push(
+
           `${index + 1}. ${product.name} — ${product.capacity}`,
+
         );
+
+        const addOnsLine = formatAddOnsLine(product.selectedAddOns);
+
+        if (addOnsLine) {
+
+          lines.push(`   ${addOnsLine}`);
+
+        }
+
       });
+
     }
+
   }
+
+
 
   if (message?.trim()) {
+
     lines.push(`Mensaje: ${message.trim()}`);
+
   }
+
+
 
   return lines.join("\n");
+
 }
+
+
 
 export function isMobileDevice(): boolean {
+
   if (typeof navigator === "undefined") {
+
     return false;
+
   }
+
+
 
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
 }
+
+
 
 /** wa.me en móvil (app), web.whatsapp.com en escritorio */
+
 export function buildQuoteWhatsAppUrl(
+
   name: string,
+
   phone: string,
+
   message?: string,
+
   products?: QuoteProductContext[],
+
 ): string {
+
+  const safeName = sanitizeText(name, 120, { required: true }) ?? "";
+
+  const safeMessage = sanitizeText(message, 1000) ?? "";
+
+  const safeProducts = products
+
+    ?.map((product) => ({
+
+      name: sanitizeText(product.name, 200, { required: true }) ?? "",
+
+      capacity: sanitizeText(product.capacity, 100, { required: true }) ?? "",
+
+      selectedAddOns: product.selectedAddOns
+
+        ?.map((addOn) => ({
+
+          id: sanitizeText(addOn.id, 80, { required: true }) ?? "",
+
+          name: sanitizeText(addOn.name, 200, { required: true }) ?? "",
+
+        }))
+
+        .filter((addOn) => addOn.id && addOn.name),
+
+    }))
+
+    .filter((product) => product.name && product.capacity);
+
+
+
   const text = encodeURIComponent(
-    buildQuoteText(name, phone, message, products),
+
+    buildQuoteText(safeName, phone, safeMessage, safeProducts),
+
   );
 
+
+
   if (isMobileDevice()) {
+
     return `https://wa.me/${QUOTE_WHATSAPP.e164}?text=${text}`;
+
   }
 
+
+
   return `https://web.whatsapp.com/send?phone=${QUOTE_WHATSAPP.e164}&text=${text}`;
+
 }
 
-/** Abre WhatsApp en el mismo gesto del clic (evita bloqueo de popups) */
-export function openWhatsAppContact(url: string): void {
-  const link = document.createElement("a");
-  link.href = url;
-  link.rel = "noopener noreferrer";
-  link.target = "_blank";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+
+
+/** Abre WhatsApp: app en móvil, nueva pestaña en escritorio. */
+export function openWhatsAppContact(url: string): boolean {
+  if (isMobileDevice()) {
+    window.location.assign(url);
+    return true;
+  }
+
+  const popup = window.open(url, "_blank", "noopener,noreferrer");
+
+  if (popup) {
+    return true;
+  }
+
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.target = "_blank";
+  anchor.rel = "noopener noreferrer";
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+
+  return true;
 }
+
+

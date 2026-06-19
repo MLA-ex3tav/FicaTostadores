@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { LogOut } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useFirebaseAuth } from "@/lib/firebase-auth";
+import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
 
 interface AuthNavButtonProps {
   className?: string;
@@ -14,26 +15,29 @@ export default function AuthNavButton({
   className = "",
   onAction,
 }: AuthNavButtonProps) {
-  const { user, isAdmin, loading, configured, signInWithGoogle, signOut } =
+  const { user, isStaff, loading, configured, signInWithGoogle, signOut } =
     useFirebaseAuth();
-  const [signingIn, setSigningIn] = useState(false);
+  const signingInRef = useRef(false);
   const [authError, setAuthError] = useState("");
 
   async function handleSignIn() {
+    if (signingInRef.current) {
+      return;
+    }
+
     setAuthError("");
-    setSigningIn(true);
+    signingInRef.current = true;
 
     try {
       await signInWithGoogle();
       onAction?.();
     } catch (error) {
-      setAuthError(
-        error instanceof Error
-          ? error.message
-          : "No se pudo iniciar sesión con Google.",
-      );
+      const message = getFirebaseAuthErrorMessage(error);
+      if (message) {
+        setAuthError(message);
+      }
     } finally {
-      setSigningIn(false);
+      signingInRef.current = false;
     }
   }
 
@@ -60,10 +64,9 @@ export default function AuthNavButton({
         <button
           type="button"
           onClick={() => void handleSignIn()}
-          disabled={signingIn}
-          className="text-sm uppercase tracking-wider text-steel-mid transition-colors hover:text-orange disabled:opacity-60"
+          className="text-sm uppercase tracking-wider text-steel-mid transition-colors hover:text-orange"
         >
-          {signingIn ? "Conectando…" : "Ingresar"}
+          Ingresar
         </button>
         {authError && (
           <p className="mt-2 max-w-xs text-xs leading-relaxed text-orange">
@@ -76,7 +79,7 @@ export default function AuthNavButton({
 
   return (
     <div className={`flex flex-wrap items-center gap-3 ${className}`}>
-      {isAdmin && (
+      {isStaff && (
         <Link
           href="/admin/productos"
           className="text-sm uppercase tracking-wider text-orange transition-colors hover:text-orange-hover"

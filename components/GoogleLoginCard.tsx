@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SteelPanel from "@/components/SteelPanel";
 import { useFirebaseAuth } from "@/lib/firebase-auth";
+import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
 import { sanitizeReturnTo } from "@/lib/login-return-to";
 
 interface GoogleLoginCardProps {
@@ -23,10 +24,10 @@ export default function GoogleLoginCard({
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
-  const { user, isAdmin, loading, configured, signInWithGoogle } =
+  const { user, isStaff, loading, configured, signInWithGoogle } =
     useFirebaseAuth();
   const [error, setError] = useState("");
-  const [signingIn, setSigningIn] = useState(false);
+  const signingInRef = useRef(false);
 
   useEffect(() => {
     if (loading || !user) {
@@ -34,29 +35,32 @@ export default function GoogleLoginCard({
     }
 
     if (adminRedirect) {
-      if (isAdmin) {
+      if (isStaff) {
         router.replace("/admin/productos");
       }
       return;
     }
 
     router.replace(returnTo);
-  }, [user, isAdmin, loading, adminRedirect, returnTo, router]);
+  }, [user, isStaff, loading, adminRedirect, returnTo, router]);
 
   async function handleSignIn() {
+    if (signingInRef.current) {
+      return;
+    }
+
     setError("");
-    setSigningIn(true);
+    signingInRef.current = true;
 
     try {
       await signInWithGoogle();
     } catch (signInError) {
-      setError(
-        signInError instanceof Error
-          ? signInError.message
-          : "No se pudo iniciar sesión con Google.",
-      );
+      const message = getFirebaseAuthErrorMessage(signInError);
+      if (message) {
+        setError(message);
+      }
     } finally {
-      setSigningIn(false);
+      signingInRef.current = false;
     }
   }
 
@@ -70,11 +74,11 @@ export default function GoogleLoginCard({
       </h1>
       <p className="mt-4 text-sm leading-relaxed text-steel-mid">{subtitle}</p>
 
-      {user && !loading && adminRedirect && !isAdmin && (
+      {user && !loading && adminRedirect && !isStaff && (
         <div className="mt-4 rounded-lg border border-steel-dark/30 bg-background/60 px-4 py-3 text-sm text-steel-mid">
           Conectado como{" "}
           <strong className="text-steel-light">{user.email}</strong>.
-          Esta cuenta no tiene permisos de administrador.
+          Esta cuenta no tiene permisos para el panel de administración.
         </div>
       )}
 
@@ -93,15 +97,28 @@ export default function GoogleLoginCard({
       )}
 
       {!user && (
-        <button
-          type="button"
-          onClick={() => void handleSignIn()}
-          disabled={signingIn || loading || !configured}
-          className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-steel-dark/30 bg-background/80 px-5 py-3.5 text-sm font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange disabled:opacity-60"
-        >
-          <GoogleIcon />
-          {signingIn ? "Conectando…" : "Continuar con Google"}
-        </button>
+        <>
+          <p className="mt-6 text-center text-xs leading-relaxed text-steel-dark">
+            Al continuar, acepta nuestros{" "}
+            <Link href="/terminos" className="text-orange hover:underline">
+              Términos y condiciones
+            </Link>{" "}
+            y la{" "}
+            <Link href="/privacidad" className="text-orange hover:underline">
+              Política de privacidad
+            </Link>
+            .
+          </p>
+          <button
+            type="button"
+            onClick={() => void handleSignIn()}
+            disabled={loading || !configured}
+            className="mt-4 flex w-full items-center justify-center gap-3 rounded-xl border border-steel-dark/30 bg-background/80 px-5 py-3.5 text-sm font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange disabled:opacity-60"
+          >
+            <GoogleIcon />
+            Continuar con Google
+          </button>
+        </>
       )}
 
       {user && loading && (

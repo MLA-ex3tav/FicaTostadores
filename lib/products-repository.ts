@@ -7,6 +7,7 @@ import {
   isVercelBlobConfigured,
 } from "@/lib/blob-storage";
 import { defaultProducts, type Product } from "@/lib/products";
+import { normalizeProductImages } from "@/lib/product-images";
 
 const BLOB_PATHNAME = "products.json";
 const LOCAL_FILE = path.join(process.cwd(), "data", "products.json");
@@ -29,7 +30,10 @@ async function readFromBlob(): Promise<Product[] | null> {
       return null;
     }
 
-    return (await response.json()) as Product[];
+    return (await response.json() as Product[]).map((product) => ({
+      ...product,
+      images: normalizeProductImages(product.images),
+    }));
   } catch {
     return null;
   }
@@ -38,7 +42,10 @@ async function readFromBlob(): Promise<Product[] | null> {
 async function readFromLocalFile(): Promise<Product[] | null> {
   try {
     const raw = await readFile(LOCAL_FILE, "utf8");
-    return JSON.parse(raw) as Product[];
+    return (JSON.parse(raw) as Product[]).map((product) => ({
+      ...product,
+      images: normalizeProductImages(product.images),
+    }));
   } catch {
     return null;
   }

@@ -1,5 +1,6 @@
 import type { ProductCatalog } from "./product-catalogs";
 import type { ProductCategory } from "./product-categories";
+import type { ProductImage } from "./product-images";
 
 export interface ProductAddOn {
   id: string;
@@ -19,7 +20,7 @@ export interface Product {
   features: string[];
   technicalDetails: { label: string; value: string }[];
   addOns: ProductAddOn[];
-  images?: string[];
+  images?: ProductImage[];
 }
 
 const commercialDescription =

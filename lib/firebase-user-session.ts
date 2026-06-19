@@ -1,4 +1,10 @@
-import { CLIENTES_COLLECTION, isAdminRole } from "@/lib/firestore-collections";
+import { CLIENTES_COLLECTION } from "@/lib/firestore-collections";
+import {
+  isStaffRole,
+  isSuperAdminRole,
+  parseUserRole,
+  type UserRole,
+} from "@/lib/permissions";
 
 export interface FirebaseUserSession {
   uid: string;
@@ -117,12 +123,28 @@ export async function getClienteRoleFromRest(
   }
 }
 
+export async function getUserRoleFromRest(
+  uid: string,
+  idToken: string,
+): Promise<UserRole | null> {
+  const role = await getClienteRoleFromRest(uid, idToken);
+  return parseUserRole(role);
+}
+
+export async function isStaffFromRest(
+  uid: string,
+  idToken: string,
+): Promise<boolean> {
+  const role = await getUserRoleFromRest(uid, idToken);
+  return isStaffRole(role);
+}
+
 export async function isAdminFromRest(
   uid: string,
   idToken: string,
 ): Promise<boolean> {
-  const role = await getClienteRoleFromRest(uid, idToken);
-  return isAdminRole(role);
+  const role = await getUserRoleFromRest(uid, idToken);
+  return isSuperAdminRole(role);
 }
 
 export function getRequestIdToken(request: Request): string | null {

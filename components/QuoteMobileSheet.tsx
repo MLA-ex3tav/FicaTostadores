@@ -129,10 +129,15 @@ export default function QuoteMobileSheet() {
                 : "translate-y-0 opacity-100 delay-75"
             }`}
           >
-            <p className="truncate text-[11px] text-steel-dark">
-              {products.length}{" "}
-              {products.length === 1 ? "producto" : "productos"}
-            </p>
+            <div className="min-w-0 truncate">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-orange">
+                Cotización
+              </p>
+              <p className="truncate text-[11px] text-steel-dark">
+                {products.length}{" "}
+                {products.length === 1 ? "producto seleccionado" : "productos seleccionados"}
+              </p>
+            </div>
             <Link
               href="/contacto"
               className="shrink-0 border border-white/[0.08] px-3 py-1 text-[10px] text-steel-mid transition-colors hover:border-orange/40 hover:text-orange"

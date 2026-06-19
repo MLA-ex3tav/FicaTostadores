@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { requireAdminSession } from "@/lib/admin-session";
-import type { CatalogConfig } from "@/lib/catalog-config";
+import { requireStaffApi } from "@/lib/admin-api-guard";
 import { canPersistCatalogConfig } from "@/lib/catalog-config-repository";
 import { BLOB_NOT_CONFIGURED_MESSAGE } from "@/lib/blob-storage";
 import {
   getCatalogConfig,
   updateCatalogConfig,
 } from "@/lib/catalog-config-server";
+import {
+  parseJsonBody,
+  RequestValidationError,
+  validationErrorResponse,
+} from "@/lib/validation/parse-request";
+import { parseCatalogConfigInput } from "@/lib/validation/catalog-input";
 
 function revalidateCatalogPages() {
   revalidatePath("/");
@@ -19,10 +24,10 @@ function revalidateCatalogPages() {
 }
 
 export async function GET(request: Request) {
-  const session = await requireAdminSession(request);
+  const guard = await requireStaffApi(request, "read");
 
-  if (!session) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
 
   const config = await getCatalogConfig();
@@ -33,10 +38,10 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const session = await requireAdminSession(request);
+  const guard = await requireStaffApi(request, "write");
 
-  if (!session) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
 
   if (!canPersistCatalogConfig()) {
@@ -49,19 +54,16 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as CatalogConfig;
-
-    if (!Array.isArray(body.catalogs) || !Array.isArray(body.categories)) {
-      return NextResponse.json(
-        { error: "Formato de catálogo inválido." },
-        { status: 400 },
-      );
-    }
-
-    const config = await updateCatalogConfig(body);
+    const body = await parseJsonBody<unknown>(request);
+    const configInput = parseCatalogConfigInput(body);
+    const config = await updateCatalogConfig(configInput);
     revalidateCatalogPages();
     return NextResponse.json(config);
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestValidationError) {
+      return validationErrorResponse(error);
+    }
+
     return NextResponse.json(
       { error: "No se pudo guardar la configuración del catálogo." },
       { status: 400 },

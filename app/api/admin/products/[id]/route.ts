@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { requireAdminSession } from "@/lib/admin-session";
+import { requireStaffApi } from "@/lib/admin-api-guard";
 import { canPersistProducts } from "@/lib/products-repository";
 import { BLOB_NOT_CONFIGURED_MESSAGE } from "@/lib/blob-storage";
 import {
@@ -8,7 +8,15 @@ import {
   getProductById,
   updateProduct,
 } from "@/lib/products-server";
-import type { Product } from "@/lib/products";
+import {
+  parseJsonBody,
+  RequestValidationError,
+  validationErrorResponse,
+} from "@/lib/validation/parse-request";
+import {
+  parseProductIdParam,
+  parseProductInput,
+} from "@/lib/validation/product-input";
 
 function revalidateProductPages() {
   revalidatePath("/");
@@ -21,13 +29,22 @@ interface RouteContext {
 }
 
 export async function GET(_request: Request, context: RouteContext) {
-  const session = await requireAdminSession(_request);
+  const guard = await requireStaffApi(_request, "read");
 
-  if (!session) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
 
-  const { id } = await context.params;
+  const { id: rawId } = await context.params;
+
+  let id: string;
+
+  try {
+    id = parseProductIdParam(rawId);
+  } catch (error) {
+    return validationErrorResponse(error);
+  }
+
   const product = await getProductById(id);
 
   if (!product) {
@@ -38,10 +55,10 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PUT(request: Request, context: RouteContext) {
-  const session = await requireAdminSession(request);
+  const guard = await requireStaffApi(request, "write");
 
-  if (!session) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
 
   if (!canPersistProducts()) {
@@ -53,14 +70,22 @@ export async function PUT(request: Request, context: RouteContext) {
     );
   }
 
-  const { id } = await context.params;
+  const { id: rawId } = await context.params;
+
+  let id: string;
 
   try {
-    const body = (await request.json()) as Product;
-    const product = await updateProduct(id, body);
+    id = parseProductIdParam(rawId);
+    const body = await parseJsonBody<unknown>(request);
+    const product = parseProductInput(body);
+    const updated = await updateProduct(id, product);
     revalidateProductPages();
-    return NextResponse.json({ product });
+    return NextResponse.json({ product: updated });
   } catch (error) {
+    if (error instanceof RequestValidationError) {
+      return validationErrorResponse(error);
+    }
+
     const message =
       error instanceof Error ? error.message : "No se pudo actualizar el producto.";
     return NextResponse.json({ error: message }, { status: 400 });
@@ -68,10 +93,10 @@ export async function PUT(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const session = await requireAdminSession(_request);
+  const guard = await requireStaffApi(_request, "write");
 
-  if (!session) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
 
   if (!canPersistProducts()) {
@@ -83,13 +108,20 @@ export async function DELETE(_request: Request, context: RouteContext) {
     );
   }
 
-  const { id } = await context.params;
+  const { id: rawId } = await context.params;
+
+  let id: string;
 
   try {
+    id = parseProductIdParam(rawId);
     await deleteProduct(id);
     revalidateProductPages();
     return NextResponse.json({ ok: true });
   } catch (error) {
+    if (error instanceof RequestValidationError) {
+      return validationErrorResponse(error);
+    }
+
     const message =
       error instanceof Error ? error.message : "No se pudo eliminar el producto.";
     return NextResponse.json({ error: message }, { status: 400 });

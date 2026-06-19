@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import ProductImagesField from "@/components/admin/ProductImagesField";
+import CustomSelect from "@/components/CustomSelect";
 
 import {
 
@@ -33,6 +34,12 @@ interface ProductFormProps {
   initialProduct?: Product;
 
   mode: "create" | "edit";
+
+  onSaved?: () => void;
+
+  onCancel?: () => void;
+
+  cancelLabel?: string;
 
 }
 
@@ -108,7 +115,13 @@ function cleanAddOns(values: ProductAddOn[]): ProductAddOn[] {
 
 
 
-export default function ProductForm({ initialProduct, mode }: ProductFormProps) {
+export default function ProductForm({
+  initialProduct,
+  mode,
+  onSaved,
+  onCancel,
+  cancelLabel = "Cancelar",
+}: ProductFormProps) {
 
   const router = useRouter();
 
@@ -220,6 +233,33 @@ export default function ProductForm({ initialProduct, mode }: ProductFormProps) 
 
   );
 
+  const catalogOptions = useMemo(
+    () =>
+      catalogConfig.catalogs.map((catalog) => ({
+        value: catalog.id,
+        label: catalog.label,
+      })),
+    [catalogConfig.catalogs],
+  );
+
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((category) => ({
+        value: category.id,
+        label: category.label,
+      })),
+    [categories],
+  );
+
+  const capacityUnitOptions = useMemo(
+    () => [
+      { value: "por-lote", label: "por lote" },
+      { value: "por-hora", label: "por hora" },
+      { value: "custom", label: "Texto libre" },
+    ],
+    [],
+  );
+
 
 
   function updateField<K extends keyof Product>(key: K, value: Product[K]) {
@@ -286,7 +326,7 @@ export default function ProductForm({ initialProduct, mode }: ProductFormProps) 
 
       capacity: formattedCapacity,
 
-      images: product.images?.filter(Boolean) ?? [],
+      images: product.images?.filter((image) => image.src) ?? [],
 
       specs: cleanLines(product.specs),
 
@@ -348,7 +388,11 @@ export default function ProductForm({ initialProduct, mode }: ProductFormProps) 
 
 
 
-      router.push("/admin/productos");
+      if (onSaved) {
+        onSaved();
+      } else {
+        router.push("/admin/productos");
+      }
 
       router.refresh();
 
@@ -436,31 +480,23 @@ export default function ProductForm({ initialProduct, mode }: ProductFormProps) 
 
           </label>
 
-          <select
+          <CustomSelect
 
             id="catalog"
 
             value={product.catalog}
 
-            onChange={(event) => handleCatalogChange(event.target.value)}
+            onChange={handleCatalogChange}
 
             disabled={!configLoaded}
 
-            className={inputClass}
+            options={catalogOptions}
 
-          >
+            aria-label="Catálogo"
 
-            {catalogConfig.catalogs.map((catalog) => (
+            className="mt-1.5"
 
-              <option key={catalog.id} value={catalog.id}>
-
-                {catalog.label}
-
-              </option>
-
-            ))}
-
-          </select>
+          />
 
           <p className="mt-1.5 text-xs text-steel-dark">
 
@@ -482,31 +518,23 @@ export default function ProductForm({ initialProduct, mode }: ProductFormProps) 
 
           </label>
 
-          <select
+          <CustomSelect
 
             id="category"
 
             value={product.category}
 
-            onChange={(event) => updateField("category", event.target.value)}
+            onChange={(value) => updateField("category", value)}
 
             disabled={!configLoaded || categories.length === 0}
 
-            className={inputClass}
+            options={categoryOptions}
 
-          >
+            aria-label="Categoría"
 
-            {categories.map((category) => (
+            className="mt-1.5"
 
-              <option key={category.id} value={category.id}>
-
-                {category.label}
-
-              </option>
-
-            ))}
-
-          </select>
+          />
 
           <p className="mt-1.5 text-xs text-steel-dark">
 
@@ -546,27 +574,19 @@ export default function ProductForm({ initialProduct, mode }: ProductFormProps) 
 
             />
 
-            <select
+            <CustomSelect
 
               value={capacityUnit}
 
-              onChange={(event) =>
+              onChange={(value) => setCapacityUnit(value as CapacityUnit)}
 
-                setCapacityUnit(event.target.value as CapacityUnit)
+              options={capacityUnitOptions}
 
-              }
+              aria-label="Unidad de capacidad"
 
-              className="industrial-input text-sm"
+              className="w-auto shrink-0"
 
-            >
-
-              <option value="por-lote">por lote</option>
-
-              <option value="por-hora">por hora</option>
-
-              <option value="custom">Texto libre</option>
-
-            </select>
+            />
 
           </div>
 
@@ -1106,17 +1126,22 @@ export default function ProductForm({ initialProduct, mode }: ProductFormProps) 
 
         </button>
 
-        <Link
-
-          href="/admin/productos"
-
-          className="text-sm text-steel-mid transition-colors hover:text-orange"
-
-        >
-
-          Cancelar
-
-        </Link>
+        {onCancel ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-sm text-steel-mid transition-colors hover:text-orange"
+          >
+            {cancelLabel}
+          </button>
+        ) : (
+          <Link
+            href="/admin/productos"
+            className="text-sm text-steel-mid transition-colors hover:text-orange"
+          >
+            {cancelLabel}
+          </Link>
+        )}
 
       </div>
 

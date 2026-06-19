@@ -7,7 +7,7 @@ export default function AdminLoginPanel() {
     <GoogleLoginCard
       badge="Administración"
       title="Acceso admin"
-      subtitle="Ingrese con Google. Solo cuentas con permisos de administrador pueden editar productos."
+      subtitle="Ingrese con Google. Solo cuentas con rol editor o administrador pueden acceder al panel."
       adminRedirect
     />
   );

@@ -10,6 +10,9 @@ interface MediaImageProps {
   className?: string;
   fallbackClassName?: string;
   priority?: boolean;
+  objectPosition?: string;
+  sizes?: string;
+  quality?: number;
 }
 
 export default function MediaImage({
@@ -18,6 +21,9 @@ export default function MediaImage({
   className = "h-48 rounded-t-xl",
   fallbackClassName,
   priority = false,
+  objectPosition = "50% 50%",
+  sizes = "(max-width: 768px) 100vw, 33vw",
+  quality = 80,
 }: MediaImageProps) {
   const [hasError, setHasError] = useState(false);
   const containerClass = fallbackClassName ?? className;
@@ -47,7 +53,9 @@ export default function MediaImage({
         alt={alt}
         fill
         className="object-cover"
-        sizes="(max-width: 768px) 100vw, 33vw"
+        style={{ objectPosition }}
+        sizes={sizes}
+        quality={quality}
         priority={priority}
         onError={() => setHasError(true)}
       />

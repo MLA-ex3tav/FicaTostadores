@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
-import { requireAdminSession } from "@/lib/admin-session";
+import { requireStaffApi } from "@/lib/admin-api-guard";
 
 /** @deprecated Usar /api/auth/me */
 export async function GET(request: Request) {
-  const session = await requireAdminSession(request);
+  const guard = await requireStaffApi(request, "read");
 
-  if (!session) {
-    return NextResponse.json({ isAdmin: false }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
 
   return NextResponse.json({
-    isAdmin: true,
-    email: session.email,
+    isStaff: true,
+    isAdmin: guard.session.role === "admin",
+    role: guard.session.role,
+    email: guard.session.email,
   });
 }

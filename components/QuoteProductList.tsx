@@ -21,12 +21,17 @@ export default function QuoteProductList({
 
   return (
     <div className={className}>
-      <p className="text-[11px] text-steel-dark">
-        {products.length}{" "}
-        {products.length === 1 ? "producto" : "productos"}
-      </p>
+      <div className="shrink-0">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-orange">
+          Cotización
+        </p>
+        <p className="mt-0.5 text-[11px] text-steel-dark">
+          {products.length}{" "}
+          {products.length === 1 ? "producto seleccionado" : "productos seleccionados"}
+        </p>
+      </div>
 
-      <ul className="mt-2 divide-y divide-white/[0.06]">
+      <ul className="mt-2 min-h-0 flex-1 divide-y divide-white/[0.06] overflow-y-auto">
         {products.map((product) => (
           <li
             key={product.id}
@@ -35,6 +40,11 @@ export default function QuoteProductList({
             <div className="min-w-0">
               <p className="truncate text-sm text-steel-light">{product.name}</p>
               <p className="mt-0.5 text-xs text-steel-dark">{product.capacity}</p>
+              {product.selectedAddOns && product.selectedAddOns.length > 0 ? (
+                <p className="mt-1 text-xs text-orange/80">
+                  + {product.selectedAddOns.map((addOn) => addOn.name).join(", ")}
+                </p>
+              ) : null}
             </div>
             <button
               type="button"
@@ -51,7 +61,7 @@ export default function QuoteProductList({
       {showCta && (
         <Link
           href="/contacto"
-          className="mt-3 block w-full border border-white/[0.08] py-2 text-center text-xs text-steel-mid transition-colors hover:border-orange/40 hover:text-orange"
+          className="mt-3 block w-full shrink-0 border border-white/[0.08] py-2 text-center text-xs text-steel-mid transition-colors hover:border-orange/40 hover:text-orange"
         >
           Ir a cotizar
         </Link>

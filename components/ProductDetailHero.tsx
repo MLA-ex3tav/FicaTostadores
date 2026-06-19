@@ -8,6 +8,7 @@ import {
   type CatalogConfig,
 } from "@/lib/catalog-config";
 import type { Product } from "@/lib/products";
+import { focusToObjectPosition } from "@/lib/product-images";
 import { useQuoteSelection } from "@/lib/quote-selection";
 import MediaImage from "./MediaImage";
 import QuoteSelectedLabel, { quoteSelectedPanelClass } from "./QuoteSelectedBadge";
@@ -34,17 +35,18 @@ export default function ProductDetailHero({
     <SteelPanel className={`mb-10 ${isSelected ? quoteSelectedPanelClass : ""}`}>
       {images.length > 0 && (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {images.map((src, index) => (
+          {images.map((image, index) => (
             <div
               key={`${product.id}-image-${index}`}
               className="relative h-48 overflow-hidden rounded-lg border border-steel-dark/30"
             >
               <MediaImage
-                src={src}
+                src={image.src}
                 alt={`${product.name} — imagen ${index + 1}`}
                 className="h-48 w-full"
                 fallbackClassName="h-48 w-full"
                 priority={index === 0}
+                objectPosition={focusToObjectPosition(image.product)}
               />
             </div>
           ))}

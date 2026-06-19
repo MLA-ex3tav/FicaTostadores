@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { requireAdminSession } from "@/lib/admin-session";
+import { requireStaffApi } from "@/lib/admin-api-guard";
 import { canPersistProducts } from "@/lib/products-repository";
 import { BLOB_NOT_CONFIGURED_MESSAGE } from "@/lib/blob-storage";
 import {
   createProduct,
   getProducts,
 } from "@/lib/products-server";
-import { slugifyProductId } from "@/lib/product-utils";
-import type { Product } from "@/lib/products";
-
+import {
+  parseJsonBody,
+  RequestValidationError,
+  validationErrorResponse,
+} from "@/lib/validation/parse-request";
+import { parseProductInput } from "@/lib/validation/product-input";
 function revalidateProductPages() {
   revalidatePath("/");
   revalidatePath("/productos");
@@ -17,10 +20,10 @@ function revalidateProductPages() {
 }
 
 export async function GET(request: Request) {
-  const session = await requireAdminSession(request);
+  const guard = await requireStaffApi(request, "read");
 
-  if (!session) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
 
   const products = await getProducts();
@@ -28,10 +31,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await requireAdminSession(request);
+  const guard = await requireStaffApi(request, "write");
 
-  if (!session) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
 
   if (!canPersistProducts()) {
@@ -44,16 +47,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as Product;
-    const product: Product = {
-      ...body,
-      id: body.id?.trim() || slugifyProductId(body.name),
-    };
+    const body = await parseJsonBody<unknown>(request);
+    const product = parseProductInput(body);
 
     const created = await createProduct(product);
     revalidateProductPages();
     return NextResponse.json({ product: created }, { status: 201 });
   } catch (error) {
+    if (error instanceof RequestValidationError) {
+      return validationErrorResponse(error);
+    }
+
     const message =
       error instanceof Error ? error.message : "No se pudo crear el producto.";
     return NextResponse.json({ error: message }, { status: 400 });

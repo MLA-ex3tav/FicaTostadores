@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { requireAdminSession } from "@/lib/admin-session";
+import { requireStaffApi } from "@/lib/admin-api-guard";
 import { getBlobErrorMessage } from "@/lib/blob-storage";
+import { detectImageMime } from "@/lib/image-magic-bytes";
 import {
   canUploadFiles,
   isAllowedImageUpload,
@@ -10,10 +11,10 @@ import {
 } from "@/lib/upload-repository";
 
 export async function POST(request: Request) {
-  const session = await requireAdminSession(request);
+  const guard = await requireStaffApi(request, "upload");
 
-  if (!session) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
 
   if (!canUploadFiles()) {
@@ -55,7 +56,22 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const contentType = normalizeImageContentType(file.type, file.name);
+    const detectedMime = detectImageMime(buffer);
+
+    if (!detectedMime) {
+      return NextResponse.json(
+        {
+          error:
+            "El archivo no es una imagen válida. Use JPG, PNG, WebP, GIF, HEIC o AVIF.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const contentType = normalizeImageContentType(
+      detectedMime || file.type,
+      file.name,
+    );
     const url = await saveUploadedImage(buffer, contentType, file.name);
 
     revalidatePath("/");

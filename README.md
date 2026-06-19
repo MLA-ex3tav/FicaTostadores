@@ -17,15 +17,33 @@ Sitio web corporativo para **Fica Tostadores**, empresa de maquinaria industrial
 | `/productos/[id]` | Ficha técnica |
 | `/contacto` | Formulario de contacto |
 | `/iniciar-sesion` | Login con Google |
-| `/admin/productos` | Panel CRUD de productos (solo `role: admin`) |
+| `/admin/productos` | Panel CRUD de productos (`editor` o `admin`) |
+| `/admin/usuarios` | Gestión de roles (solo `admin`) |
+
+## Roles de acceso
+
+| Rol | Panel admin | Catálogo | Gestionar usuarios |
+|-----|-------------|----------|--------------------|
+| `cliente` | No | No | No |
+| `editor` | Sí | Sí | No |
+| `admin` | Sí | Sí | Sí |
+
+Asigne roles desde `/admin/usuarios` (requiere al menos un administrador).
 
 ## Desarrollo
 
 ```bash
 npm install
 cp .env.example .env.local
+# Completar NEXT_PUBLIC_FIREBASE_* y NEXT_PUBLIC_SITE_URL en .env.local
 npm run dev
 ```
+
+`.env.local` no se sube a Git. Sin las variables `NEXT_PUBLIC_FIREBASE_*` el login con Google no aparecerá ni funcionará.
+
+## Autenticación
+
+El sitio usa **Firebase Auth (Google)** únicamente. No hay NextAuth ni `auth.ts`.
 
 ## Firebase
 
@@ -48,10 +66,12 @@ Al iniciar sesión con Google se crea o actualiza un documento en `clientes/{uid
 | Campo | Origen |
 |-------|--------|
 | `uid`, `email`, `displayName`, `photoURL` | Automático al login |
-| `role` | `"cliente"` al crear; editable manualmente |
+| `role` | `"cliente"` al crear; editable por administradores |
 | `createdAt`, `lastLoginAt` | Automático |
 
-**Hacer admin a alguien:** Firestore → `clientes` → documento del usuario → cambiar `role` de `"cliente"` a `"admin"`.
+**Roles:** `cliente` (sitio público), `editor` (panel sin gestión de usuarios), `admin` (acceso completo).
+
+**Asignar roles:** `/admin/usuarios` en el panel (solo administradores). También puede editar manualmente en Firestore si es el primer admin.
 
 El login **no sobrescribe** el `role` si el documento ya existe.
 
@@ -69,5 +89,7 @@ En local: `vercel env pull` para obtener credenciales de Blob.
 
 ## Notas
 
-- El formulario de contacto abre WhatsApp directamente.
+- El formulario de contacto abre WhatsApp directamente (wa.me en móvil, WhatsApp Web en escritorio).
 - El catálogo base está en `lib/products.ts`; las ediciones del admin se guardan en Blob/archivo local.
+- Las imágenes de productos se suben desde el panel admin; sin fotos, las cards muestran un placeholder.
+- `npm audit` puede reportar PostCSS transitivo de Next.js; el proyecto fija `postcss >= 8.5.10` vía `overrides` en `package.json`.

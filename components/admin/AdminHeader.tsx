@@ -18,7 +18,7 @@ function navLinkClass(isActive: boolean) {
 
 export default function AdminHeader() {
   const pathname = usePathname();
-  const { user, signOut } = useFirebaseAuth();
+  const { user, role, isSuperAdmin, signOut } = useFirebaseAuth();
 
   return (
     <header className="border-b border-white/[0.06] bg-[var(--input-bg)]">
@@ -32,7 +32,12 @@ export default function AdminHeader() {
           </div>
           <div className="flex flex-wrap items-center gap-4 text-sm">
             {user?.email && (
-              <span className="text-steel-mid">{user.email}</span>
+              <span className="text-steel-mid">
+                {user.email}
+                {role === "editor" ? (
+                  <span className="ml-2 text-xs text-steel-dark">(editor)</span>
+                ) : null}
+              </span>
             )}
             <Link href="/" className="text-steel-mid hover:text-orange">
               Ver sitio
@@ -58,6 +63,14 @@ export default function AdminHeader() {
               {item.label}
             </Link>
           ))}
+          {isSuperAdmin ? (
+            <Link
+              href="/admin/usuarios"
+              className={navLinkClass(pathname.startsWith("/admin/usuarios"))}
+            >
+              Usuarios
+            </Link>
+          ) : null}
         </nav>
       </div>
     </header>

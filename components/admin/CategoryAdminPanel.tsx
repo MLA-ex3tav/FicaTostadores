@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import CustomSelect from "@/components/CustomSelect";
 import {
   defaultCatalogConfig,
   getCatalogLabel,
@@ -161,6 +162,15 @@ export default function CategoryAdminPanel() {
 
   const inputClass = "industrial-input mt-1.5 text-sm";
 
+  const catalogOptions = useMemo(
+    () =>
+      config.catalogs.map((catalog) => ({
+        value: catalog.id,
+        label: catalog.label,
+      })),
+    [config.catalogs],
+  );
+
   if (loading) {
     return <p className="text-sm text-steel-mid">Cargando categorías…</p>;
   }
@@ -177,18 +187,14 @@ export default function CategoryAdminPanel() {
             <label htmlFor="category-catalog" className="text-xs uppercase tracking-widest text-steel-dark">
               Catálogo
             </label>
-            <select
+            <CustomSelect
               id="category-catalog"
               value={catalogId}
-              onChange={(event) => setCatalogId(event.target.value)}
-              className={inputClass}
-            >
-              {config.catalogs.map((catalog) => (
-                <option key={catalog.id} value={catalog.id}>
-                  {catalog.label}
-                </option>
-              ))}
-            </select>
+              onChange={setCatalogId}
+              options={catalogOptions}
+              aria-label="Catálogo"
+              className="mt-1.5"
+            />
           </div>
           <div>
             <label htmlFor="category-label" className="text-xs uppercase tracking-widest text-steel-dark">

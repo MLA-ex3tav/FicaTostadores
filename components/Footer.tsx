@@ -79,10 +79,20 @@ export default function Footer() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-xs text-steel-dark">
-          © {new Date().getFullYear()} {companyInfo.brand}. Todos los derechos
-          reservados.
-        </p>
+        <div className="mt-8 flex flex-col items-center gap-3 border-t border-steel-dark/20 pt-8">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-steel-mid">
+            <Link href="/privacidad" className="hover:text-orange transition-colors">
+              Política de privacidad
+            </Link>
+            <Link href="/terminos" className="hover:text-orange transition-colors">
+              Términos y condiciones
+            </Link>
+          </div>
+          <p className="text-center text-xs text-steel-dark">
+            © {new Date().getFullYear()} {companyInfo.brand}. Todos los derechos
+            reservados.
+          </p>
+        </div>
       </div>
     </footer>
   );

@@ -10,7 +10,7 @@ interface AdminGuardProps {
 
 export default function AdminGuard({ children }: AdminGuardProps) {
   const router = useRouter();
-  const { user, isAdmin, loading } = useFirebaseAuth();
+  const { user, isStaff, loading } = useFirebaseAuth();
 
   useEffect(() => {
     if (loading) {
@@ -22,10 +22,10 @@ export default function AdminGuard({ children }: AdminGuardProps) {
       return;
     }
 
-    if (!isAdmin) {
+    if (!isStaff) {
       router.replace("/admin/login?error=no-autorizado");
     }
-  }, [user, isAdmin, loading, router]);
+  }, [user, isStaff, loading, router]);
 
   if (loading) {
     return (
@@ -35,7 +35,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!user || !isStaff) {
     return null;
   }
 

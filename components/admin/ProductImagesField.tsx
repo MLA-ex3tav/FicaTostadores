@@ -1,12 +1,18 @@
 "use client";
 
-import MediaImage from "@/components/MediaImage";
+import ImageFocusEditor from "@/components/admin/ImageFocusEditor";
 import { useFirebaseAuth } from "@/lib/firebase-auth";
+import {
+  CAROUSEL_IMAGE_SPEC,
+  createProductImage,
+  PRODUCT_IMAGE_SPEC,
+  type ProductImage,
+} from "@/lib/product-images";
 import { useRef, useState } from "react";
 
 interface ProductImagesFieldProps {
-  images: string[];
-  onChange: (images: string[]) => void;
+  images: ProductImage[];
+  onChange: (images: ProductImage[]) => void;
 }
 
 export default function ProductImagesField({
@@ -48,14 +54,14 @@ export default function ProductImagesField({
           return;
         }
 
-        nextImages.push(data.url);
+        nextImages.push(createProductImage(data.url));
       }
 
       onChange(nextImages);
-    } catch (error) {
+    } catch (uploadError) {
       setError(
-        error instanceof Error
-          ? error.message
+        uploadError instanceof Error
+          ? uploadError.message
           : "Error de conexión al subir imágenes.",
       );
     } finally {
@@ -70,14 +76,33 @@ export default function ProductImagesField({
     onChange(images.filter((_, itemIndex) => itemIndex !== index));
   }
 
+  function updateImage(index: number, patch: Partial<ProductImage>) {
+    onChange(
+      images.map((image, itemIndex) =>
+        itemIndex === index ? { ...image, ...patch } : image,
+      ),
+    );
+  }
+
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-lg text-steel-light">Imágenes</h2>
           <p className="mt-1 text-xs text-steel-dark">
-            Aparecen en la ficha del producto y en el carrusel del inicio.
+            Ajuste la vista carrusel (inicio) y la vista productos (catálogo y
+            ficha). Use fotos en alta resolución según las medidas recomendadas.
           </p>
+          <ul className="mt-2 space-y-1 text-[0.65rem] text-steel-mid">
+            <li>
+              <span className="text-orange">Carrusel:</span>{" "}
+              {CAROUSEL_IMAGE_SPEC.hint}
+            </li>
+            <li>
+              <span className="text-orange">Productos:</span>{" "}
+              {PRODUCT_IMAGE_SPEC.hint}
+            </li>
+          </ul>
         </div>
         <button
           type="button"
@@ -99,23 +124,15 @@ export default function ProductImagesField({
       />
 
       {images.length > 0 ? (
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {images.map((src, index) => (
+        <div className="mt-4 space-y-6">
+          {images.map((image, index) => (
             <div
-              key={`${src}-${index}`}
-              className="overflow-hidden rounded-xl border border-white/[0.06] bg-[var(--input-bg)]"
+              key={`${image.src}-${index}`}
+              className="rounded-xl border border-white/[0.06] bg-[var(--input-bg)] p-4"
             >
-              <div className="relative h-40">
-                <MediaImage
-                  src={src}
-                  alt={`Imagen ${index + 1}`}
-                  className="h-40 w-full"
-                  fallbackClassName="h-40 w-full"
-                />
-              </div>
-              <div className="flex items-center justify-between gap-2 px-3 py-2">
-                <span className="truncate text-xs text-steel-dark">
-                  {index === 0 ? "Principal · carrusel" : `Imagen ${index + 1}`}
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-steel-mid">
+                  {index === 0 ? "Imagen principal" : `Imagen ${index + 1}`}
                 </span>
                 <button
                   type="button"
@@ -125,19 +142,46 @@ export default function ProductImagesField({
                   Quitar
                 </button>
               </div>
+
+              <div
+                className={`grid gap-4 ${
+                  index === 0 ? "md:grid-cols-2" : "max-w-md"
+                }`}
+              >
+                {index === 0 ? (
+                  <ImageFocusEditor
+                    src={image.src}
+                    label={CAROUSEL_IMAGE_SPEC.label}
+                    resolutionHint={CAROUSEL_IMAGE_SPEC.hint}
+                    aspectClassName="aspect-[5/2] w-full"
+                    focus={image.carousel}
+                    onChange={(carousel) => updateImage(index, { carousel })}
+                  />
+                ) : null}
+                <ImageFocusEditor
+                  src={image.src}
+                  label={PRODUCT_IMAGE_SPEC.label}
+                  resolutionHint={PRODUCT_IMAGE_SPEC.hint}
+                  aspectClassName="aspect-[4/3] w-full"
+                  focus={image.product}
+                  onChange={(product) => updateImage(index, { product })}
+                />
+              </div>
             </div>
           ))}
         </div>
       ) : (
         <p className="mt-4 rounded-lg border border-dashed border-steel-dark/40 px-4 py-6 text-sm text-steel-mid">
-          Sin imágenes. Suba fotos del equipo para mostrarlas en el sitio y en
-          el carrusel de la página de inicio.
+          Sin imágenes. Suba fotos del equipo y encuadre cómo se verán en el
+          sitio.
+          <span className="mt-3 block text-xs leading-relaxed text-steel-dark">
+            Resolución recomendada — Carrusel: {CAROUSEL_IMAGE_SPEC.hint}.
+            Productos: {PRODUCT_IMAGE_SPEC.hint}.
+          </span>
         </p>
       )}
 
-      {error && (
-        <p className="mt-3 text-sm text-orange">{error}</p>
-      )}
+      {error && <p className="mt-3 text-sm text-orange">{error}</p>}
     </section>
   );
 }

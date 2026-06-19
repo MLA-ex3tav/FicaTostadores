@@ -7,77 +7,46 @@ import {
   Wheat,
   type LucideIcon,
 } from "lucide-react";
-import IconBadge from "./IconBadge";
-import SteelPanel from "./SteelPanel";
 
-const roastables: {
-  name: string;
-  description: string;
-  Icon: LucideIcon;
-}[] = [
-  {
-    name: "Café",
-    description: "Granos verdes y especiales con perfiles de tueste personalizados.",
-    Icon: Coffee,
-  },
-  {
-    name: "Cacao",
-    description: "Nibs y granos de cacao para chocolatería y confitería.",
-    Icon: Bean,
-  },
-  {
-    name: "Frutos secos",
-    description: "Almendras, maní, castañas, nueces y mezclas gourmet.",
-    Icon: Nut,
-  },
-  {
-    name: "Granos y cereales",
-    description: "Maíz, trigo, cebada, malta y otros granos alimenticios.",
-    Icon: Wheat,
-  },
-  {
-    name: "Semillas",
-    description: "Girasol, chía, lino, sésamo y semillas funcionales.",
-    Icon: Sprout,
-  },
-  {
-    name: "Especias",
-    description: "Pimienta, comino, canela y mezclas de especias secas.",
-    Icon: Flame,
-  },
+const roastables: { name: string; Icon: LucideIcon }[] = [
+  { name: "Café", Icon: Coffee },
+  { name: "Cacao", Icon: Bean },
+  { name: "Frutos secos", Icon: Nut },
+  { name: "Granos y cereales", Icon: Wheat },
+  { name: "Semillas", Icon: Sprout },
+  { name: "Especias", Icon: Flame },
 ];
 
 export default function RoastablesSection() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-20">
-      <div className="mb-10 text-center">
+    <section className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-16">
+      <div className="max-w-xl">
         <p className="text-xs uppercase tracking-[0.3em] text-steel-dark">
           Aplicaciones
         </p>
-        <h2 className="mt-3 font-display text-3xl tracking-wide text-steel-light md:text-4xl">
-          MÚLTIPLES <span className="text-orange">MATERIAS PRIMAS</span>
+        <h2 className="mt-2 font-display text-2xl tracking-wide text-steel-light md:text-3xl">
+          Múltiples <span className="text-orange">materias primas</span>
         </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-steel-mid">
-          Nuestros equipos no están limitados al café. Tostamos y procesamos una
-          amplia variedad de productos para la industria alimentaria.
+        <p className="mt-3 text-sm leading-relaxed text-steel-mid">
+          Una línea de equipos para café, cacao, frutos secos, granos, semillas
+          y especias.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="mt-10 flex flex-wrap gap-x-8 gap-y-5 sm:gap-x-10">
         {roastables.map((item) => (
-          <SteelPanel key={item.name} className="p-5 md:p-6">
-            <IconBadge>
-              <item.Icon className="h-6 w-6" strokeWidth={1.75} />
-            </IconBadge>
-            <h3 className="font-display text-lg tracking-wide text-orange">
-              {item.name}
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-steel-mid">
-              {item.description}
-            </p>
-          </SteelPanel>
+          <li
+            key={item.name}
+            className="flex items-center gap-2.5 text-steel-mid"
+          >
+            <item.Icon
+              className="h-4 w-4 shrink-0 text-orange/90"
+              strokeWidth={1.75}
+            />
+            <span className="text-sm">{item.name}</span>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }
