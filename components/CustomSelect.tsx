@@ -4,11 +4,13 @@ import { ChevronDown, Search } from "lucide-react";
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type KeyboardEvent,
 } from "react";
+import { createPortal } from "react-dom";
 
 export interface CustomSelectOption {
   value: string;
@@ -30,6 +32,12 @@ interface CustomSelectProps {
 
 const SEARCH_THRESHOLD = 10;
 
+interface MenuPosition {
+  top: number;
+  left: number;
+  width: number;
+}
+
 export default function CustomSelect({
   value,
   onChange,
@@ -44,10 +52,13 @@ export default function CustomSelect({
 }: CustomSelectProps) {
   const listId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlightIndex, setHighlightIndex] = useState(0);
+  const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
 
   const showSearch = searchable ?? options.length > SEARCH_THRESHOLD;
 
@@ -71,6 +82,7 @@ export default function CustomSelect({
     setOpen(false);
     setQuery("");
     setHighlightIndex(0);
+    setMenuPosition(null);
   }
 
   function openMenu() {
@@ -91,6 +103,38 @@ export default function CustomSelect({
     closeMenu();
   }
 
+  function updateMenuPosition() {
+    const trigger = triggerRef.current;
+
+    if (!trigger) {
+      return;
+    }
+
+    const rect = trigger.getBoundingClientRect();
+
+    setMenuPosition({
+      top: rect.bottom + 8,
+      left: rect.left,
+      width: Math.max(rect.width, 160),
+    });
+  }
+
+  useLayoutEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    updateMenuPosition();
+
+    window.addEventListener("resize", updateMenuPosition);
+    window.addEventListener("scroll", updateMenuPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("scroll", updateMenuPosition, true);
+    };
+  }, [open]);
+
   useEffect(() => {
     if (!open) {
       return;
@@ -101,12 +145,17 @@ export default function CustomSelect({
     }
 
     function handlePointerDown(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        closeMenu();
+      const target = event.target as Node;
+
+      if (containerRef.current?.contains(target)) {
+        return;
       }
+
+      if (menuRef.current?.contains(target)) {
+        return;
+      }
+
+      closeMenu();
     }
 
     function handleEscape(event: globalThis.KeyboardEvent) {
@@ -171,6 +220,81 @@ export default function CustomSelect({
 
   const triggerLabel = selectedOption?.label ?? placeholder;
 
+  const menu =
+    open && menuPosition ? (
+      <div
+        ref={menuRef}
+        style={{
+          position: "fixed",
+          top: menuPosition.top,
+          left: menuPosition.left,
+          width: menuPosition.width,
+        }}
+        className="z-[120] overflow-hidden rounded-xl border border-steel-dark/30 bg-[var(--input-bg)] shadow-xl"
+        onKeyDown={handleListKeyDown}
+      >
+        {showSearch ? (
+          <div className="border-b border-steel-dark/20 p-2">
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-steel-dark"
+                aria-hidden
+              />
+              <input
+                ref={searchRef}
+                type="search"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setHighlightIndex(0);
+                }}
+                placeholder="Buscar…"
+                className="w-full rounded-lg border border-steel-dark/25 bg-background/60 py-2 pl-9 pr-3 text-sm text-steel-light placeholder:text-steel-dark focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20"
+                aria-label="Buscar opciones"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        <ul
+          id={listId}
+          role="listbox"
+          aria-label={ariaLabel ?? "Opciones"}
+          className="max-h-64 overflow-y-auto py-1"
+        >
+          {filteredOptions.length === 0 ? (
+            <li className="px-4 py-3 text-sm text-steel-dark">
+              No se encontraron opciones.
+            </li>
+          ) : (
+            filteredOptions.map((option, index) => {
+              const isSelected = option.value === value;
+              const isHighlighted = index === highlightIndex;
+
+              return (
+                <li key={option.value} role="presentation">
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onMouseEnter={() => setHighlightIndex(index)}
+                    onClick={() => selectValue(option.value)}
+                    className={`flex w-full items-center px-3 py-2.5 text-left text-sm transition-colors ${
+                      isHighlighted || isSelected
+                        ? "bg-orange/15 text-steel-light"
+                        : "text-steel-mid hover:bg-panel/80 hover:text-steel-light"
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                  </button>
+                </li>
+              );
+            })
+          )}
+        </ul>
+      </div>
+    ) : null;
+
   return (
     <div
       ref={containerRef}
@@ -179,6 +303,7 @@ export default function CustomSelect({
       {name ? <input type="hidden" name={name} value={value} readOnly /> : null}
 
       <button
+        ref={triggerRef}
         type="button"
         id={id}
         disabled={disabled}
@@ -201,74 +326,9 @@ export default function CustomSelect({
         />
       </button>
 
-      {open ? (
-        <div
-          className="absolute left-0 top-[calc(100%+0.5rem)] z-50 w-full min-w-[10rem] overflow-hidden rounded-xl border border-steel-dark/30 bg-[var(--input-bg)] shadow-xl"
-          onKeyDown={handleListKeyDown}
-        >
-          {showSearch ? (
-            <div className="border-b border-steel-dark/20 p-2">
-              <div className="relative">
-                <Search
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-steel-dark"
-                  aria-hidden
-                />
-                <input
-                  ref={searchRef}
-                  type="search"
-                  value={query}
-                  onChange={(event) => {
-                    setQuery(event.target.value);
-                    setHighlightIndex(0);
-                  }}
-                  placeholder="Buscar…"
-                  className="w-full rounded-lg border border-steel-dark/25 bg-background/60 py-2 pl-9 pr-3 text-sm text-steel-light placeholder:text-steel-dark focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20"
-                  aria-label="Buscar opciones"
-                />
-              </div>
-            </div>
-          ) : null}
-
-          <ul
-            id={listId}
-            role="listbox"
-            aria-label={ariaLabel ?? "Opciones"}
-            className="max-h-64 overflow-y-auto py-1"
-          >
-            {filteredOptions.length === 0 ? (
-              <li className="px-4 py-3 text-sm text-steel-dark">
-                No se encontraron opciones.
-              </li>
-            ) : (
-              filteredOptions.map((option, index) => {
-                const isSelected = option.value === value;
-                const isHighlighted = index === highlightIndex;
-
-                return (
-                  <li key={option.value} role="presentation">
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      onMouseEnter={() => setHighlightIndex(index)}
-                      onClick={() => selectValue(option.value)}
-                      className={`flex w-full items-center px-3 py-2.5 text-left text-sm transition-colors ${
-                        isHighlighted || isSelected
-                          ? "bg-orange/15 text-steel-light"
-                          : "text-steel-mid hover:bg-panel/80 hover:text-steel-light"
-                      }`}
-                    >
-                      <span className="min-w-0 flex-1 truncate">
-                        {option.label}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })
-            )}
-          </ul>
-        </div>
-      ) : null}
+      {typeof document !== "undefined" && menu
+        ? createPortal(menu, document.body)
+        : null}
     </div>
   );
 }

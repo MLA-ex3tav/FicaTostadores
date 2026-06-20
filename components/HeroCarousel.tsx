@@ -315,7 +315,7 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
               >
                 <HeroCarouselSlide
                   banner={banner}
-                  priority={index === activeIndex && index === 0}
+                  priority={index === 0}
                   loadImage={shouldLoadSlideImage(index, activeIndex, slideCount)}
                 />
               </div>

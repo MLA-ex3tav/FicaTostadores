@@ -2,21 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { onAuthStateChanged, type User } from "firebase/auth";
 import { useEffect, useState } from "react";
-import { getClienteRole } from "@/lib/auth-sync-client";
-import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase/client";
 import { buildLoginHref } from "@/lib/login-return-to";
-import { isStaffRole } from "@/lib/permissions";
 
 interface AuthNavButtonProps {
   className?: string;
   onAction?: () => void;
 }
 
-function getAccountLabel(user: User): string {
-  const email = user.email ?? "";
-  const localPart = email.split("@")[0]?.trim();
+interface AuthNavUser {
+  email: string | null;
+  label: string;
+  isStaff: boolean;
+}
+
+function getAccountLabel(email: string | null): string {
+  const localPart = email?.split("@")[0]?.trim();
 
   if (!localPart) {
     return "Mi cuenta";
@@ -29,59 +30,108 @@ function getAccountLabel(user: User): string {
   return localPart;
 }
 
+function isFirebaseConfiguredClient(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim() &&
+      process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim() &&
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim() &&
+      process.env.NEXT_PUBLIC_FIREBASE_APP_ID?.trim(),
+  );
+}
+
 export default function AuthNavButton({
   className = "",
   onAction,
 }: AuthNavButtonProps) {
   const pathname = usePathname();
   const loginHref = buildLoginHref(pathname);
-  const [user, setUser] = useState<User | null>(null);
-  const [isStaff, setIsStaff] = useState(false);
-  const [ready, setReady] = useState(!isFirebaseConfigured());
+  const [authUser, setAuthUser] = useState<AuthNavUser | null>(null);
 
   useEffect(() => {
-    if (!isFirebaseConfigured()) {
+    if (!isFirebaseConfiguredClient()) {
       return;
     }
 
-    const auth = getFirebaseAuth();
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
 
-    if (!auth) {
-      setReady(true);
-      return;
+    const startAuthListener = () => {
+      void (async () => {
+        const [{ onAuthStateChanged }, { getFirebaseAuth }, { getClienteRole }, { isStaffRole }] =
+          await Promise.all([
+            import("firebase/auth"),
+            import("@/lib/firebase/client"),
+            import("@/lib/auth-sync-client"),
+            import("@/lib/permissions"),
+          ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        const auth = getFirebaseAuth();
+
+        if (!auth) {
+          return;
+        }
+
+        unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+          void (async () => {
+            if (!nextUser) {
+              if (!cancelled) {
+                setAuthUser(null);
+              }
+              return;
+            }
+
+            const role = await getClienteRole(nextUser.uid);
+            const staff = isStaffRole(role);
+
+            if (!cancelled) {
+              setAuthUser({
+                email: nextUser.email,
+                label: getAccountLabel(nextUser.email),
+                isStaff: staff,
+              });
+            }
+          })();
+        });
+      })();
+    };
+
+    let idleHandle = 0;
+    let usedIdleCallback = false;
+
+    if (typeof window.requestIdleCallback === "function") {
+      usedIdleCallback = true;
+      idleHandle = window.requestIdleCallback(startAuthListener, { timeout: 2500 });
+    } else {
+      idleHandle = window.setTimeout(startAuthListener, 1500);
     }
 
-    return onAuthStateChanged(auth, (nextUser) => {
-      setUser(nextUser);
+    return () => {
+      cancelled = true;
 
-      if (!nextUser) {
-        setIsStaff(false);
-        setReady(true);
-        return;
+      if (usedIdleCallback) {
+        window.cancelIdleCallback(idleHandle);
+      } else {
+        window.clearTimeout(idleHandle);
       }
 
-      setReady(false);
-
-      void getClienteRole(nextUser.uid)
-        .then((role) => {
-          setIsStaff(isStaffRole(role));
-        })
-        .finally(() => {
-          setReady(true);
-        });
-    });
+      unsubscribe?.();
+    };
   }, []);
 
-  const href = !user ? loginHref : isStaff ? "/admin/productos" : loginHref;
-  const label = !user
+  const href = !authUser ? loginHref : authUser.isStaff ? "/admin/productos" : loginHref;
+  const label = !authUser
     ? "Ingresar"
-    : isStaff
+    : authUser.isStaff
       ? "Panel admin"
-      : getAccountLabel(user);
-  const title = user
-    ? isStaff
+      : authUser.label;
+  const title = authUser
+    ? authUser.isStaff
       ? "Entrar al panel de administración"
-      : user.email ?? undefined
+      : authUser.email ?? undefined
     : undefined;
 
   return (
@@ -90,12 +140,12 @@ export default function AuthNavButton({
       onClick={onAction}
       title={title}
       className={`text-base uppercase tracking-wider transition-colors ${
-        user
+        authUser
           ? "text-steel-light hover:text-orange"
           : "text-steel-mid hover:text-orange"
       } ${className}`}
     >
-      {ready ? label : "…"}
+      {label}
     </Link>
   );
 }

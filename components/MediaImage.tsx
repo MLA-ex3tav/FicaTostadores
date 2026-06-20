@@ -57,6 +57,7 @@ export default function MediaImage({
         sizes={sizes}
         quality={quality}
         priority={priority}
+        fetchPriority={priority ? "high" : "auto"}
         onError={() => setHasError(true)}
       />
     </div>

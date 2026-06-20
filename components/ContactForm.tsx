@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+import "@/components/contact-phone.css";
 import flags from "react-phone-number-input/flags";
 import es from "react-phone-number-input/locale/es";
 import PhoneCountrySelect from "@/components/PhoneCountrySelect";
