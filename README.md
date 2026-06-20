@@ -79,7 +79,27 @@ El login **no sobrescribe** el `role` si el documento ya existe.
 
 Solo las variables `NEXT_PUBLIC_FIREBASE_*` en `.env.local` (config web de Firebase).
 
-No se requiere service account ni claves privadas.
+No se requiere service account ni claves privadas para el login. Para **solicitudes de cotización** (formulario → Firestore) sí configure `FIREBASE_SERVICE_ACCOUNT_JSON` en el servidor.
+
+## Acceso público vs panel admin
+
+| Área | Acceso |
+|------|--------|
+| `/`, `/productos`, `/contacto`, etc. | **Público** (sin login) |
+| `/api/products`, `/api/cotizaciones/solicitudes` | **Público** (con rate limit) |
+| `/admin/*` (panel) | **Solo staff** (`editor` o `admin`) vía Google |
+| `/api/admin/*` | **Solo staff** (token Firebase en la petición) |
+
+El middleware **no** bloquea páginas públicas. Si todo el sitio responde **401**, la causa suele ser **Vercel Deployment Protection** (capa anterior a Next.js), no el código.
+
+### Vercel: producción pública
+
+1. **Project → Settings → Deployment Protection**
+2. **Production → None** (sitio público para clientes)
+3. Opcional: dejar protección solo en **Preview** si no quiere previews abiertos
+4. Redeploy
+
+Solo `/admin` requiere autenticación (Firebase + rol en Firestore). No active protección de Vercel sobre producción salvo que quiera password para todo el sitio.
 
 ## Vercel Blob
 
@@ -89,7 +109,7 @@ En local: `vercel env pull` para obtener credenciales de Blob.
 
 ## Notas
 
-- El formulario de contacto abre WhatsApp directamente (wa.me en móvil, WhatsApp Web en escritorio).
+- El formulario de contacto registra solicitudes de cotización en Firestore (`solicitudes_cotizacion`).
 - El catálogo base está en `lib/products.ts`; las ediciones del admin se guardan en Blob/archivo local.
 - Las imágenes de productos se suben desde el panel admin; sin fotos, las cards muestran un placeholder.
 - `npm audit` puede reportar PostCSS transitivo de Next.js; el proyecto fija `postcss >= 8.5.10` vía `overrides` en `package.json`.

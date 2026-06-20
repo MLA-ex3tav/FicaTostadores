@@ -18,6 +18,10 @@ service cloud.firestore {
       return role in ['cliente', 'editor', 'admin'];
     }
 
+    function isStaff() {
+      return request.auth != null && callerRole() in ['editor', 'admin'];
+    }
+
     match /clientes/{userId} {
       allow read: if request.auth != null
         && (request.auth.uid == userId || isSuperAdmin());
@@ -41,6 +45,12 @@ service cloud.firestore {
       );
 
       allow delete: if false;
+    }
+
+    // Solicitudes desde la web pública (solo datos del formulario; creación vía Admin).
+    match /solicitudes_cotizacion/{solicitudId} {
+      allow read, update: if isStaff();
+      allow create, delete: if false;
     }
 
     match /{document=**} {

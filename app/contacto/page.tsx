@@ -40,9 +40,9 @@ export default function ContactoPage() {
 
           <p className="mt-4 text-base leading-relaxed text-steel-mid md:leading-relaxed">
 
-            Complete el formulario con su nombre y WhatsApp. Le abriremos
+            Complete el formulario con sus datos y los equipos de interés. Su
 
-            WhatsApp para enviar la cotización directamente.
+            solicitud llegará al equipo comercial para preparar la cotización.
 
           </p>
 

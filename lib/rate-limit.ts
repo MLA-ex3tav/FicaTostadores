@@ -159,6 +159,8 @@ export const RATE_LIMITS = {
   adminWritePerUser: { windowMs: 60_000, max: 40 },
   upload: { windowMs: 60_000, max: 15 },
   uploadPerUser: { windowMs: 60_000, max: 10 },
+  electronHeartbeat: { windowMs: 60_000, max: 120 },
+  cotizacionesSubmit: { windowMs: 900_000, max: 5 },
 } as const satisfies Record<string, RateLimitConfig>;
 
 export function getRateLimitKey(
@@ -166,6 +168,20 @@ export function getRateLimitKey(
   pathname: string,
   method: string,
 ): { keys: string[]; config: RateLimitConfig } {
+  if (pathname.startsWith("/api/electron/")) {
+    return {
+      keys: [`${ip}:electron:heartbeat`],
+      config: RATE_LIMITS.electronHeartbeat,
+    };
+  }
+
+  if (pathname.startsWith("/api/cotizaciones/solicitudes")) {
+    return {
+      keys: [`${ip}:cotizaciones:submit`],
+      config: RATE_LIMITS.cotizacionesSubmit,
+    };
+  }
+
   if (pathname.startsWith("/api/admin/upload")) {
     return { keys: [`${ip}:upload`], config: RATE_LIMITS.upload };
   }

@@ -1,5 +1,7 @@
 import { head } from "@vercel/blob";
 import { Redis } from "@upstash/redis";
+import { isFirebaseAdminConfigured } from "@/lib/firebase-admin";
+import { getElectronPresenceStatus } from "@/lib/electron-presence";
 import { isFirebaseConfigured } from "@/lib/firebase/client";
 import {
   getBlobCommandOptions,
@@ -76,6 +78,69 @@ function getDeploymentBaseUrl(): string {
 
   const port = process.env.PORT?.trim() || "3000";
   return `http://localhost:${port}`;
+}
+
+/** URL usada por las comprobaciones HTTP (mismo despliegue en Vercel). */
+function getHealthCheckBaseUrl(): string {
+  if (process.env.VERCEL === "1") {
+    const vercelUrl = process.env.VERCEL_URL?.trim();
+
+    if (vercelUrl) {
+      return `https://${vercelUrl.replace(/\/$/, "")}`;
+    }
+  }
+
+  return getDeploymentBaseUrl();
+}
+
+function getHealthCheckFetchHeaders(
+  extra: Record<string, string> = {},
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: "text/html,application/json",
+    ...extra,
+  };
+
+  const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
+
+  if (bypass) {
+    headers["x-vercel-protection-bypass"] = bypass;
+    headers["x-vercel-set-bypass-cookie"] = "true";
+  }
+
+  return headers;
+}
+
+function deploymentProtectionMessage(path: string): string {
+  return `401 en ${path}: Vercel Deployment Protection está bloqueando el acceso público. En producción desactive la protección global (Settings → Deployment Protection → Production: None). Solo el panel /admin requiere login con Google.`;
+}
+
+function evaluateHttpHealthResponse(
+  response: Response,
+  path: string,
+  okStatuses: number[] = [],
+): Pick<HealthCheck, "status" | "message"> {
+  if (response.ok || okStatuses.includes(response.status)) {
+    return {
+      status: "ok",
+      message: `Responde ${response.status} en ${path}`,
+    };
+  }
+
+  if (
+    response.status === 401 &&
+    !process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim()
+  ) {
+    return {
+      status: "warning",
+      message: deploymentProtectionMessage(path),
+    };
+  }
+
+  return {
+    status: "error",
+    message: `Respondió ${response.status} en ${path}`,
+  };
 }
 
 function getRuntimeEnvironment(): string {
@@ -302,6 +367,72 @@ function checkFirebaseClient(): HealthCheck {
   };
 }
 
+function checkFirebaseAdmin(): HealthCheck {
+  if (isFirebaseAdminConfigured()) {
+    return {
+      id: "firebase-admin",
+      category: "firebase",
+      name: "Firebase Admin",
+      status: "ok",
+      message:
+        "Cuenta de servicio configurada para registrar solicitudes de cotización.",
+    };
+  }
+
+  return {
+    id: "firebase-admin",
+    category: "firebase",
+    name: "Firebase Admin",
+    status: "error",
+    message:
+      "Falta FIREBASE_SERVICE_ACCOUNT_JSON; el formulario web no puede guardar solicitudes.",
+    details: ["FIREBASE_SERVICE_ACCOUNT_JSON"],
+  };
+}
+
+async function checkCotizacionesApiRoute(baseUrl: string): Promise<HealthCheck> {
+  try {
+    const response = await fetchWithTimeout(
+      `${baseUrl}/api/cotizaciones/solicitudes`,
+      {
+        method: "GET",
+        headers: getHealthCheckFetchHeaders(),
+      },
+    );
+
+    const evaluated = evaluateHttpHealthResponse(response, "/api/cotizaciones/solicitudes", [
+      405,
+      400,
+    ]);
+
+    if (evaluated.status === "ok") {
+      return {
+        id: "cotizaciones-api",
+        category: "api",
+        name: "API de solicitudes",
+        status: "ok",
+        message: "Endpoint POST /api/cotizaciones/solicitudes disponible.",
+      };
+    }
+
+    return {
+      id: "cotizaciones-api",
+      category: "api",
+      name: "API de solicitudes",
+      status: evaluated.status,
+      message: evaluated.message,
+    };
+  } catch {
+    return {
+      id: "cotizaciones-api",
+      category: "api",
+      name: "API de solicitudes",
+      status: "error",
+      message: "No responde /api/cotizaciones/solicitudes.",
+    };
+  }
+}
+
 function checkVercelRuntime(): HealthCheck {
   const onVercel = process.env.VERCEL === "1";
   const vercelEnv = process.env.VERCEL_ENV?.trim();
@@ -339,6 +470,45 @@ function checkVercelRuntime(): HealthCheck {
     status: "warning",
     message: "Ejecución local o fuera de Vercel (sin metadatos de despliegue).",
     details: details.length > 0 ? details : ["NODE_ENV: " + getRuntimeEnvironment()],
+  };
+}
+
+function checkVercelDeploymentProtection(): HealthCheck {
+  const onVercel = process.env.VERCEL === "1";
+  const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
+
+  if (!onVercel) {
+    return {
+      id: "vercel-deployment-protection",
+      category: "vercel",
+      name: "Protección de despliegue",
+      status: "ok",
+      message: "No aplica fuera de Vercel.",
+    };
+  }
+
+  if (bypass) {
+    return {
+      id: "vercel-deployment-protection",
+      category: "vercel",
+      name: "Protección de despliegue",
+      status: "ok",
+      message:
+        "Bypass de automatización configurado (VERCEL_AUTOMATION_BYPASS_SECRET).",
+    };
+  }
+
+  return {
+    id: "vercel-deployment-protection",
+    category: "vercel",
+    name: "Protección de despliegue",
+    status: "warning",
+    message:
+      "Deployment Protection activa en Vercel: el sitio completo responde 401 antes de llegar a Next.js. Producción debe ser pública; use protección solo en previews si lo necesita.",
+    details: [
+      "Vercel → Settings → Deployment Protection → Production: None (público)",
+      "Opcional en Preview: Standard Protection + Protection Bypass for Automation",
+    ],
   };
 }
 
@@ -412,6 +582,119 @@ async function checkVercelBlob(): Promise<HealthCheck> {
   }
 }
 
+function formatRelativeSeconds(seconds: number): string {
+  if (seconds < 60) {
+    return `${seconds} s`;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+
+  if (remainder === 0) {
+    return `${minutes} min`;
+  }
+
+  return `${minutes} min ${remainder} s`;
+}
+
+function formatPresenceTimestamp(iso: string): string {
+  return new Intl.DateTimeFormat("es-CL", {
+    dateStyle: "medium",
+    timeStyle: "medium",
+  }).format(new Date(iso));
+}
+
+async function checkElectronCotizacionesApp(): Promise<HealthCheck> {
+  const presence = await getElectronPresenceStatus();
+  const details: string[] = [
+    `Umbral de desconexión: ${presence.heartbeatTimeoutSec} s sin heartbeat`,
+    `Almacenamiento: ${presence.storage === "redis" ? "Upstash Redis" : "memoria local (por instancia)"}`,
+  ];
+
+  if (!presence.secretConfigured) {
+    details.unshift(
+      "Defina COTIZACIONES_APP_SECRET (o ELECTRON_APP_SECRET) para aceptar heartbeats en producción.",
+    );
+
+    return {
+      id: "electron-cotizaciones-app",
+      category: "integraciones",
+      name: "App de cotizaciones (Electron)",
+      status: "warning",
+      message:
+        "Secreto de app no configurado; el endpoint de heartbeat no está protegido en desarrollo.",
+      details,
+    };
+  }
+
+  if (presence.connected && presence.lastSeenAt) {
+    if (presence.version) {
+      details.unshift(`Versión: ${presence.version}`);
+    }
+
+    if (presence.instanceId) {
+      details.unshift(`Instancia: ${presence.instanceId}`);
+    }
+
+    if (presence.hostname) {
+      details.unshift(`Equipo: ${presence.hostname}`);
+    }
+
+    details.unshift(
+      `Última señal: ${formatPresenceTimestamp(presence.lastSeenAt)}`,
+    );
+
+    if (presence.secondsSinceLastSeen !== null) {
+      details.unshift(
+        `Hace ${formatRelativeSeconds(presence.secondsSinceLastSeen)}`,
+      );
+    }
+
+    return {
+      id: "electron-cotizaciones-app",
+      category: "integraciones",
+      name: "App de cotizaciones (Electron)",
+      status: "ok",
+      message: "Conectada y enviando heartbeat.",
+      details,
+    };
+  }
+
+  if (presence.lastSeenAt) {
+    details.unshift(
+      `Última señal: ${formatPresenceTimestamp(presence.lastSeenAt)}`,
+    );
+
+    if (presence.secondsSinceLastSeen !== null) {
+      details.unshift(
+        `Sin señal hace ${formatRelativeSeconds(presence.secondsSinceLastSeen)}`,
+      );
+    }
+
+    if (presence.version) {
+      details.unshift(`Última versión reportada: ${presence.version}`);
+    }
+
+    return {
+      id: "electron-cotizaciones-app",
+      category: "integraciones",
+      name: "App de cotizaciones (Electron)",
+      status: "error",
+      message: "Desconectada (sin heartbeat reciente).",
+      details,
+    };
+  }
+
+  return {
+    id: "electron-cotizaciones-app",
+    category: "integraciones",
+    name: "App de cotizaciones (Electron)",
+    status: "error",
+    message: "Desconectada (nunca se registró un heartbeat).",
+    details,
+  };
+}
+
 async function checkUpstashRedis(): Promise<HealthCheck> {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
@@ -481,25 +764,17 @@ async function checkRouteReachability(
   try {
     const response = await fetchWithTimeout(`${baseUrl}${path}`, {
       method: "GET",
-      headers: { Accept: "text/html,application/json" },
+      headers: getHealthCheckFetchHeaders(),
     });
 
-    if (response.ok) {
-      return {
-        id,
-        category,
-        name: label,
-        status: "ok",
-        message: `Responde ${response.status} en ${path}`,
-      };
-    }
+    const evaluated = evaluateHttpHealthResponse(response, path);
 
     return {
       id,
       category,
       name: label,
-      status: "error",
-      message: `Respondió ${response.status} en ${path}`,
+      status: evaluated.status,
+      message: evaluated.message,
     };
   } catch {
     return {
@@ -523,11 +798,13 @@ function summarizeChecks(checks: HealthCheck[]): SystemHealthReport["summary"] {
 }
 
 export async function getSystemHealthReport(): Promise<SystemHealthReport> {
-  const baseUrl = getDeploymentBaseUrl();
+  const baseUrl = getHealthCheckBaseUrl();
+  const publicSiteUrl = getDeploymentBaseUrl();
 
   const firebaseChecks = await Promise.all([
     Promise.resolve(checkFirebaseEnv()),
     Promise.resolve(checkFirebaseClient()),
+    Promise.resolve(checkFirebaseAdmin()),
     checkFirebaseAuthApi(),
     checkFirestoreApi(),
     Promise.resolve(checkFirebaseStorage()),
@@ -535,11 +812,15 @@ export async function getSystemHealthReport(): Promise<SystemHealthReport> {
 
   const vercelChecks = await Promise.all([
     Promise.resolve(checkVercelRuntime()),
+    Promise.resolve(checkVercelDeploymentProtection()),
     Promise.resolve(checkSiteUrl()),
     checkVercelBlob(),
   ]);
 
-  const integrationChecks = await Promise.all([checkUpstashRedis()]);
+  const integrationChecks = await Promise.all([
+    checkElectronCotizacionesApp(),
+    checkUpstashRedis(),
+  ]);
 
   const pageChecks = await Promise.all(
     PUBLIC_PAGES.map((page) =>
@@ -547,11 +828,12 @@ export async function getSystemHealthReport(): Promise<SystemHealthReport> {
     ),
   );
 
-  const apiChecks = await Promise.all(
-    PUBLIC_APIS.map((route) =>
+  const apiChecks = await Promise.all([
+    ...PUBLIC_APIS.map((route) =>
       checkRouteReachability(baseUrl, route.path, route.label, "api"),
     ),
-  );
+    checkCotizacionesApiRoute(baseUrl),
+  ]);
 
   const checks = [
     ...firebaseChecks,
@@ -564,7 +846,7 @@ export async function getSystemHealthReport(): Promise<SystemHealthReport> {
   return {
     checkedAt: new Date().toISOString(),
     environment: getRuntimeEnvironment(),
-    deploymentUrl: baseUrl,
+    deploymentUrl: publicSiteUrl,
     checks,
     summary: summarizeChecks(checks),
   };

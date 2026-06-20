@@ -1,4 +1,4 @@
-/** WhatsApp solo para envío de cotizaciones desde el formulario */
+/** Utilidades de cotización (WhatsApp directo — reserva para enlaces manuales) */
 
 import { parsePhoneNumber, type CountryCode } from "libphonenumber-js";
 import es from "react-phone-number-input/locale/es";

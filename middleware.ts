@@ -70,6 +70,10 @@ export async function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
 
+  if (pathname.startsWith("/admin")) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
+
   applySecurityHeaders(response, isProduction);
   return response;
 }

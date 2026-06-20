@@ -52,7 +52,7 @@ export default function PrivacidadPage() {
         <p>Según cómo utilice el sitio, podemos tratar las siguientes categorías de datos:</p>
         <LegalList
           items={[
-            "Datos de contacto y cotización: nombre, número de teléfono/WhatsApp y mensaje que usted ingresa en el formulario de contacto.",
+            "Datos de contacto y cotización: nombre, correo electrónico (opcional), número de teléfono/WhatsApp, mensaje y productos seleccionados que usted ingresa en el formulario de contacto, almacenados en nuestra base de datos en la nube para que el equipo comercial pueda atender su solicitud.",
             "Datos de navegación y uso: dirección IP, tipo de navegador, páginas visitadas, fecha y hora de acceso, y datos técnicos similares recopilados por nuestros proveedores de hosting y seguridad.",
             "Datos de selección de productos: identificador, nombre y capacidad de productos que usted agrega a su lista de cotización, almacenados localmente en su navegador (localStorage) hasta que los elimine o limpie el almacenamiento del sitio.",
             "Datos de autenticación (solo usuarios autorizados): si inicia sesión con Google para acceder al panel de administración, tratamos nombre, correo electrónico, identificador de usuario, foto de perfil (si la provee Google) y rol de acceso (`cliente`, `editor` o `admin`) asignado en nuestros sistemas.",
@@ -90,13 +90,12 @@ export default function PrivacidadPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="6. Formulario de contacto y WhatsApp">
+      <LegalSection title="6. Formulario de contacto y cotizaciones">
         <p>
-          El formulario de cotización no envía sus datos a un servidor propio
-          para almacenarlos de forma permanente: al enviar, se abre WhatsApp (o
-          WhatsApp Web) con un mensaje prellenado que usted puede revisar y
-          enviar. A partir de ese momento, el tratamiento de sus datos queda
-          sujeto también a las políticas de Meta/WhatsApp.
+          Al enviar el formulario de cotización, sus datos se registran de forma
+          segura en nuestros sistemas (Firebase/Firestore) para que el equipo
+          comercial pueda revisar la solicitud, preparar un presupuesto y
+          contactarlo por teléfono, correo o WhatsApp.
         </p>
         <p>
           Si nos contacta directamente por correo, teléfono o WhatsApp, conservaremos

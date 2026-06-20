@@ -10,10 +10,6 @@ import flags from "react-phone-number-input/flags";
 import es from "react-phone-number-input/locale/es";
 import PhoneCountrySelect from "@/components/PhoneCountrySelect";
 import { useQuoteSelection } from "@/lib/quote-selection";
-import {
-  buildQuoteWhatsAppUrl,
-  openWhatsAppContact,
-} from "@/lib/quoting";
 import { SLUG_PATTERN, sanitizeText } from "@/lib/sanitize";
 import SteelPanel from "./SteelPanel";
 
@@ -23,10 +19,14 @@ export default function ContactForm() {
   const { products, addProduct, clearProducts } = useQuoteSelection();
 
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState<string | undefined>();
   const [message, setMessage] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!productId || !SLUG_PATTERN.test(productId)) {
@@ -51,7 +51,7 @@ export default function ContactForm() {
 
   const isPhoneValid = Boolean(phone && isValidPhoneNumber(phone));
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!phone || !isValidPhoneNumber(phone)) {
@@ -61,44 +61,107 @@ export default function ContactForm() {
 
     setPhoneError("");
     setSubmitError("");
+    setSubmitSuccess(false);
+    setRequestId(null);
 
     const safeName = sanitizeText(name, 120, { required: true }) ?? "";
     const safeMessage = sanitizeText(message, 1000) ?? "";
+    const safeEmail = sanitizeText(email, 200) ?? "";
 
     if (!safeName) {
       setSubmitError("Ingrese un nombre válido.");
       return;
     }
 
-    const whatsAppUrl = buildQuoteWhatsAppUrl(
-      safeName,
-      phone,
-      safeMessage,
-      products.length > 0
-        ? products.map((product) => ({
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/cotizaciones/solicitudes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: safeName,
+          phone,
+          email: safeEmail || undefined,
+          message: safeMessage || undefined,
+          products: products.map((product) => ({
+            id: product.id,
             name: product.name,
             capacity: product.capacity,
             selectedAddOns: product.selectedAddOns,
-          }))
-        : undefined,
-    );
+          })),
+        }),
+      });
 
-    try {
-      openWhatsAppContact(whatsAppUrl);
+      const data = (await response.json()) as {
+        ok?: boolean;
+        id?: string;
+        error?: string;
+        message?: string;
+      };
+
+      if (!response.ok) {
+        setSubmitError(
+          data.error ??
+            "No se pudo enviar la solicitud. Intente de nuevo en unos minutos.",
+        );
+        return;
+      }
+
+      setSubmitSuccess(true);
+      setRequestId(data.id ?? null);
+      setName("");
+      setEmail("");
+      setPhone(undefined);
+      setMessage("");
       clearProducts();
     } catch {
       setSubmitError(
-        "No se pudo abrir WhatsApp. Verifique que no tenga bloqueados los popups o intente de nuevo.",
+        "No se pudo conectar con el servidor. Verifique su conexión e intente de nuevo.",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   const introText = (
     <>
-      Complete sus datos y le abriremos WhatsApp para enviar la cotización.
+      Complete sus datos y el equipo recibirá su solicitud al instante para
+      preparar la cotización.
       {products.length === 0 && " También puede agregar productos desde el catálogo."}
     </>
   );
+
+  if (submitSuccess) {
+    return (
+      <SteelPanel className="min-w-0 w-full max-md:p-5">
+        <div className="space-y-4 text-center py-6">
+          <p className="font-display text-2xl tracking-wide text-steel-light">
+            Solicitud enviada
+          </p>
+          <p className="text-base leading-relaxed text-steel-mid">
+            Recibimos su consulta. Nuestro equipo la revisará y se pondrá en
+            contacto con usted pronto.
+          </p>
+          {requestId ? (
+            <p className="text-sm text-steel-dark">
+              Referencia: <span className="font-mono text-steel-mid">{requestId}</span>
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              setSubmitSuccess(false);
+              setRequestId(null);
+            }}
+            className="mt-4 rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange/40 hover:text-orange"
+          >
+            Enviar otra solicitud
+          </button>
+        </div>
+      </SteelPanel>
+    );
+  }
 
   return (
     <SteelPanel className="min-w-0 w-full max-md:p-5">
@@ -134,6 +197,24 @@ export default function ContactForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Su nombre completo"
+              className="industrial-input max-md:min-h-12 max-md:text-base"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-2.5 block text-sm font-medium uppercase tracking-widest text-steel-mid md:mb-2 md:text-xs md:font-normal"
+            >
+              Correo <span className="text-steel-dark">(opcional)</span>
+            </label>
+            <input
+              id="email"
+              type="email"
+              maxLength={200}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="correo@ejemplo.com"
               className="industrial-input max-md:min-h-12 max-md:text-base"
             />
           </div>
@@ -200,10 +281,10 @@ export default function ContactForm() {
 
         <button
           type="submit"
-          disabled={!name || !isPhoneValid}
+          disabled={!name || !isPhoneValid || isSubmitting}
           className="min-h-12 w-full rounded-xl bg-orange py-4 text-base font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover disabled:cursor-not-allowed disabled:opacity-40 md:min-h-0 md:py-3 md:text-sm"
         >
-          Cotizar por WhatsApp
+          {isSubmitting ? "Enviando solicitud..." : "Enviar solicitud de cotización"}
         </button>
 
         <p className="text-center text-sm leading-relaxed text-steel-dark md:text-xs">

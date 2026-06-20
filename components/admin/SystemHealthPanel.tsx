@@ -52,8 +52,66 @@ function formatCheckedAt(iso: string): string {
   }).format(new Date(iso));
 }
 
+function findElectronCheck(checks: HealthCheck[]): HealthCheck | undefined {
+  return checks.find((check) => check.id === "electron-cotizaciones-app");
+}
+
+function ElectronPresenceHighlight({ check }: { check: HealthCheck }) {
+  const isConnected = check.status === "ok";
+
+  return (
+    <section
+      className="rounded-xl border border-white/[0.06] bg-[var(--input-bg)] px-4 py-5"
+      aria-labelledby="electron-presence-title"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-steel-dark">
+            Cotizaciones
+          </p>
+          <h2
+            id="electron-presence-title"
+            className="mt-2 font-display text-xl tracking-wide text-steel-light"
+          >
+            App de cotizaciones (Electron)
+          </h2>
+        </div>
+        <span
+          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium uppercase tracking-wide ${statusBadgeClass(check.status)}`}
+        >
+          <span
+            className={`h-2 w-2 rounded-full ${isConnected ? "bg-emerald-400" : check.status === "warning" ? "bg-orange" : "bg-red-400"}`}
+            aria-hidden
+          />
+          {isConnected ? "Conectada" : check.status === "warning" ? "Sin configurar" : "Desconectada"}
+        </span>
+      </div>
+
+      <p className="mt-4 text-sm text-steel-mid">{check.message}</p>
+
+      {check.details?.length ? (
+        <ul className="mt-3 space-y-1 text-xs text-steel-dark">
+          {check.details.map((detail) => (
+            <li key={detail}>{detail}</li>
+          ))}
+        </ul>
+      ) : null}
+
+      <p className="mt-4 text-xs text-steel-dark">
+        La app Electron debe enviar POST a{" "}
+        <span className="text-steel-mid">/api/electron/heartbeat</span> cada
+        30–45 s con el secreto compartido.
+      </p>
+    </section>
+  );
+}
+
 export default function SystemHealthPanel({ report }: SystemHealthPanelProps) {
-  const grouped = groupChecksByCategory(report.checks);
+  const electronCheck = findElectronCheck(report.checks);
+  const checksWithoutElectron = report.checks.filter(
+    (check) => check.id !== "electron-cotizaciones-app",
+  );
+  const grouped = groupChecksByCategory(checksWithoutElectron);
   const categoryOrder: HealthCategory[] = [
     "firebase",
     "vercel",
@@ -64,6 +122,10 @@ export default function SystemHealthPanel({ report }: SystemHealthPanelProps) {
 
   return (
     <div className="space-y-8">
+      {electronCheck ? (
+        <ElectronPresenceHighlight check={electronCheck} />
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-white/[0.06] bg-[var(--input-bg)] px-4 py-4">
           <p className="text-xs uppercase tracking-widest text-steel-dark">
