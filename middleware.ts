@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { buildContentSecurityPolicy, createCspNonce } from "@/lib/csp";
+import { buildContentSecurityPolicy } from "@/lib/csp";
 import {
   assertRateLimits,
   getRateLimitKey,
@@ -16,11 +16,7 @@ function getClientIp(request: NextRequest): string {
   return request.headers.get("x-real-ip")?.trim() || "unknown";
 }
 
-function applySecurityHeaders(
-  response: NextResponse,
-  nonce: string,
-  isProduction: boolean,
-) {
+function applySecurityHeaders(response: NextResponse, isProduction: boolean) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -31,7 +27,7 @@ function applySecurityHeaders(
   response.headers.set("X-DNS-Prefetch-Control", "off");
   response.headers.set(
     "Content-Security-Policy",
-    buildContentSecurityPolicy(nonce, isProduction),
+    buildContentSecurityPolicy(isProduction),
   );
 
   if (isProduction) {
@@ -44,11 +40,7 @@ function applySecurityHeaders(
 
 export async function middleware(request: NextRequest) {
   const isProduction = process.env.NODE_ENV === "production";
-  const nonce = createCspNonce();
   const { pathname } = request.nextUrl;
-
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
 
   if (pathname.startsWith("/api/")) {
     const ip = getClientIp(request);
@@ -71,16 +63,14 @@ export async function middleware(request: NextRequest) {
         );
       }
 
-      applySecurityHeaders(response, nonce, isProduction);
+      applySecurityHeaders(response, isProduction);
       return response;
     }
   }
 
-  const response = NextResponse.next({
-    request: { headers: requestHeaders },
-  });
+  const response = NextResponse.next();
 
-  applySecurityHeaders(response, nonce, isProduction);
+  applySecurityHeaders(response, isProduction);
   return response;
 }
 

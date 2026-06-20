@@ -1,26 +1,24 @@
-export function buildContentSecurityPolicy(
-  nonce: string,
-  isProduction: boolean,
-): string {
+export function buildContentSecurityPolicy(isProduction: boolean): string {
+  // Production uses ISR/static pages (revalidate). Nonce-based CSP requires fully
+  // dynamic rendering — Next.js inline bootstrap scripts would be blocked otherwise.
   const scriptSrc = isProduction
     ? [
         "'self'",
-        `'nonce-${nonce}'`,
-        "'strict-dynamic'",
+        "'unsafe-inline'",
         "https://apis.google.com",
         "https://www.gstatic.com",
         "https://*.firebaseapp.com",
       ]
     : [
         "'self'",
-        `'nonce-${nonce}'`,
+        "'unsafe-inline'",
         "'unsafe-eval'",
         "https://apis.google.com",
         "https://www.gstatic.com",
         "https://*.firebaseapp.com",
       ];
 
-  return [
+  const directives = [
     "default-src 'self'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -32,9 +30,11 @@ export function buildContentSecurityPolicy(
     "font-src 'self' data:",
     "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com",
     "frame-src https://accounts.google.com https://*.firebaseapp.com",
-  ].join("; ");
-}
+  ];
 
-export function createCspNonce(): string {
-  return btoa(crypto.randomUUID());
+  if (isProduction) {
+    directives.push("upgrade-insecure-requests");
+  }
+
+  return directives.join("; ");
 }
