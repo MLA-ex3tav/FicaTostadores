@@ -3,10 +3,14 @@ export interface ProductImageFocus {
   y: number;
 }
 
-export interface ProductImage {
+export interface ProductImageView {
   src: string;
-  carousel: ProductImageFocus;
-  product: ProductImageFocus;
+  focus: ProductImageFocus;
+}
+
+export interface ProductImage {
+  carousel: ProductImageView;
+  product: ProductImageView;
 }
 
 export const DEFAULT_IMAGE_FOCUS: ProductImageFocus = { x: 50, y: 50 };
@@ -35,11 +39,27 @@ export function focusToObjectPosition(focus: ProductImageFocus): string {
   return `${focus.x}% ${focus.y}%`;
 }
 
-export function createProductImage(src: string): ProductImage {
+function createProductImageView(src: string): ProductImageView {
   return {
     src,
-    carousel: { ...DEFAULT_IMAGE_FOCUS },
-    product: { ...DEFAULT_IMAGE_FOCUS },
+    focus: { ...DEFAULT_IMAGE_FOCUS },
+  };
+}
+
+export function createProductImage(
+  carouselSrc: string,
+  productSrc?: string,
+): ProductImage {
+  return {
+    carousel: createProductImageView(carouselSrc),
+    product: createProductImageView(productSrc ?? carouselSrc),
+  };
+}
+
+export function createGalleryImage(src: string): ProductImage {
+  return {
+    carousel: createProductImageView(""),
+    product: createProductImageView(src),
   };
 }
 
@@ -61,6 +81,40 @@ function sanitizeFocus(value: unknown): ProductImageFocus {
   return { x, y };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object";
+}
+
+function extractViewSrc(view: unknown): string {
+  if (!isRecord(view)) {
+    return "";
+  }
+
+  const src = view.src;
+  return typeof src === "string" ? src.trim() : "";
+}
+
+function sanitizeView(
+  view: unknown,
+  fallbackSrc: string,
+  legacyFocus?: unknown,
+): ProductImageView {
+  const src = extractViewSrc(view) || fallbackSrc;
+  let focus: ProductImageFocus;
+
+  if (isRecord(view) && view.focus !== undefined) {
+    focus = sanitizeFocus(view.focus);
+  } else if (isRecord(view) && (view.x !== undefined || view.y !== undefined)) {
+    focus = sanitizeFocus(view);
+  } else if (legacyFocus !== undefined) {
+    focus = sanitizeFocus(legacyFocus);
+  } else {
+    focus = { ...DEFAULT_IMAGE_FOCUS };
+  }
+
+  return { src, focus };
+}
+
 export function normalizeProductImage(value: unknown): ProductImage | null {
   if (typeof value === "string" && value.trim()) {
     return createProductImage(value.trim());
@@ -71,16 +125,26 @@ export function normalizeProductImage(value: unknown): ProductImage | null {
   }
 
   const record = value as Record<string, unknown>;
-  const src = typeof record.src === "string" ? record.src.trim() : "";
+  const legacySrc = typeof record.src === "string" ? record.src.trim() : "";
+  const flatCarouselSrc =
+    typeof record.carouselSrc === "string" ? record.carouselSrc.trim() : "";
+  const flatProductSrc =
+    typeof record.productSrc === "string" ? record.productSrc.trim() : "";
 
-  if (!src) {
+  const carouselSrc =
+    flatCarouselSrc || extractViewSrc(record.carousel) || legacySrc;
+  const productSrc =
+    flatProductSrc || extractViewSrc(record.product) || legacySrc;
+
+  if (!carouselSrc && !productSrc) {
     return null;
   }
 
+  const fallbackSrc = carouselSrc || productSrc;
+
   return {
-    src,
-    carousel: sanitizeFocus(record.carousel),
-    product: sanitizeFocus(record.product),
+    carousel: sanitizeView(record.carousel, fallbackSrc, record.carousel),
+    product: sanitizeView(record.product, fallbackSrc, record.product),
   };
 }
 
@@ -102,6 +166,20 @@ export function normalizeProductImages(value: unknown): ProductImage[] {
   return images;
 }
 
-export function getProductImageSrc(image: ProductImage | undefined): string | undefined {
-  return image?.src;
+export function getCarouselImageSrc(
+  image: ProductImage | undefined,
+): string | undefined {
+  const src = image?.carousel.src.trim();
+  return src || undefined;
+}
+
+export function getProductImageSrc(
+  image: ProductImage | undefined,
+): string | undefined {
+  const src = image?.product.src.trim();
+  return src || undefined;
+}
+
+export function hasProductImageContent(image: ProductImage): boolean {
+  return Boolean(image.carousel.src.trim() || image.product.src.trim());
 }

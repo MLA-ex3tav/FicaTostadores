@@ -63,16 +63,33 @@ function splitHeadline(text: string): [string, string] {
   ];
 }
 
+function shouldLoadSlideImage(
+  index: number,
+  activeIndex: number,
+  slideCount: number,
+): boolean {
+  if (slideCount <= 1) {
+    return true;
+  }
+
+  const previous = (activeIndex - 1 + slideCount) % slideCount;
+  const next = (activeIndex + 1) % slideCount;
+
+  return index === activeIndex || index === previous || index === next;
+}
+
 function HeroCarouselSlide({
   banner,
   priority,
+  loadImage,
 }: {
   banner: HeroProductBanner;
   priority: boolean;
+  loadImage: boolean;
 }) {
   const [headlineTop, headlineBottom] = splitHeadline(banner.name);
   const href = banner.productId ? `/productos/${banner.productId}` : "/productos";
-  const hasImage = banner.src.length > 0;
+  const hasImage = banner.src.length > 0 && loadImage;
 
   return (
     <div className="relative h-full w-full shrink-0 overflow-hidden">
@@ -85,7 +102,7 @@ function HeroCarouselSlide({
           priority={priority}
           objectPosition={focusToObjectPosition(banner.carouselFocus)}
           sizes="100vw"
-          quality={90}
+          quality={80}
         />
       ) : (
         <div
@@ -96,10 +113,6 @@ function HeroCarouselSlide({
 
       <div
         className="absolute inset-y-0 left-0 z-[1] w-[58%] bg-gradient-to-r from-black/90 via-black/55 to-transparent"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute inset-y-0 right-0 z-[1] w-[48%] bg-gradient-to-l from-black/85 via-black/50 to-transparent"
         aria-hidden="true"
       />
       <div
@@ -114,18 +127,18 @@ function HeroCarouselSlide({
         draggable={false}
       />
 
-      <div className="pointer-events-none absolute inset-0 z-[3] flex h-full items-end px-5 pb-14 pt-8 sm:px-8 md:px-12 lg:px-16">
-        {/* Mobile: solo título */}
-        <div className="max-w-[85%] md:hidden">
-          <p className="font-display text-lg leading-tight tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1),0_4px_16px_rgba(0,0,0,0.9)] sm:text-xl">
+      <div className="pointer-events-none absolute inset-0 z-[3] flex h-full flex-col justify-end">
+        {/* Mobile: título */}
+        <div className="max-w-[90%] px-5 pb-14 pt-8 sm:px-8 md:hidden">
+          <p className="font-display text-xl leading-tight tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1),0_4px_16px_rgba(0,0,0,0.9)] sm:text-2xl">
             {banner.name.toUpperCase()}
           </p>
         </div>
 
-        {/* Desktop: izquierda título · derecha especificaciones */}
-        <div className="hidden h-full w-full md:flex md:justify-between md:gap-6">
-          <div className="flex w-1/2 flex-col justify-end gap-3 pr-4">
-            <div>
+        {/* Desktop: bloque título */}
+        <div className="hidden h-full w-full flex-col md:flex">
+          <div className="flex flex-1 flex-col justify-end px-8 pb-4 pt-8 lg:px-16">
+            <div className="max-w-[58%]">
               <p className="text-[0.6rem] uppercase tracking-[0.22em] text-white drop-shadow-[0_1px_4px_rgba(0,0,0,1)]">
                 {banner.catalogLabel}
                 {banner.categoryLabel ? ` · ${banner.categoryLabel}` : null}
@@ -145,39 +158,32 @@ function HeroCarouselSlide({
               <p className="mt-1.5 text-[0.65rem] leading-snug text-white line-clamp-2 drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)]">
                 {banner.description}
               </p>
-            </div>
-
-            <p className="text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-orange drop-shadow-[0_1px_4px_rgba(0,0,0,1)]">
-              Click para ver más info →
-            </p>
-          </div>
-
-          {banner.technicalDetails.length > 0 ? (
-            <div className="flex h-full w-1/2 shrink-0 flex-col justify-between py-8 text-right">
-              <p className="text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-orange drop-shadow-[0_1px_4px_rgba(0,0,0,1)]">
-                Especificaciones
+              <p className="mt-3 text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-orange drop-shadow-[0_1px_4px_rgba(0,0,0,1)]">
+                Click para ver más info →
               </p>
-              <dl className="flex flex-1 flex-col justify-between py-4">
-                {banner.technicalDetails.map((detail, index) => (
-                  <div key={detail.label} className="py-2">
-                    <dt className="text-[0.65rem] font-semibold uppercase leading-tight tracking-[0.14em] text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] sm:text-xs">
-                      {detail.label}
-                    </dt>
-                    <dd className="mt-1 font-display text-[clamp(0.7rem,1.2vw,0.95rem)] leading-none tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1),0_2px_10px_rgba(0,0,0,0.9)]">
-                      {detail.value}
-                    </dd>
-                    {index < banner.technicalDetails.length - 1 ? (
-                      <div
-                        className="ml-auto mt-2 h-px w-16 bg-white/30 sm:w-20"
-                        aria-hidden="true"
-                      />
-                    ) : null}
-                  </div>
-                ))}
-              </dl>
             </div>
-          ) : null}
+          </div>
         </div>
+
+        {banner.technicalDetails.length > 0 ? (
+          <div className="hidden border-t border-white/30 bg-black/60 px-5 py-4 backdrop-blur-sm sm:px-8 md:block md:px-8 md:py-5 lg:px-16">
+            <dl className="grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-3 sm:gap-x-6 md:flex md:w-full md:items-stretch md:divide-x md:divide-white/25 md:gap-0">
+              {banner.technicalDetails.map((detail) => (
+                <div
+                  key={detail.label}
+                  className="flex min-w-0 flex-col justify-center gap-1 md:flex-1 md:gap-1.5 md:px-4 lg:px-5 first:md:pl-0 last:md:pr-0"
+                >
+                  <dt className="text-xs font-semibold uppercase leading-snug tracking-[0.1em] text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] sm:text-sm md:text-sm lg:text-base">
+                    {detail.label}
+                  </dt>
+                  <dd className="font-display text-sm leading-snug tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1),0_2px_10px_rgba(0,0,0,0.9)] sm:text-base md:text-base lg:text-lg">
+                    {detail.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -307,7 +313,11 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
                 key={`${banner.productId || "default"}-${index}`}
                 className="h-full w-full shrink-0"
               >
-                <HeroCarouselSlide banner={banner} priority={index === 0} />
+                <HeroCarouselSlide
+                  banner={banner}
+                  priority={index === activeIndex && index === 0}
+                  loadImage={shouldLoadSlideImage(index, activeIndex, slideCount)}
+                />
               </div>
             ))}
           </div>
@@ -331,7 +341,7 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
                 <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.25} />
               </button>
 
-              <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/45 px-3 py-2 backdrop-blur-sm">
+              <div className="pointer-events-auto absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/55 px-3 py-2 backdrop-blur-sm sm:bottom-5 md:bottom-[7.25rem]">
                 {slides.map((banner, index) => {
                   const isActive = index === activeIndex;
                   return (

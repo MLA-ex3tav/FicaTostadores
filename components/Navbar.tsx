@@ -28,12 +28,12 @@ function CotizarButton({
     <Link
       href="/contacto"
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg bg-orange px-4 py-2 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg bg-orange px-4 py-2.5 text-base font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover ${className}`}
     >
       <Mail className="h-4 w-4" />
       Cotizar
       {count > 0 && (
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-orange">
+        <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-sm font-bold text-orange">
           {count}
         </span>
       )}
@@ -73,7 +73,7 @@ export default function Navbar() {
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className={`text-sm uppercase tracking-wider transition-colors ${
+                  className={`text-base uppercase tracking-wider transition-colors ${
                     isActive
                       ? "text-orange"
                       : "text-steel-mid hover:text-steel-light"
@@ -119,7 +119,7 @@ export default function Navbar() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className={`block py-3 text-sm uppercase tracking-wider ${
+                    className={`block py-3 text-base uppercase tracking-wider ${
                       isActive ? "text-orange" : "text-steel-mid"
                     }`}
                     onClick={() => setMenuOpen(false)}

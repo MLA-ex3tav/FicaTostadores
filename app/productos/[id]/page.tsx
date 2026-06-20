@@ -2,15 +2,15 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import ProductAddOnsQuotePicker from "@/components/ProductAddOnsQuotePicker";
-import ProductDetailAdminEdit from "@/components/ProductDetailAdminEdit";
 import ProductDetailContent from "@/components/ProductDetailContent";
 import ProductDetailHero from "@/components/ProductDetailHero";
+import ProductDetailPageShell from "@/components/ProductDetailPageShell";
 import ProductQuoteActions from "@/components/ProductQuoteActions";
 import SectionLabel from "@/components/SectionLabel";
 import { getCatalogConfig } from "@/lib/catalog-config-server";
 import { getProductById, getProducts } from "@/lib/products-server";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;
@@ -56,7 +56,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         Volver al catálogo
       </Link>
 
-      <ProductDetailAdminEdit product={product}>
+      <ProductDetailPageShell product={product}>
       <ProductDetailHero product={product} catalogConfig={catalogConfig} />
 
       <ProductDetailContent product={product} />
@@ -81,7 +81,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         productCapacity={product.capacity}
         addOns={product.addOns}
       />
-      </ProductDetailAdminEdit>
+      </ProductDetailPageShell>
     </div>
   );
 }

@@ -154,7 +154,7 @@ export default function ProductQuoteActions({
 
           onClick={handleConsultClick}
 
-          className={`inline-flex items-center justify-center rounded-xl px-10 py-3.5 text-sm font-semibold uppercase tracking-wider transition-colors ${
+          className={`inline-flex items-center justify-center rounded-xl px-10 py-3.5 text-base font-semibold uppercase tracking-wider transition-colors ${
 
             alreadySelected
 
@@ -178,7 +178,7 @@ export default function ProductQuoteActions({
 
           href="/productos"
 
-          className="inline-flex items-center justify-center rounded-xl border border-steel-mid/40 px-10 py-3.5 text-sm font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange"
+          className="inline-flex items-center justify-center rounded-xl border border-steel-mid/40 px-10 py-3.5 text-base font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange"
 
         >
 
@@ -214,7 +214,7 @@ export default function ProductQuoteActions({
 
                   id="quote-modal-title"
 
-                  className="font-display text-xl tracking-wide text-steel-light"
+                  className="font-display text-2xl tracking-wide text-steel-light"
 
                 >
 
@@ -222,7 +222,7 @@ export default function ProductQuoteActions({
 
                 </p>
 
-                <p className="mt-3 text-sm leading-relaxed text-steel-mid">
+                <p className="mt-3 text-base leading-relaxed text-steel-mid">
 
                   Elija los agregados que desea incluir en la cotización de{" "}
 
@@ -254,7 +254,7 @@ export default function ProductQuoteActions({
 
                     onClick={() => setModalOpen(false)}
 
-                    className="flex-1 rounded-xl border border-steel-mid/40 px-4 py-3 text-sm font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange"
+                    className="flex-1 rounded-xl border border-steel-mid/40 px-4 py-3 text-base font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange"
 
                   >
 
@@ -268,7 +268,7 @@ export default function ProductQuoteActions({
 
                     onClick={handleConfirmSelection}
 
-                    className="flex-1 rounded-xl bg-orange px-4 py-3 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover"
+                    className="flex-1 rounded-xl bg-orange px-4 py-3 text-base font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover"
 
                   >
 
@@ -288,7 +288,7 @@ export default function ProductQuoteActions({
 
                   id="quote-modal-title"
 
-                  className="font-display text-xl tracking-wide text-steel-light"
+                  className="font-display text-2xl tracking-wide text-steel-light"
 
                 >
 
@@ -296,7 +296,7 @@ export default function ProductQuoteActions({
 
                 </p>
 
-                <p className="mt-3 text-sm leading-relaxed text-steel-mid">
+                <p className="mt-3 text-base leading-relaxed text-steel-mid">
 
                   <span className="text-orange">{productName}</span> quedó
 
@@ -336,7 +336,7 @@ export default function ProductQuoteActions({
 
                     onClick={() => setModalOpen(false)}
 
-                    className="flex-1 rounded-xl border border-steel-mid/40 px-4 py-3 text-sm font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange"
+                    className="flex-1 rounded-xl border border-steel-mid/40 px-4 py-3 text-base font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange"
 
                   >
 
@@ -356,7 +356,7 @@ export default function ProductQuoteActions({
 
                     }}
 
-                    className="flex-1 rounded-xl bg-orange px-4 py-3 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover"
+                    className="flex-1 rounded-xl bg-orange px-4 py-3 text-base font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover"
 
                   >
 

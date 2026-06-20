@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import ProductCard from "@/components/ProductCard";
+import { sectionEyebrowClass } from "@/components/SectionHeader";
 import {
   getCategoriesForCatalog,
   shouldShowCategoryForCatalog,
@@ -18,11 +19,18 @@ type SubFilterId = string | "all";
 
 const PRODUCTS_PER_PAGE = 15;
 
-const filterButtonClass = (isActive: boolean) =>
-  `rounded-lg border px-4 py-2 text-xs uppercase tracking-wider transition-colors ${
+const catalogTabClass = (isActive: boolean) =>
+  `shrink-0 whitespace-nowrap border-b-2 px-1 pb-3 pt-1 font-display text-base tracking-wide transition-colors ${
     isActive
-      ? "border-orange bg-orange text-white"
-      : "border-steel-dark/40 text-steel-mid hover:border-orange hover:text-orange"
+      ? "border-orange text-steel-light"
+      : "border-transparent text-steel-mid hover:text-steel-light"
+  }`;
+
+const categoryTabClass = (isActive: boolean) =>
+  `shrink-0 whitespace-nowrap border-b-2 px-1 pb-2 pt-1 text-sm tracking-wide transition-colors ${
+    isActive
+      ? "border-orange text-steel-light"
+      : "border-transparent text-steel-dark hover:text-steel-mid"
   }`;
 
 function parseCatalog(value: string | null, config: CatalogConfig): string {
@@ -130,45 +138,67 @@ export default function ProductsCatalog({
 
   return (
     <>
-      <div className="mb-8 flex flex-wrap gap-2">
-        {catalogConfig.catalogs.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => handleCatalogChange(item.id)}
-            aria-pressed={catalog === item.id}
-            className={filterButtonClass(catalog === item.id)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      {showSubFilters && (
-        <div className="mb-8 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => handleSubFilterChange("all")}
-            aria-pressed={subFilter === "all"}
-            className={filterButtonClass(subFilter === "all")}
-          >
-            Todos
-          </button>
-          {subCategories.map((category) => (
+      <nav
+        aria-label="Catálogos"
+        className="mb-6 border-b border-steel-dark/15"
+      >
+        <div
+          className="-mx-4 flex gap-6 overflow-x-auto px-4 md:mx-0 md:px-0"
+          role="tablist"
+        >
+          {catalogConfig.catalogs.map((item) => (
             <button
-              key={category.id}
+              key={item.id}
               type="button"
-              onClick={() => handleSubFilterChange(category.id)}
-              aria-pressed={subFilter === category.id}
-              className={filterButtonClass(subFilter === category.id)}
+              role="tab"
+              aria-selected={catalog === item.id}
+              onClick={() => handleCatalogChange(item.id)}
+              className={catalogTabClass(catalog === item.id)}
             >
-              {category.label}
+              {item.label}
             </button>
           ))}
         </div>
+      </nav>
+
+      {showSubFilters && (
+        <nav
+          aria-label="Tipos de equipo"
+          className="mb-8 border-b border-steel-dark/10"
+        >
+          <p className={`mb-2 ${sectionEyebrowClass}`}>
+            Tipo
+          </p>
+          <div
+            className="-mx-4 flex gap-5 overflow-x-auto px-4 md:mx-0 md:px-0"
+            role="tablist"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={subFilter === "all"}
+              onClick={() => handleSubFilterChange("all")}
+              className={categoryTabClass(subFilter === "all")}
+            >
+              Todos
+            </button>
+            {subCategories.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                role="tab"
+                aria-selected={subFilter === category.id}
+                onClick={() => handleSubFilterChange(category.id)}
+                className={categoryTabClass(subFilter === category.id)}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+        </nav>
       )}
 
-      <p className="mb-6 text-sm text-steel-dark">
+      <p className="mb-6 text-base text-steel-dark">
         {filtered.length} {filtered.length === 1 ? "equipo" : "equipos"}
         {totalPages > 1 ? (
           <>
@@ -197,18 +227,18 @@ export default function ProductsCatalog({
             type="button"
             onClick={() => handlePageChange(page - 1)}
             disabled={page <= 1}
-            className="rounded-lg border border-steel-dark/40 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-steel-mid transition-colors hover:border-orange hover:text-orange disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg border border-steel-dark/40 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-steel-mid transition-colors hover:border-orange hover:text-orange disabled:cursor-not-allowed disabled:opacity-40"
           >
             Anterior
           </button>
-          <span className="text-sm text-steel-mid">
+          <span className="text-base text-steel-mid">
             {page} / {totalPages}
           </span>
           <button
             type="button"
             onClick={() => handlePageChange(page + 1)}
             disabled={page >= totalPages}
-            className="rounded-lg border border-steel-dark/40 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-steel-mid transition-colors hover:border-orange hover:text-orange disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg border border-steel-dark/40 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-steel-mid transition-colors hover:border-orange hover:text-orange disabled:cursor-not-allowed disabled:opacity-40"
           >
             Siguiente
           </button>

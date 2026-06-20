@@ -11,10 +11,10 @@ export default function Footer() {
 
         <div className="grid gap-8 md:grid-cols-3">
           <div>
-            <p className="font-display text-lg tracking-widest text-orange">
+            <p className="font-display text-xl tracking-widest text-orange">
               FICA TOSTADORES
             </p>
-            <p className="mt-2 text-sm text-steel-mid">
+            <p className="mt-2 text-base text-steel-mid">
               {companyInfo.legalName}. Maquinaria industrial para tostado de
               café, frutos secos, granos y semillas. Fabricado en Chile, IX
               Región.
@@ -22,10 +22,10 @@ export default function Footer() {
           </div>
 
           <div>
-            <p className="mb-3 text-xs uppercase tracking-widest text-steel-dark">
+            <p className="mb-3 text-sm uppercase tracking-widest text-steel-dark">
               Navegación
             </p>
-            <ul className="space-y-2 text-sm text-steel-mid">
+            <ul className="space-y-2 text-base text-steel-mid">
               <li>
                 <Link href="/" className="hover:text-orange transition-colors">
                   Inicio
@@ -51,10 +51,10 @@ export default function Footer() {
           </div>
 
           <div>
-            <p className="mb-3 text-xs uppercase tracking-widest text-steel-dark">
+            <p className="mb-3 text-sm uppercase tracking-widest text-steel-dark">
               Contacto
             </p>
-            <ul className="space-y-2 text-sm text-steel-mid">
+            <ul className="space-y-2 text-base text-steel-mid">
               <li>
                 <a
                   href={`mailto:${companyInfo.emailVentas}`}
@@ -80,7 +80,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-8 flex flex-col items-center gap-3 border-t border-steel-dark/20 pt-8">
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-steel-mid">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-steel-mid">
             <Link href="/privacidad" className="hover:text-orange transition-colors">
               Política de privacidad
             </Link>
@@ -88,7 +88,7 @@ export default function Footer() {
               Términos y condiciones
             </Link>
           </div>
-          <p className="text-center text-xs text-steel-dark">
+          <p className="text-center text-sm text-steel-dark">
             © {new Date().getFullYear()} {companyInfo.brand}. Todos los derechos
             reservados.
           </p>

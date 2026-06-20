@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import SteelPanel from "@/components/SteelPanel";
+import { sectionEyebrowClass } from "@/components/SectionHeader";
 import { useFirebaseAuth } from "@/lib/firebase-auth";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
 import { sanitizeReturnTo } from "@/lib/login-return-to";
@@ -66,16 +67,16 @@ export default function GoogleLoginCard({
 
   return (
     <SteelPanel className="mx-auto w-full max-w-md">
-      <p className="text-xs uppercase tracking-[0.3em] text-steel-dark">
+      <p className={sectionEyebrowClass}>
         {badge}
       </p>
-      <h1 className="mt-3 font-display text-3xl tracking-wide text-steel-light">
+      <h1 className="mt-3 font-display text-4xl tracking-wide text-steel-light">
         {user ? "Sesión iniciada" : title}
       </h1>
-      <p className="mt-4 text-sm leading-relaxed text-steel-mid">{subtitle}</p>
+      <p className="mt-4 text-base leading-relaxed text-steel-mid">{subtitle}</p>
 
       {user && !loading && adminRedirect && !isStaff && (
-        <div className="mt-4 rounded-lg border border-steel-dark/30 bg-background/60 px-4 py-3 text-sm text-steel-mid">
+        <div className="mt-4 rounded-lg border border-steel-dark/30 bg-background/60 px-4 py-3 text-base text-steel-mid">
           Conectado como{" "}
           <strong className="text-steel-light">{user.email}</strong>.
           Esta cuenta no tiene permisos para el panel de administración.
@@ -83,13 +84,13 @@ export default function GoogleLoginCard({
       )}
 
       {error && (
-        <p className="mt-4 rounded-lg border border-orange/40 bg-orange/10 px-4 py-3 text-sm text-orange">
+        <p className="mt-4 rounded-lg border border-orange/40 bg-orange/10 px-4 py-3 text-base text-orange">
           {error}
         </p>
       )}
 
       {!configured && (
-        <p className="mt-4 rounded-lg border border-steel-dark/30 bg-background/60 px-4 py-3 text-sm text-steel-mid">
+        <p className="mt-4 rounded-lg border border-steel-dark/30 bg-background/60 px-4 py-3 text-base text-steel-mid">
           Firebase no está configurado. Copiá <code>.env.example</code> a{" "}
           <code>.env.local</code> y completá las variables{" "}
           <code>NEXT_PUBLIC_FIREBASE_*</code>.
@@ -98,7 +99,7 @@ export default function GoogleLoginCard({
 
       {!user && (
         <>
-          <p className="mt-6 text-center text-xs leading-relaxed text-steel-dark">
+          <p className="mt-6 text-center text-sm leading-relaxed text-steel-dark">
             Al continuar, acepta nuestros{" "}
             <Link href="/terminos" className="text-orange hover:underline">
               Términos y condiciones
@@ -113,7 +114,7 @@ export default function GoogleLoginCard({
             type="button"
             onClick={() => void handleSignIn()}
             disabled={loading || !configured}
-            className="mt-4 flex w-full items-center justify-center gap-3 rounded-xl border border-steel-dark/30 bg-background/80 px-5 py-3.5 text-sm font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange disabled:opacity-60"
+            className="mt-4 flex w-full items-center justify-center gap-3 rounded-xl border border-steel-dark/30 bg-background/80 px-5 py-3.5 text-base font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange disabled:opacity-60"
           >
             <GoogleIcon />
             Continuar con Google
@@ -122,12 +123,12 @@ export default function GoogleLoginCard({
       )}
 
       {user && loading && (
-        <p className="mt-8 text-center text-sm text-steel-mid">
+        <p className="mt-8 text-center text-base text-steel-mid">
           Redirigiendo…
         </p>
       )}
 
-      <p className="mt-4 text-center text-xs text-steel-dark">
+      <p className="mt-4 text-center text-sm text-steel-dark">
         <Link href="/" className="hover:text-orange">
           Volver al sitio
         </Link>

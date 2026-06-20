@@ -91,68 +91,89 @@ export default function ContactForm() {
     }
   }
 
+  const introText = (
+    <>
+      Complete sus datos y le abriremos WhatsApp para enviar la cotización.
+      {products.length === 0 && " También puede agregar productos desde el catálogo."}
+    </>
+  );
+
   return (
-    <SteelPanel>
-      <p className="mb-6 text-sm text-steel-mid">
-        Complete sus datos y le abriremos WhatsApp para enviar la cotización.
-        {products.length === 0 && " También puede agregar productos desde el catálogo."}
-      </p>
+    <SteelPanel className="min-w-0 w-full max-md:p-5">
+      <div className="mb-8 space-y-3 border-b border-white/[0.06] pb-6 md:hidden">
+        <h2 className="font-display text-2xl tracking-wide text-steel-light">
+          Formulario de cotización
+        </h2>
+        <p className="text-base leading-relaxed text-steel-mid">{introText}</p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-        <div>
-          <label
-            htmlFor="name"
-            className="mb-2 block text-xs uppercase tracking-widest text-steel-mid"
-          >
-            Nombre
-          </label>
-          <input
-            id="name"
-            type="text"
-            required
-            maxLength={120}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Su nombre completo"
-            className="industrial-input"
-          />
-        </div>
+      <p className="mb-6 hidden text-sm text-steel-mid md:block">{introText}</p>
 
-        <div>
-          <label
-            htmlFor="phone"
-            className="mb-2 block text-xs uppercase tracking-widest text-steel-mid"
-          >
-            WhatsApp / teléfono
-          </label>
-          <PhoneInput
-            id="phone"
-            defaultCountry="CL"
-            labels={es}
-            flags={flags}
-            countrySelectComponent={PhoneCountrySelect}
-            placeholder="912345678"
-            value={phone}
-            onChange={setPhone}
-            className="phone-input-wrapper"
-          />
-          <p className="mt-1.5 text-xs text-steel-dark">
-            Ingrese solo el número local, sin repetir el código del país.
-          </p>
-          {phoneError && (
-            <p className="mt-1 text-xs text-orange">{phoneError}</p>
-          )}
-          {phone && !isPhoneValid && !phoneError && (
-            <p className="mt-1 text-xs text-steel-dark">
-              Verifique que el número sea correcto.
+      <form
+        onSubmit={handleSubmit}
+        className="min-w-0 w-full space-y-7 md:space-y-6"
+        noValidate
+      >
+        <fieldset className="min-w-0 w-full space-y-7 md:space-y-6">
+          <legend className="sr-only">Datos de contacto</legend>
+
+          <div>
+            <label
+              htmlFor="name"
+              className="mb-2.5 block text-sm font-medium uppercase tracking-widest text-steel-mid md:mb-2 md:text-xs md:font-normal"
+            >
+              Nombre
+            </label>
+            <input
+              id="name"
+              type="text"
+              required
+              maxLength={120}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Su nombre completo"
+              className="industrial-input max-md:min-h-12 max-md:text-base"
+            />
+          </div>
+
+          <div className="min-w-0">
+            <label
+              htmlFor="phone"
+              className="mb-2.5 block text-sm font-medium uppercase tracking-widest text-steel-mid md:mb-2 md:text-xs md:font-normal"
+            >
+              WhatsApp / teléfono
+            </label>
+            <div className="min-w-0 w-full">
+              <PhoneInput
+                id="phone"
+                defaultCountry="CL"
+                labels={es}
+                flags={flags}
+                countrySelectComponent={PhoneCountrySelect}
+                placeholder="912345678"
+                value={phone}
+                onChange={setPhone}
+                className="phone-input-wrapper"
+              />
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-steel-dark md:mt-1.5 md:text-xs">
+              Ingrese solo el número local, sin repetir el código del país.
             </p>
-          )}
-        </div>
+            {phoneError ? (
+              <p className="mt-2 text-sm text-orange md:mt-1 md:text-xs">{phoneError}</p>
+            ) : null}
+            {phone && !isPhoneValid && !phoneError ? (
+              <p className="mt-2 text-sm text-steel-dark md:mt-1 md:text-xs">
+                Verifique que el número sea correcto.
+              </p>
+            ) : null}
+          </div>
+        </fieldset>
 
-        <div>
+        <div className="border-t border-white/[0.06] pt-7 md:border-t-0 md:pt-0">
           <label
             htmlFor="message"
-            className="mb-2 block text-xs uppercase tracking-widest text-steel-mid"
+            className="mb-2.5 block text-sm font-medium uppercase tracking-widest text-steel-mid md:mb-2 md:text-xs md:font-normal"
           >
             Mensaje <span className="text-steel-dark">(opcional)</span>
           </label>
@@ -167,23 +188,23 @@ export default function ContactForm() {
                 ? "Detalles adicionales sobre su consulta..."
                 : "Cuéntenos qué equipo necesita o su consulta..."
             }
-            className="industrial-input resize-y"
+            className="industrial-input max-md:min-h-24 max-md:text-base resize-y"
           />
         </div>
 
         {submitError ? (
-          <p className="text-sm text-orange">{submitError}</p>
+          <p className="text-base text-orange md:text-sm">{submitError}</p>
         ) : null}
 
         <button
           type="submit"
           disabled={!name || !isPhoneValid}
-          className="w-full rounded-xl bg-orange py-3 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover disabled:cursor-not-allowed disabled:opacity-40"
+          className="min-h-12 w-full rounded-xl bg-orange py-4 text-base font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover disabled:cursor-not-allowed disabled:opacity-40 md:min-h-0 md:py-3 md:text-sm"
         >
           Cotizar por WhatsApp
         </button>
 
-        <p className="text-center text-xs leading-relaxed text-steel-dark">
+        <p className="text-center text-sm leading-relaxed text-steel-dark md:text-xs">
           Al enviar, acepta nuestros{" "}
           <Link href="/terminos" className="text-orange hover:underline">
             Términos y condiciones

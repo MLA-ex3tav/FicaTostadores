@@ -95,7 +95,10 @@ body {
 
 /* Industrial input styles */
 .industrial-input {
+  box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border-radius: var(--radius-md);
   background: var(--input-bg);
   border: 1px solid rgba(200, 205, 212, 0.25);
@@ -116,15 +119,20 @@ body {
 }
 
 /* Phone input overrides */
-.PhoneInput {
+.PhoneInput,
+.phone-input-wrapper {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .PhoneInputCountry {
   position: relative;
   flex: 0 0 auto;
+  min-width: 0;
   border: none;
   background: transparent;
   padding: 0;
@@ -162,6 +170,7 @@ body {
 }
 
 .PhoneInputInput {
+  box-sizing: border-box;
   flex: 1;
   min-width: 0;
   height: 2.75rem;
@@ -187,4 +196,24 @@ body {
 .hero-carousel:focus-visible {
   outline: 2px solid var(--orange);
   outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  fieldset {
+    min-width: 0;
+  }
+
+  .PhoneInput,
+  .phone-input-wrapper {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .PhoneInputInput {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: 3rem;
+    font-size: 1rem;
+  }
 }

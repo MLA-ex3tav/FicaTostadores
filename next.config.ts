@@ -8,6 +8,7 @@ const extraDevOrigins =
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["localhost", "127.0.0.1", ...extraDevOrigins],
   images: {
+    qualities: [75, 80],
     remotePatterns: [
       {
         protocol: "https",

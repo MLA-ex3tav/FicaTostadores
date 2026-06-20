@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import SectionHeader from "@/components/SectionHeader";
 
 interface LegalPageLayoutProps {
   eyebrow: string;
@@ -18,14 +19,13 @@ export default function LegalPageLayout({
 }: LegalPageLayoutProps) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 md:px-6 md:py-24">
-      <p className="text-xs uppercase tracking-[0.3em] text-steel-dark">
-        {eyebrow}
-      </p>
-      <h1 className="mt-3 font-display text-4xl tracking-wide text-steel-light md:text-5xl">
-        <span className="text-orange">{title}</span>
-      </h1>
-      <p className="mt-4 text-sm text-steel-mid">{description}</p>
-      <p className="mt-2 text-xs text-steel-dark">
+      <SectionHeader
+        as="h1"
+        eyebrow={eyebrow}
+        title={<span className="text-orange">{title}</span>}
+        description={description}
+      />
+      <p className="mt-2 text-sm text-steel-dark">
         Última actualización: {lastUpdated}
       </p>
 
@@ -33,11 +33,11 @@ export default function LegalPageLayout({
         <span />
       </div>
 
-      <article className="legal-prose space-y-8 text-sm leading-relaxed text-steel-mid">
+      <article className="legal-prose space-y-8 text-base leading-relaxed text-steel-mid">
         {children}
       </article>
 
-      <div className="mt-12 flex flex-wrap gap-4 border-t border-steel-dark/30 pt-8 text-sm">
+      <div className="mt-12 flex flex-wrap gap-4 border-t border-steel-dark/30 pt-8 text-base">
         <Link href="/privacidad" className="text-orange hover:underline">
           Política de privacidad
         </Link>
@@ -60,7 +60,7 @@ interface LegalSectionProps {
 export function LegalSection({ title, children }: LegalSectionProps) {
   return (
     <section>
-      <h2 className="font-display text-xl tracking-wide text-steel-light">
+      <h2 className="font-display text-2xl tracking-wide text-steel-light">
         {title}
       </h2>
       <div className="mt-3 space-y-3">{children}</div>

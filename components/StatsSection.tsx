@@ -13,10 +13,10 @@ export default function StatsSection() {
             key={stat.label}
             className="flex-1 px-4 py-6 text-center sm:py-7"
           >
-            <p className="font-display text-3xl tracking-wide text-orange md:text-4xl">
+            <p className="font-display text-4xl tracking-wide text-orange md:text-5xl">
               {stat.value}
             </p>
-            <p className="mt-1 text-sm text-steel-mid">{stat.label}</p>
+            <p className="mt-1 text-base text-steel-mid">{stat.label}</p>
           </div>
         ))}
       </div>

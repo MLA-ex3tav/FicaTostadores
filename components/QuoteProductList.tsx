@@ -4,6 +4,11 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { useQuoteSelection } from "@/lib/quote-selection";
 
+export const quoteEyebrowClass =
+  "text-sm font-semibold uppercase tracking-[0.3em] text-orange";
+
+export const quoteCountClass = "text-base text-steel-mid";
+
 interface QuoteProductListProps {
   className?: string;
   showCta?: boolean;
@@ -19,29 +24,31 @@ export default function QuoteProductList({
     return null;
   }
 
+  const countLabel =
+    products.length === 1
+      ? "1 producto seleccionado"
+      : `${products.length} productos seleccionados`;
+
   return (
     <div className={className}>
-      <div className="shrink-0">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-orange">
-          Cotización
-        </p>
-        <p className="mt-0.5 text-[11px] text-steel-dark">
-          {products.length}{" "}
-          {products.length === 1 ? "producto seleccionado" : "productos seleccionados"}
-        </p>
+      <div className="shrink-0 border-b border-white/[0.08] pb-4">
+        <p className={quoteEyebrowClass}>Cotización</p>
+        <p className={`mt-1.5 ${quoteCountClass}`}>{countLabel}</p>
       </div>
 
-      <ul className="mt-2 min-h-0 flex-1 divide-y divide-white/[0.06] overflow-y-auto">
+      <ul className="mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto">
         {products.map((product) => (
           <li
             key={product.id}
-            className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+            className="flex items-start justify-between gap-3 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3.5 py-3"
           >
-            <div className="min-w-0">
-              <p className="truncate text-sm text-steel-light">{product.name}</p>
-              <p className="mt-0.5 text-xs text-steel-dark">{product.capacity}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-display text-xl tracking-wide text-steel-light">
+                {product.name}
+              </p>
+              <p className="mt-1 text-base text-steel-dark">{product.capacity}</p>
               {product.selectedAddOns && product.selectedAddOns.length > 0 ? (
-                <p className="mt-1 text-xs text-orange/80">
+                <p className="mt-1.5 text-base text-orange/80">
                   + {product.selectedAddOns.map((addOn) => addOn.name).join(", ")}
                 </p>
               ) : null}
@@ -49,10 +56,10 @@ export default function QuoteProductList({
             <button
               type="button"
               onClick={() => removeProduct(product.id)}
-              className="shrink-0 p-0.5 text-steel-dark transition-colors hover:text-orange"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] text-steel-dark transition-colors hover:border-orange/40 hover:bg-orange/10 hover:text-orange"
               aria-label={`Quitar ${product.name} de la cotización`}
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-5 w-5" strokeWidth={2} />
             </button>
           </li>
         ))}
@@ -61,7 +68,7 @@ export default function QuoteProductList({
       {showCta && (
         <Link
           href="/contacto"
-          className="mt-3 block w-full shrink-0 border border-white/[0.08] py-2 text-center text-xs text-steel-mid transition-colors hover:border-orange/40 hover:text-orange"
+          className="mt-4 block w-full shrink-0 rounded-xl border border-orange/40 py-3.5 text-center text-base font-semibold uppercase tracking-wider text-orange transition-colors hover:border-orange hover:bg-orange/10"
         >
           Ir a cotizar
         </Link>

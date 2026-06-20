@@ -14,6 +14,9 @@ interface ImageFocusEditorProps {
   aspectClassName: string;
   focus: ProductImageFocus;
   onChange: (focus: ProductImageFocus) => void;
+  onReplaceImage?: () => void;
+  replaceImageLabel?: string;
+  replacingImage?: boolean;
 }
 
 export default function ImageFocusEditor({
@@ -23,6 +26,9 @@ export default function ImageFocusEditor({
   aspectClassName,
   focus,
   onChange,
+  onReplaceImage,
+  replaceImageLabel,
+  replacingImage = false,
 }: ImageFocusEditorProps) {
   const updateFromPointer = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -36,9 +42,21 @@ export default function ImageFocusEditor({
 
   return (
     <div>
-      <p className="mb-1.5 text-[0.65rem] font-semibold uppercase tracking-wider text-steel-mid">
-        {label}
-      </p>
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-steel-mid">
+          {label}
+        </p>
+        {onReplaceImage ? (
+          <button
+            type="button"
+            disabled={replacingImage}
+            onClick={onReplaceImage}
+            className="text-[0.65rem] text-orange hover:text-orange-hover disabled:opacity-60"
+          >
+            {replacingImage ? "Subiendo…" : (replaceImageLabel ?? "Cambiar imagen")}
+          </button>
+        ) : null}
+      </div>
       <p className="mb-2 text-[0.6rem] leading-snug text-orange/90">
         Recomendado: {resolutionHint}
       </p>

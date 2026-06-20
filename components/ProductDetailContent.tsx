@@ -12,7 +12,7 @@ export default function ProductDetailContent({
       <div className="space-y-12">
         <div>
           <SectionLabel>Descripción</SectionLabel>
-          <p className="mt-5 max-w-prose text-sm leading-[1.8] text-steel-mid">
+          <p className="mt-5 max-w-prose text-base leading-[1.8] text-steel-mid">
             {product.longDescription}
           </p>
         </div>
@@ -23,7 +23,7 @@ export default function ProductDetailContent({
             {product.features.map((feature, index) => (
               <li
                 key={feature}
-                className={`flex gap-4 py-3.5 text-sm leading-relaxed text-steel-mid ${
+                className={`flex gap-4 py-3.5 text-base leading-relaxed text-steel-mid ${
                   index < product.features.length - 1
                     ? "border-b border-white/[0.06]"
                     : ""
@@ -54,10 +54,10 @@ export default function ProductDetailContent({
                   : ""
               }`}
             >
-              <dt className="text-[11px] uppercase tracking-[0.14em] text-steel-dark">
+              <dt className="text-xs uppercase tracking-[0.14em] text-steel-dark">
                 {detail.label}
               </dt>
-              <dd className="text-sm font-medium tracking-wide text-steel-light sm:text-right">
+              <dd className="text-base font-medium tracking-wide text-steel-light sm:text-right">
                 {detail.value}
               </dd>
             </div>

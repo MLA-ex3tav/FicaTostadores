@@ -114,13 +114,13 @@ export default function TermsConsentBanner() {
           <SteelPanel className="w-full max-w-lg">
             <p
               id={titleId}
-              className="font-display text-xl tracking-wide text-steel-light"
+              className="font-display text-2xl tracking-wide text-steel-light"
             >
               Términos y privacidad
             </p>
             <p
               id={descriptionId}
-              className="mt-3 text-sm leading-relaxed text-steel-mid"
+              className="mt-3 text-base leading-relaxed text-steel-mid"
             >
               Al utilizar este sitio usted acepta nuestros{" "}
               <Link
@@ -143,7 +143,7 @@ export default function TermsConsentBanner() {
               .
             </p>
 
-            <label className="mt-6 flex cursor-pointer items-start gap-3 text-sm text-steel-mid">
+            <label className="mt-6 flex cursor-pointer items-start gap-3 text-base text-steel-mid">
               <input
                 type="checkbox"
                 checked={checked}
@@ -160,7 +160,7 @@ export default function TermsConsentBanner() {
               <button
                 type="button"
                 onClick={handleDecline}
-                className="flex-1 rounded-xl border border-steel-mid/40 px-4 py-3 text-sm font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange"
+                className="flex-1 rounded-xl border border-steel-mid/40 px-4 py-3 text-base font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange"
               >
                 Rechazar
               </button>
@@ -168,7 +168,7 @@ export default function TermsConsentBanner() {
                 type="button"
                 onClick={handleAccept}
                 disabled={!checked}
-                className="flex-1 rounded-xl bg-orange px-4 py-3 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-xl bg-orange px-4 py-3 text-base font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Aceptar
               </button>
@@ -181,7 +181,7 @@ export default function TermsConsentBanner() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-4 left-4 right-4 z-[301] mx-auto max-w-lg rounded-xl border border-steel-dark/30 bg-panel px-4 py-3 text-sm text-steel-mid shadow-lg sm:left-auto sm:right-6"
+          className="fixed bottom-4 left-4 right-4 z-[301] mx-auto max-w-lg rounded-xl border border-steel-dark/30 bg-panel px-4 py-3 text-base text-steel-mid shadow-lg sm:left-auto sm:right-6"
         >
           Puede seguir navegando el sitio. Le volveremos a solicitar la
           aceptación en su próxima visita.

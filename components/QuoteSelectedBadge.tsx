@@ -9,9 +9,9 @@ export default function QuoteSelectedLabel({
 }: QuoteSelectedLabelProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-orange ${className}`}
+      className={`inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.3em] text-orange ${className}`}
     >
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange" aria-hidden />
+      <span className="h-2 w-2 shrink-0 rounded-full bg-orange" aria-hidden />
       En cotización
     </span>
   );

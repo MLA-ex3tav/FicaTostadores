@@ -23,6 +23,7 @@ import { formatCapacity, parseCapacity, type CapacityUnit } from "@/lib/capacity
 
 import type { Product, ProductAddOn } from "@/lib/products";
 
+import { hasProductImageContent } from "@/lib/product-images";
 import { slugifyProductId } from "@/lib/product-utils";
 
 import { useFirebaseAuth } from "@/lib/firebase-auth";
@@ -326,7 +327,7 @@ export default function ProductForm({
 
       capacity: formattedCapacity,
 
-      images: product.images?.filter((image) => image.src) ?? [],
+      images: product.images?.filter(hasProductImageContent) ?? [],
 
       specs: cleanLines(product.specs),
 

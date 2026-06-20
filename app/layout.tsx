@@ -5,7 +5,6 @@ import MainWithQuotePadding from "@/components/MainWithQuotePadding";
 import Navbar from "@/components/Navbar";
 import QuoteSelectionSidebar from "@/components/QuoteSelectionSidebar";
 import { companyInfo } from "@/lib/company";
-import { FirebaseAuthProvider } from "@/lib/firebase-auth";
 import { QuoteSelectionProvider } from "@/lib/quote-selection";
 import PageLoadingBar from "@/components/PageLoadingBar";
 import TermsConsentBanner from "@/components/TermsConsentBanner";
@@ -50,16 +49,14 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} ${oswald.variable} h-full`}>
       <body className="flex min-h-full flex-col antialiased">
-        <FirebaseAuthProvider>
-          <QuoteSelectionProvider>
-            <PageLoadingBar />
-            <TermsConsentBanner />
-            <Navbar />
-            <QuoteSelectionSidebar />
-            <MainWithQuotePadding>{children}</MainWithQuotePadding>
-            <Footer />
-          </QuoteSelectionProvider>
-        </FirebaseAuthProvider>
+        <QuoteSelectionProvider>
+          <PageLoadingBar />
+          <TermsConsentBanner />
+          <Navbar />
+          <QuoteSelectionSidebar />
+          <MainWithQuotePadding>{children}</MainWithQuotePadding>
+          <Footer />
+        </QuoteSelectionProvider>
       </body>
     </html>
   );

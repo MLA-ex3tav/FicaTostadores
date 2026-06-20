@@ -248,7 +248,7 @@ export default function PhoneCountrySelect({
         }
         onClick={() => (open ? closeMenu() : openMenu())}
         onKeyDown={handleTriggerKeyDown}
-        className="flex h-11 shrink-0 items-center gap-1.5 rounded-xl border border-steel-dark/25 bg-[var(--input-bg)] px-2.5 text-steel-light transition-colors hover:border-steel-mid/50 focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-12 min-h-12 shrink-0 items-center gap-1.5 rounded-xl border border-steel-dark/25 bg-[var(--input-bg)] px-2.5 text-steel-light transition-colors hover:border-steel-mid/50 focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20 disabled:cursor-not-allowed disabled:opacity-50 md:h-11 md:min-h-0"
       >
         {selectedCountry ? (
           <>
