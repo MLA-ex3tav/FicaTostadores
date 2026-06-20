@@ -9,6 +9,32 @@ import { useFirebaseAuth } from "@/lib/firebase-auth";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
 import { sanitizeReturnTo } from "@/lib/login-return-to";
 
+const POST_LOGIN_RETURN_KEY = "fica-post-login-return";
+
+function readPostLoginReturn(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return sessionStorage.getItem(POST_LOGIN_RETURN_KEY);
+}
+
+function clearPostLoginReturn(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  sessionStorage.removeItem(POST_LOGIN_RETURN_KEY);
+}
+
+function savePostLoginReturn(path: string): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  sessionStorage.setItem(POST_LOGIN_RETURN_KEY, path);
+}
+
 interface GoogleLoginCardProps {
   title?: string;
   subtitle?: string;
@@ -25,25 +51,56 @@ export default function GoogleLoginCard({
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
-  const { user, isStaff, loading, configured, signInWithGoogle } =
-    useFirebaseAuth();
+  const {
+    user,
+    isStaff,
+    loading,
+    configured,
+    pendingAuthError,
+    clearPendingAuthError,
+    signInWithGoogle,
+    signOut,
+  } = useFirebaseAuth();
   const [error, setError] = useState("");
+  const [redirectingToGoogle, setRedirectingToGoogle] = useState(false);
   const signingInRef = useRef(false);
+  const pendingPostLoginRedirectRef = useRef(false);
 
   useEffect(() => {
-    if (loading || !user) {
+    if (pendingAuthError) {
+      setError(pendingAuthError);
+      clearPendingAuthError();
+    }
+  }, [pendingAuthError, clearPendingAuthError]);
+
+  useEffect(() => {
+    if (adminRedirect || loading || !user) {
       return;
     }
 
-    if (adminRedirect) {
-      if (isStaff) {
-        router.replace("/admin/productos");
-      }
+    if (!pendingPostLoginRedirectRef.current && !readPostLoginReturn()) {
       return;
     }
 
+    pendingPostLoginRedirectRef.current = false;
+    clearPostLoginReturn();
+    setRedirectingToGoogle(false);
     router.replace(returnTo);
-  }, [user, isStaff, loading, adminRedirect, returnTo, router]);
+  }, [adminRedirect, loading, returnTo, router, user]);
+
+  useEffect(() => {
+    if (user) {
+      setRedirectingToGoogle(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!adminRedirect || loading || !user || !isStaff) {
+      return;
+    }
+
+    router.replace("/admin/productos");
+  }, [adminRedirect, isStaff, loading, router, user]);
 
   async function handleSignIn() {
     if (signingInRef.current) {
@@ -51,11 +108,18 @@ export default function GoogleLoginCard({
     }
 
     setError("");
+    setRedirectingToGoogle(false);
     signingInRef.current = true;
 
     try {
+      savePostLoginReturn(returnTo);
+      pendingPostLoginRedirectRef.current = true;
+      setRedirectingToGoogle(true);
       await signInWithGoogle();
     } catch (signInError) {
+      pendingPostLoginRedirectRef.current = false;
+      clearPostLoginReturn();
+      setRedirectingToGoogle(false);
       const message = getFirebaseAuthErrorMessage(signInError);
       if (message) {
         setError(message);
@@ -65,21 +129,58 @@ export default function GoogleLoginCard({
     }
   }
 
+  async function handleSignOut() {
+    setError("");
+    setRedirectingToGoogle(false);
+    pendingPostLoginRedirectRef.current = false;
+    clearPostLoginReturn();
+
+    try {
+      await signOut();
+    } catch (signOutError) {
+      const message = getFirebaseAuthErrorMessage(signOutError);
+      if (message) {
+        setError(message);
+      }
+    }
+  }
+
+  function handleContinue() {
+    if (adminRedirect) {
+      if (isStaff) {
+        router.replace("/admin/productos");
+      }
+      return;
+    }
+
+    router.replace(returnTo);
+  }
+
+  const showGoogleButton = !user;
+  const showLoggedInActions = Boolean(user) && !loading;
+
   return (
     <SteelPanel className="mx-auto w-full max-w-md">
-      <p className={sectionEyebrowClass}>
-        {badge}
-      </p>
+      <p className={sectionEyebrowClass}>{badge}</p>
       <h1 className="mt-3 font-display text-4xl tracking-wide text-steel-light">
         {user ? "Sesión iniciada" : title}
       </h1>
-      <p className="mt-4 text-base leading-relaxed text-steel-mid">{subtitle}</p>
+      <p className="mt-4 text-base leading-relaxed text-steel-mid">
+        {user
+          ? "Use Continuar para seguir navegando o cierre sesión para cambiar de cuenta."
+          : subtitle}
+      </p>
 
-      {user && !loading && adminRedirect && !isStaff && (
+      {user && !loading && (
         <div className="mt-4 rounded-lg border border-steel-dark/30 bg-background/60 px-4 py-3 text-base text-steel-mid">
           Conectado como{" "}
           <strong className="text-steel-light">{user.email}</strong>.
-          Esta cuenta no tiene permisos para el panel de administración.
+          {adminRedirect && !isStaff && (
+            <>
+              {" "}
+              Esta cuenta no tiene permisos para el panel de administración.
+            </>
+          )}
         </div>
       )}
 
@@ -91,13 +192,25 @@ export default function GoogleLoginCard({
 
       {!configured && (
         <p className="mt-4 rounded-lg border border-steel-dark/30 bg-background/60 px-4 py-3 text-base text-steel-mid">
-          Firebase no está configurado. Copiá <code>.env.example</code> a{" "}
-          <code>.env.local</code> y completá las variables{" "}
+          Firebase no está configurado. Copie <code>.env.example</code> a{" "}
+          <code>.env.local</code> y complete las variables{" "}
           <code>NEXT_PUBLIC_FIREBASE_*</code>.
         </p>
       )}
 
-      {!user && (
+      {loading && (
+        <p className="mt-6 text-center text-base text-steel-mid">
+          Verificando sesión…
+        </p>
+      )}
+
+      {redirectingToGoogle && !user && (
+        <p className="mt-6 text-center text-base text-steel-mid">
+          Conectando con Google…
+        </p>
+      )}
+
+      {showGoogleButton && !redirectingToGoogle && (
         <>
           <p className="mt-6 text-center text-sm leading-relaxed text-steel-dark">
             Al continuar, acepta nuestros{" "}
@@ -122,10 +235,25 @@ export default function GoogleLoginCard({
         </>
       )}
 
-      {user && loading && (
-        <p className="mt-8 text-center text-base text-steel-mid">
-          Redirigiendo…
-        </p>
+      {showLoggedInActions && (
+        <div className="mt-6 flex flex-col gap-3">
+          {(adminRedirect ? isStaff : true) && (
+            <button
+              type="button"
+              onClick={handleContinue}
+              className="flex w-full items-center justify-center rounded-xl border border-orange bg-orange/10 px-5 py-3.5 text-base font-semibold uppercase tracking-wider text-orange transition-colors hover:bg-orange hover:text-background"
+            >
+              {adminRedirect ? "Ir al panel" : "Continuar"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            className="flex w-full items-center justify-center rounded-xl border border-steel-dark/30 bg-background/80 px-5 py-3.5 text-base font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange hover:text-orange"
+          >
+            Cerrar sesión
+          </button>
+        </div>
       )}
 
       <p className="mt-4 text-center text-sm text-steel-dark">

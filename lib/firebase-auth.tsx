@@ -1,9 +1,12 @@
 "use client";
 
+import { FirebaseError } from "firebase/app";
 import {
   GoogleAuthProvider,
+  getRedirectResult,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
@@ -24,6 +27,19 @@ import {
 import { syncAuthSession } from "@/lib/auth-sync";
 import type { UserRole } from "@/lib/permissions";
 
+const AUTH_SESSION_SYNC_TIMEOUT_MS = 12_000;
+
+async function syncAuthSessionWithTimeout(user: User) {
+  return Promise.race([
+    syncAuthSession(user),
+    new Promise<never>((_, reject) => {
+      window.setTimeout(() => {
+        reject(new Error("Tiempo de espera agotado al verificar la sesión."));
+      }, AUTH_SESSION_SYNC_TIMEOUT_MS);
+    }),
+  ]);
+}
+
 interface FirebaseAuthContextValue {
   configured: boolean;
   user: User | null;
@@ -32,6 +48,8 @@ interface FirebaseAuthContextValue {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   loading: boolean;
+  pendingAuthError: string | null;
+  clearPendingAuthError: () => void;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   adminFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -46,6 +64,11 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [isStaff, setIsStaff] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(configured);
+  const [pendingAuthError, setPendingAuthError] = useState<string | null>(null);
+
+  const clearPendingAuthError = useCallback(() => {
+    setPendingAuthError(null);
+  }, []);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -54,6 +77,15 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
+
+    void getRedirectResult(auth)
+      .catch((error) => {
+        if (isAuthFlowCancelled(error)) {
+          return;
+        }
+
+        setPendingAuthError(getFirebaseAuthErrorMessage(error));
+      });
 
     return onAuthStateChanged(auth, (nextUser) => {
       void (async () => {
@@ -68,11 +100,20 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
         }
 
         setLoading(true);
-        const session = await syncAuthSession(nextUser);
-        setRole(session.role);
-        setIsStaff(session.isStaff);
-        setIsAdmin(session.isAdmin);
-        setLoading(false);
+
+        try {
+          const session = await syncAuthSessionWithTimeout(nextUser);
+          setRole(session.role);
+          setIsStaff(session.isStaff);
+          setIsAdmin(session.isAdmin);
+        } catch (error) {
+          console.error("[firebase-auth]", getFirebaseAuthErrorMessage(error));
+          setRole(null);
+          setIsStaff(false);
+          setIsAdmin(false);
+        } finally {
+          setLoading(false);
+        }
       })();
     });
   }, []);
@@ -93,6 +134,15 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       await signInWithPopup(auth, provider);
     } catch (error) {
       if (isAuthFlowCancelled(error)) {
+        return;
+      }
+
+      if (
+        error instanceof FirebaseError &&
+        (error.code === "auth/popup-blocked" ||
+          error.code === "auth/operation-not-supported-in-this-environment")
+      ) {
+        await signInWithRedirect(auth, provider);
         return;
       }
 
@@ -146,11 +196,25 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       isAdmin,
       isSuperAdmin: isAdmin,
       loading,
+      pendingAuthError,
+      clearPendingAuthError,
       signInWithGoogle,
       signOut,
       adminFetch,
     }),
-    [configured, user, role, isStaff, isAdmin, loading, signInWithGoogle, signOut, adminFetch],
+    [
+      configured,
+      user,
+      role,
+      isStaff,
+      isAdmin,
+      loading,
+      pendingAuthError,
+      clearPendingAuthError,
+      signInWithGoogle,
+      signOut,
+      adminFetch,
+    ],
   );
 
   return (

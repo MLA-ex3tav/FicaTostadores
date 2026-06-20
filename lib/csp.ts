@@ -26,10 +26,10 @@ export function buildContentSecurityPolicy(isProduction: boolean): string {
     "object-src 'none'",
     `script-src ${scriptSrc.join(" ")}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://lh3.googleusercontent.com",
-    "font-src 'self' data:",
-    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com",
-    "frame-src https://accounts.google.com https://*.firebaseapp.com",
+    "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://lh3.googleusercontent.com https://www.gstatic.com https://*.google.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "connect-src 'self' https://*.googleapis.com https://apis.google.com https://www.gstatic.com https://accounts.google.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com",
+    "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com https://*.google.com",
   ];
 
   if (isProduction) {

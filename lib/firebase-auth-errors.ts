@@ -18,7 +18,11 @@ export function getFirebaseAuthErrorMessage(error: unknown): string {
       case "auth/unauthorized-domain":
         return "Dominio no autorizado en Firebase. En Authentication → Configuración → Dominios autorizados, agregue localhost y, si usa la red local, su IP (ej. 192.168.3.107).";
       case "auth/popup-blocked":
-        return "El navegador bloqueó la ventana de Google. Permita ventanas emergentes para este sitio.";
+        return "El navegador bloqueó la ventana de Google. Permita ventanas emergentes para este sitio o desactive el bloqueador de anuncios.";
+      case "auth/internal-error":
+        return "Error interno de Firebase al volver de Google. Si ve init.json 404 en la consola, ejecute «firebase deploy --only hosting» una vez (ver firebase.json en el repo).";
+      case "auth/network-request-failed":
+        return "No se pudo conectar con Google. Revise su conexión y desactive bloqueadores de anuncios para accounts.google.com.";
       default:
         return error.message;
     }
