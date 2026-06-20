@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { useQuoteSelection } from "@/lib/quote-selection";
 import QuoteProductList, {
@@ -39,17 +39,10 @@ export default function QuoteDesktopDock() {
                   : "pointer-events-none opacity-0 delay-0"
               }`}
             >
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="mb-3 flex h-11 w-11 shrink-0 items-center justify-center self-end rounded-xl text-steel-mid transition-colors hover:text-orange"
-                aria-label="Contraer lista de cotización"
-              >
-                <ChevronDown className="h-4 w-4" strokeWidth={2.25} />
-              </button>
               <QuoteProductList
                 className="flex min-h-0 flex-1 flex-col overflow-hidden"
                 showCta
+                onCollapse={() => setOpen(false)}
               />
             </div>
           </div>

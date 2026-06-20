@@ -110,7 +110,7 @@ export default function QuoteMobileSheet() {
                 : "pointer-events-none opacity-0 delay-0"
             }`}
           >
-            <QuoteProductList />
+            <QuoteProductList onCollapse={collapse} />
           </div>
         </div>
       </div>

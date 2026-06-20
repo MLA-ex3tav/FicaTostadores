@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { useQuoteSelection } from "@/lib/quote-selection";
 
 export const quoteEyebrowClass =
@@ -12,11 +12,13 @@ export const quoteCountClass = "text-base text-steel-mid";
 interface QuoteProductListProps {
   className?: string;
   showCta?: boolean;
+  onCollapse?: () => void;
 }
 
 export default function QuoteProductList({
   className = "",
   showCta = true,
+  onCollapse,
 }: QuoteProductListProps) {
   const { products, removeProduct } = useQuoteSelection();
 
@@ -29,11 +31,37 @@ export default function QuoteProductList({
       ? "1 producto seleccionado"
       : `${products.length} productos seleccionados`;
 
+  const headerContent = (
+    <>
+      <div className="min-w-0 flex-1 text-left">
+        <p className={quoteEyebrowClass}>Cotización</p>
+        <p className={`mt-1.5 ${quoteCountClass}`}>{countLabel}</p>
+      </div>
+      {onCollapse ? (
+        <ChevronDown
+          className="h-4 w-4 shrink-0 text-steel-mid"
+          strokeWidth={2.25}
+          aria-hidden
+        />
+      ) : null}
+    </>
+  );
+
   return (
     <div className={className}>
       <div className="shrink-0 border-b border-white/[0.08] pb-4">
-        <p className={quoteEyebrowClass}>Cotización</p>
-        <p className={`mt-1.5 ${quoteCountClass}`}>{countLabel}</p>
+        {onCollapse ? (
+          <button
+            type="button"
+            onClick={onCollapse}
+            className="flex w-full items-start justify-between gap-3 rounded-xl px-1 py-1 text-left transition-colors hover:text-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange/40"
+            aria-label="Contraer lista de cotización"
+          >
+            {headerContent}
+          </button>
+        ) : (
+          headerContent
+        )}
       </div>
 
       <ul className="mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto">

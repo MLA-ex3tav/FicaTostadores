@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type MouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import MediaImage from "./MediaImage";
@@ -197,6 +198,8 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const pointerStartXRef = useRef<number | null>(null);
+  const pointerStartYRef = useRef<number | null>(null);
+  const suppressClickUntilRef = useRef(0);
   const slideCount = slides.length;
 
   const goTo = useCallback(
@@ -250,29 +253,36 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
   };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget) {
+    if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
+
     pointerStartXRef.current = event.clientX;
+    pointerStartYRef.current = event.clientY;
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget) {
-      pointerStartXRef.current = null;
-      return;
-    }
-
     const startX = pointerStartXRef.current;
+    const startY = pointerStartYRef.current;
     pointerStartXRef.current = null;
+    pointerStartYRef.current = null;
 
-    if (startX === null) {
+    if (startX === null || startY === null) {
       return;
     }
 
     const deltaX = event.clientX - startX;
-    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) {
+    const deltaY = event.clientY - startY;
+
+    if (
+      Math.abs(deltaX) < SWIPE_THRESHOLD_PX ||
+      Math.abs(deltaX) <= Math.abs(deltaY)
+    ) {
       return;
     }
+
+    suppressClickUntilRef.current = Date.now() + 400;
 
     if (deltaX < 0) {
       goNext();
@@ -280,6 +290,18 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
     }
 
     goPrev();
+  };
+
+  const onPointerCancel = () => {
+    pointerStartXRef.current = null;
+    pointerStartYRef.current = null;
+  };
+
+  const onCarouselClickCapture = (event: MouseEvent<HTMLDivElement>) => {
+    if (Date.now() < suppressClickUntilRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
   };
 
   if (slideCount === 0) {
@@ -294,15 +316,19 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
         aria-roledescription="Carrusel"
         aria-label="Productos destacados"
         onKeyDown={onKeyDown}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onFocus={() => setIsPaused(true)}
         onBlur={() => setIsPaused(false)}
         tabIndex={0}
       >
-        <div className="relative aspect-[5/2] min-h-[15rem] max-h-[34rem] w-full bg-panel/40">
+        <div
+          className="relative aspect-[5/2] min-h-[15rem] max-h-[34rem] w-full touch-pan-y bg-panel/40"
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
+          onClickCapture={onCarouselClickCapture}
+        >
           <div
             className="flex h-full transition-transform duration-700 ease-out motion-reduce:transition-none"
             style={{ transform: `translateX(-${activeIndex * 100}%)` }}
@@ -327,7 +353,7 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
               <button
                 type="button"
                 onClick={goPrev}
-                className="absolute left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 sm:left-5 sm:h-11 sm:w-11"
+                className="absolute left-3 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:flex sm:left-5 sm:h-11 sm:w-11"
                 aria-label="Slide anterior"
               >
                 <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.25} />
@@ -335,7 +361,7 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
               <button
                 type="button"
                 onClick={goNext}
-                className="absolute right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 sm:right-5 sm:h-11 sm:w-11"
+                className="absolute right-3 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:flex sm:right-5 sm:h-11 sm:w-11"
                 aria-label="Slide siguiente"
               >
                 <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.25} />

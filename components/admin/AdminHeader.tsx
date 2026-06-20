@@ -8,6 +8,7 @@ const navItems = [
   { href: "/admin/productos", label: "Productos" },
   { href: "/admin/catalogos", label: "Catálogos" },
   { href: "/admin/categorias", label: "Categorías" },
+  { href: "/admin/conexiones", label: "Conexiones" },
 ];
 
 function navLinkClass(isActive: boolean) {
