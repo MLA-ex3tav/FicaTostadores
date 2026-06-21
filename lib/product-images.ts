@@ -1,3 +1,5 @@
+import { resolveStorageImageUrl } from "@/lib/blob-storage";
+
 export interface ProductImageFocus {
   x: number;
   y: number;
@@ -166,18 +168,25 @@ export function normalizeProductImages(value: unknown): ProductImage[] {
   return images;
 }
 
+function resolveViewSrc(src: string | undefined): string | undefined {
+  const trimmed = src?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return resolveStorageImageUrl(trimmed);
+}
+
 export function getCarouselImageSrc(
   image: ProductImage | undefined,
 ): string | undefined {
-  const src = image?.carousel.src.trim();
-  return src || undefined;
+  return resolveViewSrc(image?.carousel.src);
 }
 
 export function getProductImageSrc(
   image: ProductImage | undefined,
 ): string | undefined {
-  const src = image?.product.src.trim();
-  return src || undefined;
+  return resolveViewSrc(image?.product.src);
 }
 
 export function hasProductImageContent(image: ProductImage): boolean {

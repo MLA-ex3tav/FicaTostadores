@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate:uploads": "node --env-file=.env.local scripts/migrate-local-uploads-to-blob.mjs"
   },
   "dependencies": {
     "@upstash/ratelimit": "^2.0.8",

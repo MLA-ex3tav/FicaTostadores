@@ -85,7 +85,42 @@ export function isBlobStorageImageUrl(src: string): boolean {
   }
 }
 
+const LOCAL_PRODUCT_UPLOAD_PREFIX = "/uploads/products/";
+
+const LOCAL_PRODUCT_UPLOAD_FILENAME =
+  /^[a-z0-9-]+\.(jpe?g|png|gif|webp|heic|heif|avif)$/i;
+
+export function isLocalProductUploadPath(src: string): boolean {
+  if (!src.startsWith(LOCAL_PRODUCT_UPLOAD_PREFIX)) {
+    return false;
+  }
+
+  const filename = src.slice(LOCAL_PRODUCT_UPLOAD_PREFIX.length);
+  return LOCAL_PRODUCT_UPLOAD_FILENAME.test(filename);
+}
+
+/** Convierte rutas locales del admin a URLs públicas de Blob cuando el store está configurado. */
+export function resolveStorageImageUrl(src: string): string {
+  const trimmed = src.trim();
+
+  if (!isLocalProductUploadPath(trimmed)) {
+    return trimmed;
+  }
+
+  const hostname = getBlobStoreHostname();
+  if (!hostname) {
+    return trimmed;
+  }
+
+  const filename = trimmed.slice(LOCAL_PRODUCT_UPLOAD_PREFIX.length);
+  return `https://${hostname}/product-images/${filename}`;
+}
+
 /** Evita el optimizador de Next.js para Blob y rutas locales de uploads del admin. */
 export function shouldBypassImageOptimizer(src: string): boolean {
-  return isBlobStorageImageUrl(src) || src.startsWith("/uploads/");
+  return (
+    isBlobStorageImageUrl(src) ||
+    isLocalProductUploadPath(src) ||
+    src.startsWith(LOCAL_PRODUCT_UPLOAD_PREFIX)
+  );
 }
