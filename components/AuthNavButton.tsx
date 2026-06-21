@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { buildLoginHref } from "@/lib/login-return-to";
+import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
 
 interface AuthNavButtonProps {
   className?: string;
@@ -45,7 +47,11 @@ export default function AuthNavButton({
 }: AuthNavButtonProps) {
   const pathname = usePathname();
   const loginHref = buildLoginHref(pathname);
+  const accountHref = buildLoginHref(pathname);
   const [authUser, setAuthUser] = useState<AuthNavUser | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isFirebaseConfiguredClient()) {
@@ -80,18 +86,18 @@ export default function AuthNavButton({
             if (!nextUser) {
               if (!cancelled) {
                 setAuthUser(null);
+                setMenuOpen(false);
               }
               return;
             }
 
             const role = await getClienteRole(nextUser.uid);
-            const staff = isStaffRole(role);
 
             if (!cancelled) {
               setAuthUser({
                 email: nextUser.email,
                 label: getAccountLabel(nextUser.email),
-                isStaff: staff,
+                isStaff: isStaffRole(role),
               });
             }
           })();
@@ -122,30 +128,134 @@ export default function AuthNavButton({
     };
   }, []);
 
-  const href = !authUser ? loginHref : authUser.isStaff ? "/admin/productos" : loginHref;
-  const label = !authUser
-    ? "Ingresar"
-    : authUser.isStaff
-      ? "Panel admin"
-      : authUser.label;
-  const title = authUser
-    ? authUser.isStaff
-      ? "Entrar al panel de administración"
-      : authUser.email ?? undefined
-    : undefined;
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuOpen]);
+
+  async function handleSignOut() {
+    if (signingOut) {
+      return;
+    }
+
+    setSigningOut(true);
+    setMenuOpen(false);
+
+    try {
+      const [{ signOut }, { getFirebaseAuth }] = await Promise.all([
+        import("firebase/auth"),
+        import("@/lib/firebase/client"),
+      ]);
+
+      const auth = getFirebaseAuth();
+
+      if (auth) {
+        await signOut(auth);
+      }
+
+      onAction?.();
+    } catch (signOutError) {
+      console.error(getFirebaseAuthErrorMessage(signOutError));
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
+  if (!authUser) {
+    return (
+      <Link
+        href={loginHref}
+        onClick={onAction}
+        className={`text-base uppercase tracking-wider transition-colors text-steel-mid hover:text-orange ${className}`}
+      >
+        Ingresar
+      </Link>
+    );
+  }
+
+  const menuId = "auth-nav-menu";
 
   return (
-    <Link
-      href={href}
-      onClick={onAction}
-      title={title}
-      className={`text-base uppercase tracking-wider transition-colors ${
-        authUser
-          ? "text-steel-light hover:text-orange"
-          : "text-steel-mid hover:text-orange"
-      } ${className}`}
-    >
-      {label}
-    </Link>
+    <div ref={menuRef} className={`relative ${className}`}>
+      <button
+        type="button"
+        aria-expanded={menuOpen}
+        aria-controls={menuId}
+        aria-haspopup="menu"
+        title={authUser.email ?? undefined}
+        disabled={signingOut}
+        onClick={() => setMenuOpen((open) => !open)}
+        className="inline-flex items-center gap-1.5 text-base uppercase tracking-wider text-steel-light transition-colors hover:text-orange disabled:opacity-60"
+      >
+        {authUser.label}
+        <ChevronDown
+          className={`h-4 w-4 transition-transform ${menuOpen ? "rotate-180" : ""}`}
+          aria-hidden
+        />
+      </button>
+
+      {menuOpen ? (
+        <div
+          id={menuId}
+          role="menu"
+          className="absolute right-0 top-full z-50 mt-2 min-w-[11rem] overflow-hidden rounded-lg border border-steel-dark/30 bg-panel py-1 shadow-lg"
+        >
+          <Link
+            href={accountHref}
+            role="menuitem"
+            onClick={() => {
+              setMenuOpen(false);
+              onAction?.();
+            }}
+            className="block px-4 py-2.5 text-sm uppercase tracking-wider text-steel-mid transition-colors hover:bg-background/80 hover:text-orange"
+          >
+            Cuenta
+          </Link>
+          {authUser.isStaff ? (
+            <Link
+              href="/admin/productos"
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false);
+                onAction?.();
+              }}
+              className="block px-4 py-2.5 text-sm uppercase tracking-wider text-steel-mid transition-colors hover:bg-background/80 hover:text-orange"
+            >
+              Panel
+            </Link>
+          ) : null}
+          <button
+            type="button"
+            role="menuitem"
+            disabled={signingOut}
+            onClick={() => void handleSignOut()}
+            className="block w-full px-4 py-2.5 text-left text-sm uppercase tracking-wider text-steel-mid transition-colors hover:bg-background/80 hover:text-orange disabled:opacity-60"
+          >
+            {signingOut ? "Cerrando…" : "Cerrar sesión"}
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }

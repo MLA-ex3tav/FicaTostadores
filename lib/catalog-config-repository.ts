@@ -1,81 +1,18 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { head, put } from "@vercel/blob";
+import { isFirebaseAdminConfigured } from "@/lib/firebase-admin";
 import {
-  canPersistWithBlob,
-  getBlobCommandOptions,
-  isVercelBlobConfigured,
-} from "@/lib/blob-storage";
+  readCatalogConfigFromFirestore,
+  writeCatalogConfigToFirestore,
+} from "@/lib/catalog/firestore-catalog-config-repository";
 import {
   defaultCatalogConfig,
   type CatalogConfig,
 } from "@/lib/catalog-config";
 
-const BLOB_PATHNAME = "catalog-config.json";
-const LOCAL_FILE = path.join(process.cwd(), "data", "catalog-config.json");
-
-async function readFromBlob(): Promise<CatalogConfig | null> {
-  if (!isVercelBlobConfigured()) {
-    return null;
-  }
-
-  try {
-    const blob = await head(BLOB_PATHNAME, getBlobCommandOptions());
-
-    if (!blob) {
-      return null;
-    }
-
-    const response = await fetch(blob.url, { cache: "no-store" });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    return (await response.json()) as CatalogConfig;
-  } catch {
-    return null;
-  }
-}
-
-async function readFromLocalFile(): Promise<CatalogConfig | null> {
-  try {
-    const raw = await readFile(LOCAL_FILE, "utf8");
-    return JSON.parse(raw) as CatalogConfig;
-  } catch {
-    return null;
-  }
-}
-
-async function writeToBlob(config: CatalogConfig): Promise<void> {
-  await put(BLOB_PATHNAME, JSON.stringify(config, null, 2), {
-    ...getBlobCommandOptions(),
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-  });
-}
-
-async function writeToLocalFile(config: CatalogConfig): Promise<void> {
-  await mkdir(path.dirname(LOCAL_FILE), { recursive: true });
-  await writeFile(LOCAL_FILE, JSON.stringify(config, null, 2), "utf8");
-}
-
 export async function loadCatalogConfig(): Promise<CatalogConfig> {
-  const blobConfigured = isVercelBlobConfigured();
-
-  if (blobConfigured) {
-    const fromBlob = await readFromBlob();
-    if (fromBlob) {
-      return fromBlob;
-    }
-  }
-
-  if (!blobConfigured || process.env.NODE_ENV !== "production") {
-    const fromFile = await readFromLocalFile();
-    if (fromFile) {
-      return fromFile;
+  if (isFirebaseAdminConfigured()) {
+    const fromFirestore = await readCatalogConfigFromFirestore();
+    if (fromFirestore) {
+      return fromFirestore;
     }
   }
 
@@ -83,14 +20,13 @@ export async function loadCatalogConfig(): Promise<CatalogConfig> {
 }
 
 export async function saveCatalogConfig(config: CatalogConfig): Promise<void> {
-  if (isVercelBlobConfigured()) {
-    await writeToBlob(config);
-    return;
+  if (!isFirebaseAdminConfigured()) {
+    throw new Error("Firebase Admin no está configurado.");
   }
 
-  await writeToLocalFile(config);
+  await writeCatalogConfigToFirestore(config);
 }
 
 export function canPersistCatalogConfig(): boolean {
-  return canPersistWithBlob();
+  return isFirebaseAdminConfigured();
 }

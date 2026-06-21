@@ -5,9 +5,9 @@ import GoogleLoginCard from "@/components/GoogleLoginCard";
 export default function AdminLoginPanel() {
   return (
     <GoogleLoginCard
-      badge="Administración"
-      title="Acceso admin"
-      subtitle="Ingrese con Google. Solo cuentas con rol editor o administrador en Firestore pueden entrar al panel."
+      badge="Acceso restringido"
+      title="Iniciar sesión"
+      subtitle="Ingrese con su cuenta de Google para continuar."
       adminRedirect
     />
   );

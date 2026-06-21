@@ -10,17 +10,23 @@ import {
   type ReactNode,
 } from "react";
 
+import { withQuoteLineTotal } from "@/lib/quote-pricing";
+import { parseClpPriceInput } from "@/lib/pricing";
+
 const STORAGE_KEY = "fica-quote-selection";
 
 export interface QuoteProductAddOn {
   id: string;
   name: string;
+  price?: number | null;
 }
 
 export interface QuoteProductItem {
   id: string;
   name: string;
   capacity: string;
+  listPrice?: number | null;
+  lineTotal?: number | null;
   selectedAddOns?: QuoteProductAddOn[];
 }
 
@@ -53,7 +59,13 @@ function normalizeAddOn(value: unknown): QuoteProductAddOn | null {
     return null;
   }
 
-  return { id, name };
+  const price = parseClpPriceInput(record.price);
+
+  return {
+    id,
+    name,
+    price: price ?? null,
+  };
 }
 
 function normalizeStoredProduct(value: unknown): QuoteProductItem | null {
@@ -77,13 +89,20 @@ function normalizeStoredProduct(value: unknown): QuoteProductItem | null {
     return null;
   }
 
+  const listPrice = parseClpPriceInput(record.listPrice);
   const selectedAddOns = Array.isArray(record.selectedAddOns)
     ? record.selectedAddOns
         .map(normalizeAddOn)
         .filter((addOn): addOn is QuoteProductAddOn => addOn !== null)
     : [];
 
-  return { id, name, capacity, selectedAddOns };
+  return withQuoteLineTotal({
+    id,
+    name,
+    capacity,
+    listPrice: listPrice ?? null,
+    selectedAddOns,
+  });
 }
 
 function readStoredProducts(): QuoteProductItem[] {
@@ -129,21 +148,26 @@ export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
 
   const addProduct = useCallback((product: QuoteProductItem) => {
     setProducts((current) => {
+      const normalized = withQuoteLineTotal({
+        ...product,
+        selectedAddOns: product.selectedAddOns ?? [],
+      });
       const existingIndex = current.findIndex((item) => item.id === product.id);
-      const selectedAddOns = product.selectedAddOns ?? [];
 
       if (existingIndex >= 0) {
         const next = [...current];
         next[existingIndex] = {
           ...next[existingIndex],
-          name: product.name,
-          capacity: product.capacity,
-          selectedAddOns,
+          name: normalized.name,
+          capacity: normalized.capacity,
+          listPrice: normalized.listPrice,
+          selectedAddOns: normalized.selectedAddOns,
+          lineTotal: normalized.lineTotal,
         };
         return next;
       }
 
-      return [...current, { ...product, selectedAddOns }];
+      return [...current, normalized];
     });
   }, []);
 
@@ -151,7 +175,9 @@ export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
     (id: string, selectedAddOns: QuoteProductAddOn[]) => {
       setProducts((current) =>
         current.map((item) =>
-          item.id === id ? { ...item, selectedAddOns } : item,
+          item.id === id
+            ? withQuoteLineTotal({ ...item, selectedAddOns })
+            : item,
         ),
       );
     },

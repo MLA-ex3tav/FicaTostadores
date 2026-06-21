@@ -1,7 +1,9 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { SOLICITUDES_COTIZACION_COLLECTION } from "@/lib/cotizaciones/constants";
+import { enrichCotizacionProducts } from "@/lib/quote-pricing";
 import type { CreateSolicitudCotizacionInput } from "@/lib/validation/cotizacion-input";
 import { getFirebaseAdminFirestore } from "@/lib/firebase-admin";
+import { getProducts } from "@/lib/products-server";
 
 export class CotizacionesRepositoryError extends Error {
   constructor(message: string) {
@@ -22,6 +24,8 @@ export async function createSolicitudCotizacion(
   }
 
   const docRef = db.collection(SOLICITUDES_COTIZACION_COLLECTION).doc();
+  const catalog = await getProducts();
+  const pricing = enrichCotizacionProducts(input.products, catalog);
 
   await docRef.set({
     source: "web",
@@ -30,7 +34,11 @@ export async function createSolicitudCotizacion(
     clientEmail: input.email,
     clientCountry: input.clientCountry,
     message: input.message,
-    products: input.products,
+    shipping: input.shipping,
+    clientUserId: input.clientUserId,
+    products: pricing.products,
+    finalTotal: pricing.finalTotal,
+    pricingComplete: pricing.pricingComplete,
     createdAt: FieldValue.serverTimestamp(),
   });
 

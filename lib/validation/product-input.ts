@@ -156,7 +156,7 @@ export function parseProductInput(body: unknown): Product {
     category,
     name,
     capacity,
-    ...(listPrice !== null ? { listPrice } : {}),
+    listPrice,
     description,
     longDescription,
     specs,

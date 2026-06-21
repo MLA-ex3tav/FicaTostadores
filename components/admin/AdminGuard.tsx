@@ -23,7 +23,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     }
 
     if (!isStaff) {
-      router.replace("/admin/login?error=no-autorizado");
+      router.replace("/");
     }
   }, [user, isStaff, loading, router]);
 

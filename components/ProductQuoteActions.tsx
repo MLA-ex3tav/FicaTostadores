@@ -10,6 +10,8 @@ import { useState } from "react";
 
 import type { ProductAddOn } from "@/lib/products";
 
+import { buildQuoteProductItem } from "@/lib/quote-pricing";
+
 import { useQuoteSelection } from "@/lib/quote-selection";
 
 import QuoteAddOnSelector from "./QuoteAddOnSelector";
@@ -26,19 +28,9 @@ interface ProductQuoteActionsProps {
 
   productCapacity: string;
 
+  listPrice?: number | null;
+
   addOns: ProductAddOn[];
-
-}
-
-
-
-function mapSelectedAddOns(addOns: ProductAddOn[], selectedIds: string[]) {
-
-  return addOns
-
-    .filter((addOn) => selectedIds.includes(addOn.id))
-
-    .map((addOn) => ({ id: addOn.id, name: addOn.name }));
 
 }
 
@@ -51,6 +43,8 @@ export default function ProductQuoteActions({
   productName,
 
   productCapacity,
+
+  listPrice,
 
   addOns,
 
@@ -69,6 +63,19 @@ export default function ProductQuoteActions({
   const alreadySelected = hasProduct(productId);
 
   const hasAddOns = addOns.length > 0;
+
+  function buildSelection(selectedIds: string[]) {
+    return buildQuoteProductItem(
+      {
+        id: productId,
+        name: productName,
+        capacity: productCapacity,
+        listPrice: listPrice ?? null,
+        addOns,
+      },
+      selectedIds,
+    );
+  }
 
 
 
@@ -102,17 +109,7 @@ export default function ProductQuoteActions({
 
 
 
-    addProduct({
-
-      id: productId,
-
-      name: productName,
-
-      capacity: productCapacity,
-
-      selectedAddOns: [],
-
-    });
+    addProduct(buildSelection([]));
 
     setConfirmed(true);
 
@@ -124,17 +121,7 @@ export default function ProductQuoteActions({
 
   function handleConfirmSelection() {
 
-    addProduct({
-
-      id: productId,
-
-      name: productName,
-
-      capacity: productCapacity,
-
-      selectedAddOns: mapSelectedAddOns(addOns, selectedAddOnIds),
-
-    });
+    addProduct(buildSelection(selectedAddOnIds));
 
     setConfirmed(true);
 
@@ -310,9 +297,9 @@ export default function ProductQuoteActions({
 
                       Agregados:{" "}
 
-                      {mapSelectedAddOns(addOns, selectedAddOnIds)
+                      {buildSelection(selectedAddOnIds)
 
-                        .map((addOn) => addOn.name)
+                        .selectedAddOns?.map((addOn) => addOn.name)
 
                         .join(", ")}
 

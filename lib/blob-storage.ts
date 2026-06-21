@@ -58,6 +58,11 @@ export const BLOB_NOT_CONFIGURED_MESSAGE =
 
 /** Hostname for this project's public Blob store, e.g. abc123.public.blob.vercel-storage.com */
 export function getBlobStoreHostname(): string | null {
+  const publicStoreId = stripEnvQuotes(process.env.NEXT_PUBLIC_BLOB_STORE_ID);
+  if (publicStoreId.startsWith("store_")) {
+    return `${publicStoreId.slice("store_".length).toLowerCase()}.public.blob.vercel-storage.com`;
+  }
+
   const storeId = stripEnvQuotes(process.env.BLOB_STORE_ID);
   if (storeId.startsWith("store_")) {
     return `${storeId.slice("store_".length).toLowerCase()}.public.blob.vercel-storage.com`;

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   useCallback,
@@ -22,6 +23,7 @@ interface HeroCarouselProps {
 
 const AUTO_ADVANCE_MS = 6000;
 const SWIPE_THRESHOLD_PX = 48;
+const TAP_THRESHOLD_PX = 10;
 
 const DEFAULT_BANNERS: HeroProductBanner[] = [
   {
@@ -93,7 +95,7 @@ function HeroCarouselSlide({
   const hasImage = banner.src.length > 0 && loadImage;
 
   return (
-    <div className="relative h-full w-full shrink-0 overflow-hidden">
+    <div className="relative h-full w-full shrink-0 cursor-pointer overflow-hidden">
       {hasImage ? (
         <MediaImage
           src={banner.src}
@@ -121,19 +123,19 @@ function HeroCarouselSlide({
         aria-hidden="true"
       />
 
-      <Link
-        href={href}
-        className="absolute inset-0 z-[2]"
-        aria-label={`Ver ${banner.name}`}
-        draggable={false}
-      />
-
-      <div className="pointer-events-none absolute inset-0 z-[3] flex h-full flex-col justify-end">
+      <div className="pointer-events-none absolute inset-0 z-[2] flex h-full flex-col justify-end">
         {/* Mobile: título */}
         <div className="max-w-[90%] px-5 pb-14 pt-8 sm:px-8 md:hidden">
           <p className="font-display text-xl leading-tight tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1),0_4px_16px_rgba(0,0,0,0.9)] sm:text-2xl">
             {banner.name.toUpperCase()}
           </p>
+          <Link
+            href={href}
+            className="pointer-events-auto mt-3 inline-block text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-orange drop-shadow-[0_1px_4px_rgba(0,0,0,1)] hover:text-orange/90"
+            onClick={(event) => event.stopPropagation()}
+          >
+            Ver producto →
+          </Link>
         </div>
 
         {/* Desktop: bloque título */}
@@ -159,9 +161,13 @@ function HeroCarouselSlide({
               <p className="mt-1.5 text-[0.65rem] leading-snug text-white line-clamp-2 drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)]">
                 {banner.description}
               </p>
-              <p className="mt-3 text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-orange drop-shadow-[0_1px_4px_rgba(0,0,0,1)]">
+              <Link
+                href={href}
+                className="pointer-events-auto mt-3 inline-block text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-orange drop-shadow-[0_1px_4px_rgba(0,0,0,1)] hover:text-orange/90"
+                onClick={(event) => event.stopPropagation()}
+              >
                 Click para ver más info →
-              </p>
+              </Link>
             </div>
           </div>
         </div>
@@ -197,10 +203,15 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
   );
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const router = useRouter();
   const pointerStartXRef = useRef<number | null>(null);
   const pointerStartYRef = useRef<number | null>(null);
-  const suppressClickUntilRef = useRef(0);
+  const didSwipeRef = useRef(false);
   const slideCount = slides.length;
+
+  const getSlideHref = useCallback((banner: HeroProductBanner) => {
+    return banner.productId ? `/productos/${banner.productId}` : "/productos";
+  }, []);
 
   const goTo = useCallback(
     (index: number) => {
@@ -244,16 +255,28 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
     if (event.key === "ArrowRight") {
       event.preventDefault();
       goNext();
+      return;
     }
 
     if (event.key === "ArrowLeft") {
       event.preventDefault();
       goPrev();
+      return;
+    }
+
+    if (event.key === "Enter" || event.key === " ") {
+      const target = event.target as HTMLElement;
+      if (target.closest("button, a")) {
+        return;
+      }
+
+      event.preventDefault();
+      router.push(getSlideHref(slides[activeIndex]));
     }
   };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if ((event.target as HTMLElement).closest("button")) {
+    if ((event.target as HTMLElement).closest("button, a")) {
       return;
     }
 
@@ -263,13 +286,16 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
 
     pointerStartXRef.current = event.clientX;
     pointerStartYRef.current = event.clientY;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    didSwipeRef.current = false;
   };
 
   const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if ((event.target as HTMLElement).closest("button")) {
+    if ((event.target as HTMLElement).closest("button, a")) {
+      pointerStartXRef.current = null;
+      pointerStartYRef.current = null;
       return;
     }
+
     const startX = pointerStartXRef.current;
     const startY = pointerStartYRef.current;
     pointerStartXRef.current = null;
@@ -281,33 +307,37 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
 
     const deltaX = event.clientX - startX;
     const deltaY = event.clientY - startY;
+    const absDeltaX = Math.abs(deltaX);
+    const absDeltaY = Math.abs(deltaY);
 
-    if (
-      Math.abs(deltaX) < SWIPE_THRESHOLD_PX ||
-      Math.abs(deltaX) <= Math.abs(deltaY)
-    ) {
+    if (absDeltaX >= SWIPE_THRESHOLD_PX && absDeltaX > absDeltaY) {
+      didSwipeRef.current = true;
+
+      if (deltaX < 0) {
+        goNext();
+      } else {
+        goPrev();
+      }
+
       return;
     }
 
-    suppressClickUntilRef.current = Date.now() + 400;
-
-    if (deltaX < 0) {
-      goNext();
-      return;
+    if (absDeltaX <= TAP_THRESHOLD_PX && absDeltaY <= TAP_THRESHOLD_PX) {
+      router.push(getSlideHref(slides[activeIndex]));
     }
-
-    goPrev();
   };
 
   const onPointerCancel = () => {
     pointerStartXRef.current = null;
     pointerStartYRef.current = null;
+    didSwipeRef.current = false;
   };
 
   const onCarouselClickCapture = (event: MouseEvent<HTMLDivElement>) => {
-    if (Date.now() < suppressClickUntilRef.current) {
+    if (didSwipeRef.current) {
       event.preventDefault();
       event.stopPropagation();
+      didSwipeRef.current = false;
     }
   };
 

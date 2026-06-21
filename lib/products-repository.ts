@@ -1,101 +1,36 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { head, put } from "@vercel/blob";
+import { isFirebaseAdminConfigured } from "@/lib/firebase-admin";
 import {
-  canPersistWithBlob,
-  getBlobCommandOptions,
-  isVercelBlobConfigured,
-} from "@/lib/blob-storage";
+  readProductsFromFirestore,
+  writeProductsToFirestore,
+} from "@/lib/catalog/firestore-product-repository";
+import { normalizeProductRecords } from "@/lib/products/normalize-product";
 import { defaultProducts, type Product } from "@/lib/products";
-import { normalizeProductImages } from "@/lib/product-images";
-
-const BLOB_PATHNAME = "products.json";
-const LOCAL_FILE = path.join(process.cwd(), "data", "products.json");
-
-async function readFromBlob(): Promise<Product[] | null> {
-  if (!isVercelBlobConfigured()) {
-    return null;
-  }
-
-  try {
-    const blob = await head(BLOB_PATHNAME, getBlobCommandOptions());
-
-    if (!blob) {
-      return null;
-    }
-
-    const response = await fetch(blob.url, { cache: "no-store" });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    return (await response.json() as Product[]).map((product) => ({
-      ...product,
-      images: normalizeProductImages(product.images),
-    }));
-  } catch {
-    return null;
-  }
-}
-
-async function readFromLocalFile(): Promise<Product[] | null> {
-  try {
-    const raw = await readFile(LOCAL_FILE, "utf8");
-    return (JSON.parse(raw) as Product[]).map((product) => ({
-      ...product,
-      images: normalizeProductImages(product.images),
-    }));
-  } catch {
-    return null;
-  }
-}
-
-async function writeToBlob(products: Product[]): Promise<void> {
-  await put(BLOB_PATHNAME, JSON.stringify(products, null, 2), {
-    ...getBlobCommandOptions(),
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-  });
-}
-
-async function writeToLocalFile(products: Product[]): Promise<void> {
-  await mkdir(path.dirname(LOCAL_FILE), { recursive: true });
-  await writeFile(LOCAL_FILE, JSON.stringify(products, null, 2), "utf8");
-}
 
 export async function loadProducts(): Promise<Product[]> {
-  const blobConfigured = isVercelBlobConfigured();
-
-  if (blobConfigured) {
-    const fromBlob = await readFromBlob();
-    if (fromBlob) {
-      return fromBlob;
+  if (isFirebaseAdminConfigured()) {
+    const fromFirestore = await readProductsFromFirestore();
+    if (fromFirestore) {
+      return fromFirestore;
     }
   }
 
-  // Sin Blob configurado, o solo en dev si Blob no responde: archivo local.
-  if (!blobConfigured || process.env.NODE_ENV !== "production") {
-    const fromFile = await readFromLocalFile();
-    if (fromFile) {
-      return fromFile;
-    }
-  }
-
-  return defaultProducts;
+  return normalizeProductRecords(defaultProducts);
 }
 
 export async function saveProducts(products: Product[]): Promise<void> {
-  if (isVercelBlobConfigured()) {
-    await writeToBlob(products);
-    return;
+  if (!isFirebaseAdminConfigured()) {
+    throw new Error("Firebase Admin no está configurado.");
   }
 
-  await writeToLocalFile(products);
+  const normalized = normalizeProductRecords(products);
+  await writeProductsToFirestore(normalized);
 }
 
 export function canPersistProducts(): boolean {
-  return canPersistWithBlob();
+  return isFirebaseAdminConfigured();
+}
+
+/** @deprecated Ya no hay caché en memoria; se mantiene por compatibilidad. */
+export function invalidateProductsCache(): void {
+  // no-op
 }

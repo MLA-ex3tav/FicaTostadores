@@ -7,7 +7,6 @@ import SteelPanel from "@/components/SteelPanel";
 import { sectionEyebrowClass } from "@/components/SectionHeader";
 import { useFirebaseAuth } from "@/lib/firebase-auth";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
-import { getRoleLabel } from "@/lib/permissions";
 import { sanitizeReturnTo } from "@/lib/login-return-to";
 
 const POST_LOGIN_RETURN_KEY = "fica-post-login-return";
@@ -54,7 +53,6 @@ export default function GoogleLoginCard({
   const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
   const {
     user,
-    role,
     isStaff,
     loading,
     configured,
@@ -95,6 +93,14 @@ export default function GoogleLoginCard({
       setRedirectingToGoogle(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!adminRedirect || loading || !user || isStaff) {
+      return;
+    }
+
+    router.replace("/");
+  }, [adminRedirect, isStaff, loading, router, user]);
 
   useEffect(() => {
     if (!adminRedirect || loading || !user || !isStaff) {
@@ -159,7 +165,8 @@ export default function GoogleLoginCard({
   }
 
   const showGoogleButton = !user;
-  const showLoggedInActions = Boolean(user) && !loading;
+  const showLoggedInActions =
+    Boolean(user) && !loading && !(adminRedirect && !isStaff);
 
   return (
     <SteelPanel className="mx-auto w-full max-w-md">
@@ -176,22 +183,7 @@ export default function GoogleLoginCard({
       {user && !loading && (
         <div className="mt-4 rounded-lg border border-steel-dark/30 bg-background/60 px-4 py-3 text-base text-steel-mid">
           Conectado como{" "}
-          <strong className="text-steel-light">{user.email}</strong>
-          {role ? (
-            <>
-              {" "}
-              · Rol:{" "}
-              <strong className="text-steel-light">{getRoleLabel(role)}</strong>
-            </>
-          ) : null}
-          .
-          {adminRedirect && !isStaff && (
-            <>
-              {" "}
-              Esta cuenta es de cliente; no tiene permisos para el panel de
-              administración.
-            </>
-          )}
+          <strong className="text-steel-light">{user.email}</strong>.
         </div>
       )}
 
@@ -254,7 +246,7 @@ export default function GoogleLoginCard({
               onClick={handleContinue}
               className="flex w-full items-center justify-center rounded-xl border border-orange bg-orange/10 px-5 py-3.5 text-base font-semibold uppercase tracking-wider text-orange transition-colors hover:bg-orange hover:text-background"
             >
-              {adminRedirect ? "Ir al panel" : "Continuar"}
+              Continuar
             </button>
           )}
           <button

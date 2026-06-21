@@ -8,6 +8,7 @@ import { companyInfo } from "@/lib/company";
 import { QuoteSelectionProvider } from "@/lib/quote-selection";
 import PageLoadingBar from "@/components/PageLoadingBar";
 import TermsConsentBanner from "@/components/TermsConsentBanner";
+import WhatsAppFloatButton from "@/components/WhatsAppFloatButton";
 import "./globals.css";
 
 const siteUrl =
@@ -56,6 +57,7 @@ export default function RootLayout({
           <QuoteSelectionSidebar />
           <MainWithQuotePadding>{children}</MainWithQuotePadding>
           <Footer />
+          <WhatsAppFloatButton />
         </QuoteSelectionProvider>
       </body>
     </html>

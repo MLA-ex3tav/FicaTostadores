@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronDown, X } from "lucide-react";
 import { useQuoteSelection } from "@/lib/quote-selection";
+import QuoteTotalSummary, { QuoteLinePrice } from "./QuoteTotalSummary";
 
 export const quoteEyebrowClass =
   "text-sm font-semibold uppercase tracking-[0.3em] text-orange";
@@ -13,20 +14,78 @@ interface QuoteProductListProps {
   className?: string;
   showCta?: boolean;
   onCollapse?: () => void;
+  variant?: "default" | "minimal";
 }
 
 export default function QuoteProductList({
   className = "",
   showCta = true,
   onCollapse,
+  variant = "default",
 }: QuoteProductListProps) {
   const { products, removeProduct } = useQuoteSelection();
+  const isMinimal = variant === "minimal";
 
   if (products.length === 0) {
     return null;
   }
 
   const countLabel =
+    products.length === 1
+      ? "1 producto"
+      : `${products.length} productos`;
+
+  if (isMinimal) {
+    return (
+      <div className={className}>
+        <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
+          <p className="text-xs uppercase tracking-[0.2em] text-steel-dark">
+            Cotización
+          </p>
+          <p className="text-sm text-steel-mid">{countLabel}</p>
+        </div>
+
+        <ul className="divide-y divide-white/[0.06]">
+          {products.map((product) => (
+            <li
+              key={product.id}
+              className="flex items-start justify-between gap-3 py-3.5"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-lg tracking-wide text-steel-light">
+                  {product.name}
+                </p>
+                <p className="mt-0.5 text-xs text-steel-dark">{product.capacity}</p>
+                {product.selectedAddOns && product.selectedAddOns.length > 0 ? (
+                  <p className="mt-1 text-xs text-steel-mid">
+                    + {product.selectedAddOns.map((addOn) => addOn.name).join(", ")}
+                  </p>
+                ) : null}
+                <QuoteLinePrice
+                  lineTotal={product.lineTotal}
+                  listPrice={product.listPrice}
+                  selectedAddOns={product.selectedAddOns}
+                  compact
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeProduct(product.id)}
+                className="mt-0.5 shrink-0 p-1 text-steel-dark transition-colors hover:text-orange"
+                aria-label={`Quitar ${product.name} de la cotización`}
+              >
+                <X className="h-4 w-4" strokeWidth={2} />
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <QuoteTotalSummary products={products} className="pt-3" compact />
+      </div>
+    );
+  }
+
+  const countLabelFull =
     products.length === 1
       ? "1 producto seleccionado"
       : `${products.length} productos seleccionados`;
@@ -35,7 +94,7 @@ export default function QuoteProductList({
     <>
       <div className="min-w-0 flex-1 text-left">
         <p className={quoteEyebrowClass}>Cotización</p>
-        <p className={`mt-1.5 ${quoteCountClass}`}>{countLabel}</p>
+        <p className={`mt-1.5 ${quoteCountClass}`}>{countLabelFull}</p>
       </div>
       {onCollapse ? (
         <ChevronDown
@@ -80,6 +139,11 @@ export default function QuoteProductList({
                   + {product.selectedAddOns.map((addOn) => addOn.name).join(", ")}
                 </p>
               ) : null}
+              <QuoteLinePrice
+                lineTotal={product.lineTotal}
+                listPrice={product.listPrice}
+                selectedAddOns={product.selectedAddOns}
+              />
             </div>
             <button
               type="button"
@@ -92,6 +156,8 @@ export default function QuoteProductList({
           </li>
         ))}
       </ul>
+
+      <QuoteTotalSummary products={products} className="mt-4" />
 
       {showCta && (
         <Link

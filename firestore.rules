@@ -53,6 +53,17 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // Catálogo público (escritura solo vía Admin SDK en API routes).
+    match /productos/{productId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /catalogo_config/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

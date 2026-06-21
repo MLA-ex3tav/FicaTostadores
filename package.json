@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "migrate:uploads": "node --env-file=.env.local scripts/migrate-local-uploads-to-blob.mjs"
+    "migrate:uploads": "node --env-file=.env.local scripts/migrate-local-uploads-to-blob.mjs",
+    "migrate:firestore": "node --env-file=.env.local scripts/migrate-catalog-to-firestore.mjs"
   },
   "dependencies": {
     "@upstash/ratelimit": "^2.0.8",

@@ -1,4 +1,9 @@
+import {
+  deleteProductFromFirestore,
+  upsertProductInFirestore,
+} from "@/lib/catalog/firestore-product-repository";
 import { loadProducts, saveProducts } from "@/lib/products-repository";
+import { normalizeProductRecord } from "@/lib/products/normalize-product";
 import type { Product } from "@/lib/products";
 
 export async function getProducts(): Promise<Product[]> {
@@ -25,21 +30,22 @@ export async function getProductsByCatalog(
 }
 
 export async function createProduct(product: Product): Promise<Product> {
+  const normalized = normalizeProductRecord(product);
   const products = await loadProducts();
 
-  if (products.some((item) => item.id === product.id)) {
+  if (products.some((item) => item.id === normalized.id)) {
     throw new Error("Ya existe un producto con ese identificador.");
   }
 
-  const next = [...products, product];
-  await saveProducts(next);
-  return product;
+  await upsertProductInFirestore(normalized);
+  return normalized;
 }
 
 export async function updateProduct(
   id: string,
   product: Product,
 ): Promise<Product> {
+  const normalized = normalizeProductRecord(product);
   const products = await loadProducts();
   const index = products.findIndex((item) => item.id === id);
 
@@ -47,23 +53,32 @@ export async function updateProduct(
     throw new Error("Producto no encontrado.");
   }
 
-  if (product.id !== id && products.some((item) => item.id === product.id)) {
+  if (
+    normalized.id !== id &&
+    products.some((item) => item.id === normalized.id)
+  ) {
     throw new Error("Ya existe un producto con ese identificador.");
   }
 
-  const next = [...products];
-  next[index] = product;
-  await saveProducts(next);
-  return product;
+  if (normalized.id !== id) {
+    await deleteProductFromFirestore(id);
+  }
+
+  await upsertProductInFirestore(normalized);
+  return normalized;
 }
 
 export async function deleteProduct(id: string): Promise<void> {
   const products = await loadProducts();
-  const next = products.filter((item) => item.id !== id);
 
-  if (next.length === products.length) {
+  if (!products.some((item) => item.id === id)) {
     throw new Error("Producto no encontrado.");
   }
 
-  await saveProducts(next);
+  await deleteProductFromFirestore(id);
+}
+
+/** Reemplaza todo el catálogo (solo migraciones o mantenimiento). */
+export async function replaceAllProducts(products: Product[]): Promise<void> {
+  await saveProducts(products);
 }

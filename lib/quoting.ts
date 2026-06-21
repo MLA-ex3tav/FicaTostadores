@@ -45,6 +45,7 @@ function buildQuoteText(
   phone: string,
   message?: string,
   products?: QuoteProductContext[],
+  options?: { requestId?: string; email?: string },
 ): string {
   const lines = [
     "Hola, solicito cotización — Fica Tostadores",
@@ -55,6 +56,10 @@ function buildQuoteText(
   const country = countryLabelFromPhone(phone);
   if (country) {
     lines.push(`País: ${country}`);
+  }
+
+  if (options?.email?.trim()) {
+    lines.push(`Correo: ${options.email.trim()}`);
   }
 
   if (products && products.length > 0) {
@@ -81,6 +86,10 @@ function buildQuoteText(
     lines.push(`Mensaje: ${message.trim()}`);
   }
 
+  if (options?.requestId?.trim()) {
+    lines.push(`Referencia: ${options.requestId.trim()}`);
+  }
+
   return lines.join("\n");
 }
 
@@ -98,9 +107,12 @@ export function buildQuoteWhatsAppUrl(
   phone: string,
   message?: string,
   products?: QuoteProductContext[],
+  options?: { requestId?: string; email?: string },
 ): string {
   const safeName = sanitizeText(name, 120, { required: true }) ?? "";
   const safeMessage = sanitizeText(message, 1000) ?? "";
+  const safeEmail = sanitizeText(options?.email, 200) ?? "";
+  const safeRequestId = sanitizeText(options?.requestId, 80) ?? "";
   const safeProducts = products
     ?.map((product) => ({
       name: sanitizeText(product.name, 200, { required: true }) ?? "",
@@ -115,7 +127,10 @@ export function buildQuoteWhatsAppUrl(
     .filter((product) => product.name && product.capacity);
 
   const text = encodeURIComponent(
-    buildQuoteText(safeName, phone, safeMessage, safeProducts),
+    buildQuoteText(safeName, phone, safeMessage, safeProducts, {
+      email: safeEmail || undefined,
+      requestId: safeRequestId || undefined,
+    }),
   );
 
   if (isMobileDevice()) {
@@ -147,4 +162,15 @@ export function openWhatsAppContact(url: string): boolean {
   document.body.removeChild(anchor);
 
   return true;
+}
+
+export function buildWhatsAppContactUrl(message?: string): string {
+  const safeMessage = sanitizeText(message, 500) ?? "";
+  const base = `https://wa.me/${QUOTE_WHATSAPP.e164}`;
+
+  if (safeMessage) {
+    return `${base}?text=${encodeURIComponent(safeMessage)}`;
+  }
+
+  return base;
 }

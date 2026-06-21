@@ -41,9 +41,9 @@ export default async function AdminProductsPage() {
 
         {!canPersist && (
           <p className="mt-6 rounded-lg border border-orange/30 bg-orange/10 px-4 py-3 text-sm text-orange">
-            En producción conecte Vercel Blob Storage al proyecto (Storage → Blob
-            → Connect to Project) y haga redeploy. Sin eso solo puede ver el
-            catálogo.
+            Firebase Admin no está configurado. Defina FIREBASE_SERVICE_ACCOUNT_JSON
+            o FIREBASE_SERVICE_ACCOUNT_PATH en .env.local (y en Vercel en
+            producción). Sin eso solo puede ver el catálogo.
           </p>
         )}
 

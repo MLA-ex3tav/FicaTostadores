@@ -55,6 +55,9 @@ imageRemotePatterns.push({
 });
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_BLOB_STORE_ID: process.env.BLOB_STORE_ID,
+  },
   allowedDevOrigins: [
     "localhost",
     "127.0.0.1",
@@ -64,6 +67,9 @@ const nextConfig: NextConfig = {
   images: {
     qualities: [75, 80],
     localPatterns: [
+      {
+        pathname: "/images/**",
+      },
       {
         pathname: "/uploads/**",
       },

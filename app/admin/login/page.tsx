@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import AdminLoginPanel from "@/components/admin/AdminLoginPanel";
 
 export const metadata = {
-  title: "Acceso admin | Fica Tostadores",
+  title: "Iniciar sesión | Fica Tostadores",
 };
 
 export default function AdminLoginPage() {

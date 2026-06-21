@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireStaffApi } from "@/lib/admin-api-guard";
 import { canPersistCatalogConfig } from "@/lib/catalog-config-repository";
-import { BLOB_NOT_CONFIGURED_MESSAGE } from "@/lib/blob-storage";
+import { FIREBASE_ADMIN_NOT_CONFIGURED_MESSAGE } from "@/lib/firebase-admin-config";
 import {
   getCatalogConfig,
   updateCatalogConfig,
@@ -47,7 +47,7 @@ export async function PUT(request: Request) {
   if (!canPersistCatalogConfig()) {
     return NextResponse.json(
       {
-        error: BLOB_NOT_CONFIGURED_MESSAGE,
+        error: FIREBASE_ADMIN_NOT_CONFIGURED_MESSAGE,
       },
       { status: 503 },
     );

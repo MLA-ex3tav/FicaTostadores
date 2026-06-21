@@ -9,10 +9,13 @@ import {
   isSuperAdminRole,
   type UserRole,
 } from "@/lib/permissions";
+import type { ClienteShippingProfile } from "@/lib/shipping-profile";
+import { readClienteShippingProfile, sanitizeClienteShippingProfile } from "@/lib/shipping-profile";
 import { getFirebaseFirestore } from "@/lib/firebase/client";
 
 interface ClienteRecord {
   role?: UserRole;
+  shippingProfile?: unknown;
 }
 
 export async function getClienteRole(uid: string): Promise<UserRole | null> {
@@ -30,6 +33,50 @@ export async function getClienteRole(uid: string): Promise<UserRole | null> {
 
   const data = snapshot.data() as ClienteRecord;
   return data.role ?? null;
+}
+
+export async function getClienteShippingProfile(
+  uid: string,
+): Promise<ClienteShippingProfile | null> {
+  const db = getFirebaseFirestore();
+
+  if (!db) {
+    return null;
+  }
+
+  const snapshot = await getDoc(doc(db, CLIENTES_COLLECTION, uid));
+
+  if (!snapshot.exists()) {
+    return null;
+  }
+
+  return readClienteShippingProfile(snapshot.data() as Record<string, unknown>);
+}
+
+export async function saveClienteShippingProfile(
+  user: User,
+  profile: ClienteShippingProfile,
+): Promise<void> {
+  const db = getFirebaseFirestore();
+
+  if (!db) {
+    return;
+  }
+
+  const sanitized = sanitizeClienteShippingProfile(profile);
+
+  if (!sanitized) {
+    return;
+  }
+
+  await setDoc(
+    doc(db, CLIENTES_COLLECTION, user.uid),
+    {
+      shippingProfile: sanitized,
+      shippingProfileUpdatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
 }
 
 export async function upsertClienteClient(user: User): Promise<void> {

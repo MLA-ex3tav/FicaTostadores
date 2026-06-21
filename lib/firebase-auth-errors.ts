@@ -23,6 +23,8 @@ export function getFirebaseAuthErrorMessage(error: unknown): string {
         return "Error interno de Firebase al volver de Google. Si ve init.json 404 en la consola, ejecute «firebase deploy --only hosting» una vez (ver firebase.json en el repo).";
       case "auth/network-request-failed":
         return "No se pudo conectar con Google. Revise su conexión y desactive bloqueadores de anuncios para accounts.google.com.";
+      case "auth/invalid-credential":
+        return "Credenciales de Google inválidas en Firebase. En Firebase Console → Authentication → Sign-in method → Google, verifique que el Web client secret coincida con Google Cloud Console → Credentials (OAuth 2.0). Si lo regeneró, vuelva a pegarlo en Firebase o desactive y reactive el proveedor Google.";
       default:
         return error.message;
     }

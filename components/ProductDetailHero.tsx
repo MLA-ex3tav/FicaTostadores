@@ -38,35 +38,57 @@ export default function ProductDetailHero({
     return src ? [{ image, index, src }] : [];
   });
 
-  return (
-    <SteelPanel className={`mb-10 ${isSelected ? quoteSelectedPanelClass : ""}`}>
-      {images.length > 0 && (
-        <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {images.map(({ image, index, src }) => (
-            <div
-              key={`${product.id}-image-${index}`}
-              className="relative h-48 overflow-hidden rounded-lg border border-steel-dark/30"
-            >
-              <MediaImage
-                src={src}
-                alt={`${product.name} — imagen ${index + 1}`}
-                className="h-48 w-full"
-                fallbackClassName="h-48 w-full"
-                priority={index === 0}
-                objectPosition={focusToObjectPosition(image.product.focus)}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+  const primaryImage = images[0];
+  const secondaryImages = images.slice(1);
 
-      <div className="flex items-start gap-4">
-        {images.length === 0 && (
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-steel-dark/40 bg-background/40">
-            <Factory className="h-6 w-6 text-orange" strokeWidth={1.75} />
-          </span>
-        )}
-        <div className="min-w-0 flex-1">
+  return (
+    <SteelPanel
+      className={`mb-10 overflow-hidden !p-0 ${isSelected ? quoteSelectedPanelClass : ""}`}
+    >
+      <div className="grid md:grid-cols-2 md:items-stretch">
+        <div className="flex min-w-0 flex-col overflow-hidden md:h-full">
+          <div className="relative aspect-[4/3] min-h-[14rem] overflow-hidden md:aspect-auto md:min-h-[18rem] md:flex-1">
+            {primaryImage ? (
+              <MediaImage
+                src={primaryImage.src}
+                alt={product.name}
+                className="h-full w-full"
+                fallbackClassName="h-full w-full"
+                priority
+                objectPosition={focusToObjectPosition(
+                  primaryImage.image.product.focus,
+                )}
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            ) : (
+              <div className="flex h-full min-h-[14rem] items-center justify-center bg-background/40 md:min-h-[18rem]">
+                <Factory className="h-16 w-16 text-orange" strokeWidth={1.75} />
+              </div>
+            )}
+          </div>
+
+          {secondaryImages.length > 0 && (
+            <div className="grid shrink-0 grid-cols-4 gap-px bg-steel-dark/20 md:grid-cols-3">
+              {secondaryImages.map(({ image, index, src }) => (
+                <div
+                  key={`${product.id}-image-${index}`}
+                  className="relative aspect-square overflow-hidden bg-panel"
+                >
+                  <MediaImage
+                    src={src}
+                    alt={`${product.name} — imagen ${index + 1}`}
+                    className="h-full w-full"
+                    fallbackClassName="h-full w-full"
+                    objectPosition={focusToObjectPosition(image.product.focus)}
+                    sizes="120px"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="relative z-10 flex min-w-0 flex-col p-6 md:p-8 lg:p-10">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="text-sm uppercase tracking-widest text-steel-dark">
               {getCatalogLabel(product.catalog, catalogConfig)}
@@ -79,7 +101,7 @@ export default function ProductDetailHero({
           <p className="mt-1 text-sm uppercase tracking-widest text-orange">
             {product.capacity}
           </p>
-          <h1 className="mt-2 font-display text-4xl tracking-wide text-steel-light md:text-5xl">
+          <h1 className="mt-2 font-display text-4xl tracking-wide text-steel-light lg:text-5xl">
             {product.name}
           </h1>
           <ProductPrice

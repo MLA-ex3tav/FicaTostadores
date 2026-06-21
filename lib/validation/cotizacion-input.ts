@@ -4,6 +4,8 @@ import type {
   CotizacionProductAddOn,
   CotizacionProductLine,
 } from "@/lib/cotizaciones/types";
+import { parseClpPriceInput } from "@/lib/pricing";
+import { sanitizeShippingInfo, type ShippingInfo } from "@/lib/shipping-profile";
 
 export interface CreateSolicitudCotizacionInput {
   name: string;
@@ -12,6 +14,8 @@ export interface CreateSolicitudCotizacionInput {
   message: string | null;
   products: CotizacionProductLine[];
   clientCountry: string | null;
+  shipping: ShippingInfo | null;
+  clientUserId: string | null;
 }
 
 function sanitizeAddOn(value: unknown): CotizacionProductAddOn | null {
@@ -27,7 +31,11 @@ function sanitizeAddOn(value: unknown): CotizacionProductAddOn | null {
     return null;
   }
 
-  return { id, name };
+  return {
+    id,
+    name,
+    price: parseClpPriceInput(record.price),
+  };
 }
 
 function sanitizeProductLine(value: unknown): CotizacionProductLine | null {
@@ -60,7 +68,9 @@ function sanitizeProductLine(value: unknown): CotizacionProductLine | null {
     name,
     capacity,
     catalog,
+    listPrice: null,
     selectedAddOns,
+    lineTotal: null,
   };
 }
 
@@ -99,6 +109,12 @@ export function parseCreateSolicitudCotizacionInput(
 
   const countryCode = parsedPhone.country ?? null;
   const clientCountry = countryCode;
+  const shipping = sanitizeShippingInfo(record.shipping);
+  const clientUserIdRaw = sanitizeText(record.clientUserId, 128);
+  const clientUserId =
+    clientUserIdRaw && /^[a-zA-Z0-9]{10,128}$/.test(clientUserIdRaw)
+      ? clientUserIdRaw
+      : null;
 
   return {
     name,
@@ -107,5 +123,7 @@ export function parseCreateSolicitudCotizacionInput(
     message,
     products,
     clientCountry,
+    shipping,
+    clientUserId,
   };
 }

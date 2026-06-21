@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ProductAddOn } from "@/lib/products";
+import { buildQuoteProductItem } from "@/lib/quote-pricing";
 import { useQuoteSelection } from "@/lib/quote-selection";
 import QuoteAddOnSelector from "./QuoteAddOnSelector";
 
@@ -9,23 +10,18 @@ interface ProductAddOnsQuotePickerProps {
   productId: string;
   productName: string;
   productCapacity: string;
+  listPrice?: number | null;
   addOns: ProductAddOn[];
-}
-
-function mapSelectedAddOns(addOns: ProductAddOn[], selectedIds: string[]) {
-  return addOns
-    .filter((addOn) => selectedIds.includes(addOn.id))
-    .map((addOn) => ({ id: addOn.id, name: addOn.name }));
 }
 
 export default function ProductAddOnsQuotePicker({
   productId,
   productName,
   productCapacity,
+  listPrice,
   addOns,
 }: ProductAddOnsQuotePickerProps) {
-  const { hasProduct, products, addProduct, updateProductAddOns } =
-    useQuoteSelection();
+  const { hasProduct, products, addProduct } = useQuoteSelection();
   const inQuote = hasProduct(productId);
   const existing = products.find((product) => product.id === productId);
   const syncedIds =
@@ -49,18 +45,18 @@ export default function ProductAddOnsQuotePicker({
 
   function handleChange(ids: string[]) {
     setSelectedIds(ids);
-    const selectedAddOns = mapSelectedAddOns(addOns, ids);
-
-    if (inQuote) {
-      updateProductAddOns(productId, selectedAddOns);
-    } else {
-      addProduct({
-        id: productId,
-        name: productName,
-        capacity: productCapacity,
-        selectedAddOns,
-      });
-    }
+    addProduct(
+      buildQuoteProductItem(
+        {
+          id: productId,
+          name: productName,
+          capacity: productCapacity,
+          listPrice: listPrice ?? null,
+          addOns,
+        },
+        ids,
+      ),
+    );
   }
 
   return (

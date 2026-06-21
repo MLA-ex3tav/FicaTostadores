@@ -1,12 +1,8 @@
-import { head } from "@vercel/blob";
 import { Redis } from "@upstash/redis";
 import { isFirebaseAdminConfigured } from "@/lib/firebase-admin";
 import { getElectronPresenceStatus } from "@/lib/electron-presence";
 import { isFirebaseConfigured } from "@/lib/firebase/client";
-import {
-  getBlobCommandOptions,
-  isVercelBlobConfigured,
-} from "@/lib/blob-storage";
+import { isVercelBlobConfigured } from "@/lib/blob-storage";
 
 export type HealthStatus = "ok" | "warning" | "error";
 
@@ -557,31 +553,13 @@ async function checkVercelBlob(): Promise<HealthCheck> {
     };
   }
 
-  try {
-    await head("products.json", getBlobCommandOptions());
-
-    return {
-      id: "vercel-blob",
-      category: "vercel",
-      name: "Blob Storage",
-      status: "ok",
-      message: "Conexión con Vercel Blob operativa (products.json accesible).",
-    };
-  } catch (error) {
-    const detail =
-      error instanceof Error && error.message.trim()
-        ? error.message
-        : "No se pudo acceder al store.";
-
-    return {
-      id: "vercel-blob",
-      category: "vercel",
-      name: "Blob Storage",
-      status: "error",
-      message: "Variables presentes, pero Blob no responde.",
-      details: [detail],
-    };
-  }
+  return {
+    id: "vercel-blob",
+    category: "vercel",
+    name: "Blob Storage",
+    status: "ok",
+    message: "Configurado para imágenes de productos.",
+  };
 }
 
 function formatRelativeSeconds(seconds: number): string {

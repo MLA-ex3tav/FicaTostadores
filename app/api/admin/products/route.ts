@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireStaffApi } from "@/lib/admin-api-guard";
 import { canPersistProducts } from "@/lib/products-repository";
-import { BLOB_NOT_CONFIGURED_MESSAGE } from "@/lib/blob-storage";
+import { FIREBASE_ADMIN_NOT_CONFIGURED_MESSAGE } from "@/lib/firebase-admin-config";
 import {
   createProduct,
   getProducts,
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   if (!canPersistProducts()) {
     return NextResponse.json(
       {
-        error: BLOB_NOT_CONFIGURED_MESSAGE,
+        error: FIREBASE_ADMIN_NOT_CONFIGURED_MESSAGE,
       },
       { status: 503 },
     );

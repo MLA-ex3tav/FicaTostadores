@@ -70,6 +70,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             productId={product.id}
             productName={product.name}
             productCapacity={product.capacity}
+            listPrice={product.listPrice}
             addOns={product.addOns}
           />
         </section>
@@ -79,6 +80,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         productId={product.id}
         productName={product.name}
         productCapacity={product.capacity}
+        listPrice={product.listPrice}
         addOns={product.addOns}
       />
       </ProductDetailPageShell>

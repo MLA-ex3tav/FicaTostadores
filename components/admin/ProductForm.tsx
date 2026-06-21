@@ -125,6 +125,20 @@ function cleanAddOns(values: ProductAddOn[]): ProductAddOn[] {
 
 
 
+function formatListPriceInputValue(value: number | null | undefined): string {
+
+  if (value == null || !Number.isFinite(value)) {
+
+    return "";
+
+  }
+
+  return String(value);
+
+}
+
+
+
 export default function ProductForm({
   initialProduct,
   mode,
@@ -160,6 +174,12 @@ export default function ProductForm({
   const [capacityUnit, setCapacityUnit] = useState<CapacityUnit>(() =>
 
     parseCapacity(initialProduct?.capacity ?? "").unit,
+
+  );
+
+  const [listPriceInput, setListPriceInput] = useState(() =>
+
+    formatListPriceInputValue(initialProduct?.listPrice),
 
   );
 
@@ -358,9 +378,9 @@ export default function ProductForm({
 
     if (
 
-      product.listPrice != null &&
+      listPriceInput.trim() !== "" &&
 
-      parseClpPriceInput(product.listPrice) === null
+      parseClpPriceInput(listPriceInput) === null
 
     ) {
 
@@ -374,6 +394,10 @@ export default function ProductForm({
 
 
 
+    const parsedListPrice = parseClpPriceInput(listPriceInput);
+
+
+
     const payload: Product = {
 
       ...product,
@@ -381,6 +405,8 @@ export default function ProductForm({
       id: product.id.trim() || slugifyProductId(product.name),
 
       capacity: formattedCapacity,
+
+      listPrice: parsedListPrice,
 
       images: product.images?.filter(hasProductImageContent) ?? [],
 
@@ -459,6 +485,8 @@ export default function ProductForm({
           images: data.product.images ?? [],
 
         });
+
+        setListPriceInput(formatListPriceInputValue(data.product.listPrice));
 
         const parsedCapacity = parseCapacity(data.product.capacity);
 
@@ -702,23 +730,23 @@ export default function ProductForm({
 
             inputMode="numeric"
 
-            value={product.listPrice ?? ""}
+            value={listPriceInput}
 
             onChange={(event) => {
 
-              const raw = event.target.value;
+              setListPriceInput(event.target.value);
 
-              if (raw === "") {
+            }}
 
-                updateField("listPrice", null);
+            onBlur={() => {
 
-                return;
+              const parsed = parseClpPriceInput(listPriceInput);
+
+              if (parsed !== null) {
+
+                setListPriceInput(formatListPriceInputValue(parsed));
 
               }
-
-              const parsed = parseClpPriceInput(raw);
-
-              updateField("listPrice", parsed);
 
             }}
 

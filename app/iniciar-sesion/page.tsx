@@ -20,7 +20,7 @@ export default function IniciarSesionPage() {
               INICIAR <span className="text-orange">SESIÓN</span>
             </>
           }
-          description="Use su cuenta de Google. Los usuarios nuevos quedan como cliente; el panel de administración requiere rol editor o administrador."
+          description="Use su cuenta de Google para continuar en el sitio."
         />
       </div>
 
