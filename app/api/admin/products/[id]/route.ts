@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { requireStaffApi } from "@/lib/admin-api-guard";
 import { canPersistProducts } from "@/lib/products-repository";
 import { BLOB_NOT_CONFIGURED_MESSAGE } from "@/lib/blob-storage";
@@ -8,6 +7,7 @@ import {
   getProductById,
   updateProduct,
 } from "@/lib/products-server";
+import { revalidateProductPages } from "@/lib/revalidate-products";
 import {
   parseJsonBody,
   RequestValidationError,
@@ -17,12 +17,6 @@ import {
   parseProductIdParam,
   parseProductInput,
 } from "@/lib/validation/product-input";
-
-function revalidateProductPages() {
-  revalidatePath("/");
-  revalidatePath("/productos");
-  revalidatePath("/productos/[id]", "page");
-}
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -79,7 +73,7 @@ export async function PUT(request: Request, context: RouteContext) {
     const body = await parseJsonBody<unknown>(request);
     const product = parseProductInput(body);
     const updated = await updateProduct(id, product);
-    revalidateProductPages();
+    revalidateProductPages(updated.id);
     return NextResponse.json({ product: updated });
   } catch (error) {
     if (error instanceof RequestValidationError) {
@@ -115,7 +109,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
   try {
     id = parseProductIdParam(rawId);
     await deleteProduct(id);
-    revalidateProductPages();
+    revalidateProductPages(id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof RequestValidationError) {

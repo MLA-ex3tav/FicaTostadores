@@ -26,7 +26,7 @@ async function readFromBlob(): Promise<CatalogConfig | null> {
       return null;
     }
 
-    const response = await fetch(blob.url);
+    const response = await fetch(blob.url, { cache: "no-store" });
 
     if (!response.ok) {
       return null;
@@ -63,16 +63,20 @@ async function writeToLocalFile(config: CatalogConfig): Promise<void> {
 }
 
 export async function loadCatalogConfig(): Promise<CatalogConfig> {
-  const fromBlob = await readFromBlob();
+  const blobConfigured = isVercelBlobConfigured();
 
-  if (fromBlob) {
-    return fromBlob;
+  if (blobConfigured) {
+    const fromBlob = await readFromBlob();
+    if (fromBlob) {
+      return fromBlob;
+    }
   }
 
-  const fromFile = await readFromLocalFile();
-
-  if (fromFile) {
-    return fromFile;
+  if (!blobConfigured || process.env.NODE_ENV !== "production") {
+    const fromFile = await readFromLocalFile();
+    if (fromFile) {
+      return fromFile;
+    }
   }
 
   return defaultCatalogConfig;

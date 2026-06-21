@@ -1,5 +1,6 @@
 import HeroCarousel from "./HeroCarousel";
 import type { HeroProductBanner } from "@/lib/images";
+import { shouldBypassImageOptimizer } from "@/lib/blob-storage";
 import { getImageProps } from "next/image";
 import { preload } from "react-dom";
 
@@ -30,7 +31,14 @@ export default function HeroSection({ banners }: HeroSectionProps) {
   const firstBanner = banners[0];
 
   if (firstBanner?.src) {
-    preloadHeroLcpImage(firstBanner);
+    if (shouldBypassImageOptimizer(firstBanner.src)) {
+      preload(firstBanner.src, {
+        as: "image",
+        fetchPriority: "high",
+      });
+    } else {
+      preloadHeroLcpImage(firstBanner);
+    }
   }
 
   return <HeroCarousel banners={banners} />;

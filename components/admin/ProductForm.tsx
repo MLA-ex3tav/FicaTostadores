@@ -20,6 +20,7 @@ import {
 } from "@/lib/catalog-config";
 
 import { formatCapacity, parseCapacity, type CapacityUnit } from "@/lib/capacity";
+import { parseClpPriceInput } from "@/lib/pricing";
 
 import type { Product, ProductAddOn } from "@/lib/products";
 
@@ -228,6 +229,34 @@ export default function ProductForm({
 
 
 
+  useEffect(() => {
+
+    if (!initialProduct) {
+
+      return;
+
+    }
+
+
+
+    setProduct({
+
+      ...initialProduct,
+
+      images: initialProduct.images ?? [],
+
+    });
+
+    const parsedCapacity = parseCapacity(initialProduct.capacity);
+
+    setCapacityValue(parsedCapacity.value);
+
+    setCapacityUnit(parsedCapacity.unit);
+
+  }, [initialProduct]);
+
+
+
   const categories = useMemo(
 
     () =>
@@ -327,6 +356,24 @@ export default function ProductForm({
 
 
 
+    if (
+
+      product.listPrice != null &&
+
+      parseClpPriceInput(product.listPrice) === null
+
+    ) {
+
+      setError("Precio de lista inválido.");
+
+      setSaving(false);
+
+      return;
+
+    }
+
+
+
     const payload: Product = {
 
       ...product,
@@ -383,7 +430,13 @@ export default function ProductForm({
 
 
 
-      const data = (await response.json()) as { error?: string };
+      const data = (await response.json()) as {
+
+        error?: string;
+
+        product?: Product;
+
+      };
 
 
 
@@ -392,6 +445,26 @@ export default function ProductForm({
         setError(data.error ?? "No se pudo guardar el producto.");
 
         return;
+
+      }
+
+
+
+      if (data.product) {
+
+        setProduct({
+
+          ...data.product,
+
+          images: data.product.images ?? [],
+
+        });
+
+        const parsedCapacity = parseCapacity(data.product.capacity);
+
+        setCapacityValue(parsedCapacity.value);
+
+        setCapacityUnit(parsedCapacity.unit);
 
       }
 
@@ -625,11 +698,7 @@ export default function ProductForm({
 
             id="listPrice"
 
-            type="number"
-
-            min={0}
-
-            step={1}
+            type="text"
 
             inputMode="numeric"
 
@@ -639,17 +708,21 @@ export default function ProductForm({
 
               const raw = event.target.value;
 
-              updateField(
+              if (raw === "") {
 
-                "listPrice",
+                updateField("listPrice", null);
 
-                raw === "" ? null : Number.parseInt(raw, 10),
+                return;
 
-              );
+              }
+
+              const parsed = parseClpPriceInput(raw);
+
+              updateField("listPrice", parsed);
 
             }}
 
-            placeholder="Ej. 2500000"
+            placeholder="Ej. 2500000 o 2.500.000"
 
             className={inputClass}
 

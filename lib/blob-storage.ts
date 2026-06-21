@@ -9,11 +9,15 @@ interface BlobCommandOptions {
   storeId?: string;
 }
 
+function stripEnvQuotes(value: string | undefined): string {
+  return value?.trim().replace(/^["']|["']$/g, "") ?? "";
+}
+
 export function isVercelBlobConfigured(): boolean {
   return Boolean(
-    process.env.BLOB_READ_WRITE_TOKEN?.trim() ||
-      process.env.BLOB_STORE_ID?.trim() ||
-      process.env.VERCEL_OIDC_TOKEN?.trim(),
+    stripEnvQuotes(process.env.BLOB_READ_WRITE_TOKEN) ||
+      stripEnvQuotes(process.env.BLOB_STORE_ID) ||
+      stripEnvQuotes(process.env.VERCEL_OIDC_TOKEN),
   );
 }
 
@@ -22,9 +26,9 @@ export function canPersistWithBlob(): boolean {
 }
 
 export function getBlobCommandOptions(): BlobCommandOptions {
-  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  const oidcToken = process.env.VERCEL_OIDC_TOKEN?.trim();
-  const storeId = process.env.BLOB_STORE_ID?.trim();
+  const token = stripEnvQuotes(process.env.BLOB_READ_WRITE_TOKEN);
+  const oidcToken = stripEnvQuotes(process.env.VERCEL_OIDC_TOKEN);
+  const storeId = stripEnvQuotes(process.env.BLOB_STORE_ID);
 
   if (token) {
     return { token };
@@ -51,3 +55,37 @@ export function getBlobErrorMessage(error: unknown): string {
 
 export const BLOB_NOT_CONFIGURED_MESSAGE =
   "En producción conecte Vercel Blob Storage al proyecto (Storage → Blob → Connect to Project) y redeploy.";
+
+/** Hostname for this project's public Blob store, e.g. abc123.public.blob.vercel-storage.com */
+export function getBlobStoreHostname(): string | null {
+  const storeId = stripEnvQuotes(process.env.BLOB_STORE_ID);
+  if (storeId.startsWith("store_")) {
+    return `${storeId.slice("store_".length).toLowerCase()}.public.blob.vercel-storage.com`;
+  }
+
+  const token = stripEnvQuotes(process.env.BLOB_READ_WRITE_TOKEN);
+  const tokenMatch = token.match(/^vercel_blob_rw_([^_]+)_/i);
+  if (tokenMatch?.[1]) {
+    return `${tokenMatch[1].toLowerCase()}.public.blob.vercel-storage.com`;
+  }
+
+  return null;
+}
+
+export function isBlobStorageImageUrl(src: string): boolean {
+  if (!src.startsWith("http://") && !src.startsWith("https://")) {
+    return false;
+  }
+
+  try {
+    const { hostname } = new URL(src);
+    return hostname.endsWith(".public.blob.vercel-storage.com");
+  } catch {
+    return src.includes(".public.blob.vercel-storage.com");
+  }
+}
+
+/** Evita el optimizador de Next.js para Blob y rutas locales de uploads del admin. */
+export function shouldBypassImageOptimizer(src: string): boolean {
+  return isBlobStorageImageUrl(src) || src.startsWith("/uploads/");
+}

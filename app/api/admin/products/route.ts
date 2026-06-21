@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { requireStaffApi } from "@/lib/admin-api-guard";
 import { canPersistProducts } from "@/lib/products-repository";
 import { BLOB_NOT_CONFIGURED_MESSAGE } from "@/lib/blob-storage";
@@ -7,17 +6,13 @@ import {
   createProduct,
   getProducts,
 } from "@/lib/products-server";
+import { revalidateProductPages } from "@/lib/revalidate-products";
 import {
   parseJsonBody,
   RequestValidationError,
   validationErrorResponse,
 } from "@/lib/validation/parse-request";
 import { parseProductInput } from "@/lib/validation/product-input";
-function revalidateProductPages() {
-  revalidatePath("/");
-  revalidatePath("/productos");
-  revalidatePath("/productos/[id]", "page");
-}
 
 export async function GET(request: Request) {
   const guard = await requireStaffApi(request, "read");
@@ -51,7 +46,7 @@ export async function POST(request: Request) {
     const product = parseProductInput(body);
 
     const created = await createProduct(product);
-    revalidateProductPages();
+    revalidateProductPages(created.id);
     return NextResponse.json({ product: created }, { status: 201 });
   } catch (error) {
     if (error instanceof RequestValidationError) {

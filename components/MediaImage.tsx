@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Factory } from "lucide-react";
 import { useState } from "react";
+import { shouldBypassImageOptimizer } from "@/lib/blob-storage";
 
 interface MediaImageProps {
   src: string;
@@ -27,6 +28,7 @@ export default function MediaImage({
 }: MediaImageProps) {
   const [hasError, setHasError] = useState(false);
   const containerClass = fallbackClassName ?? className;
+  const useDirectImage = shouldBypassImageOptimizer(src);
 
   if (hasError) {
     return (
@@ -58,6 +60,7 @@ export default function MediaImage({
         quality={quality}
         priority={priority}
         fetchPriority={priority ? "high" : "auto"}
+        unoptimized={useDirectImage}
         onError={() => setHasError(true)}
       />
     </div>

@@ -24,7 +24,7 @@ async function readFromBlob(): Promise<Product[] | null> {
       return null;
     }
 
-    const response = await fetch(blob.url);
+    const response = await fetch(blob.url, { cache: "no-store" });
 
     if (!response.ok) {
       return null;
@@ -67,16 +67,21 @@ async function writeToLocalFile(products: Product[]): Promise<void> {
 }
 
 export async function loadProducts(): Promise<Product[]> {
-  const fromBlob = await readFromBlob();
+  const blobConfigured = isVercelBlobConfigured();
 
-  if (fromBlob) {
-    return fromBlob;
+  if (blobConfigured) {
+    const fromBlob = await readFromBlob();
+    if (fromBlob) {
+      return fromBlob;
+    }
   }
 
-  const fromFile = await readFromLocalFile();
-
-  if (fromFile) {
-    return fromFile;
+  // Sin Blob configurado, o solo en dev si Blob no responde: archivo local.
+  if (!blobConfigured || process.env.NODE_ENV !== "production") {
+    const fromFile = await readFromLocalFile();
+    if (fromFile) {
+      return fromFile;
+    }
   }
 
   return defaultProducts;

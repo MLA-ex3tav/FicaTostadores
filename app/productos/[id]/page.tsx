@@ -10,7 +10,7 @@ import SectionLabel from "@/components/SectionLabel";
 import { getCatalogConfig } from "@/lib/catalog-config-server";
 import { getProductById, getProducts } from "@/lib/products-server";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;

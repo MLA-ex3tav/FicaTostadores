@@ -1,5 +1,6 @@
 import os from "os";
 import type { NextConfig } from "next";
+import { getBlobStoreHostname } from "@/lib/blob-storage";
 
 const extraDevOrigins =
   process.env.EXTRA_DEV_ORIGINS?.split(",")
@@ -32,6 +33,27 @@ function getLocalNetworkDevOrigins(): string[] {
   return [...origins];
 }
 
+const blobHostname = getBlobStoreHostname();
+
+const imageRemotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] =
+  [];
+
+if (blobHostname) {
+  imageRemotePatterns.push({
+    protocol: "https",
+    hostname: blobHostname,
+    port: "",
+    pathname: "/**",
+  });
+}
+
+imageRemotePatterns.push({
+  protocol: "https",
+  hostname: "*.public.blob.vercel-storage.com",
+  port: "",
+  pathname: "/**",
+});
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "localhost",
@@ -41,12 +63,12 @@ const nextConfig: NextConfig = {
   ],
   images: {
     qualities: [75, 80],
-    remotePatterns: [
+    localPatterns: [
       {
-        protocol: "https",
-        hostname: "*.public.blob.vercel-storage.com",
+        pathname: "/uploads/**",
       },
     ],
+    remotePatterns: imageRemotePatterns,
   },
 };
 

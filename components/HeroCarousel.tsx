@@ -329,57 +329,34 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
         onBlur={() => setIsPaused(false)}
         tabIndex={0}
       >
-        <div
-          className="relative aspect-[5/2] min-h-[15rem] max-h-[34rem] w-full touch-pan-y bg-panel/40"
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerCancel}
-          onClickCapture={onCarouselClickCapture}
-        >
+        <div className="relative aspect-[5/2] min-h-[15rem] max-h-[34rem] w-full bg-panel/40">
           <div
-            className="flex h-full transition-transform duration-700 ease-out motion-reduce:transition-none"
-            style={{ transform: `translateX(-${activeIndex * 100}%)` }}
-            aria-live="polite"
+            className="absolute inset-0 touch-pan-y"
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            onClickCapture={onCarouselClickCapture}
           >
-            {slides.map((banner, index) => (
-              <div
-                key={`${banner.productId || "default"}-${index}`}
-                className="h-full w-full shrink-0"
-              >
-                <HeroCarouselSlide
-                  banner={banner}
-                  priority={index === 0}
-                  loadImage={shouldLoadSlideImage(index, activeIndex, slideCount)}
-                />
-              </div>
-            ))}
-          </div>
+            <div
+              className="flex h-full transition-transform duration-700 ease-out motion-reduce:transition-none"
+              style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+              aria-live="polite"
+            >
+              {slides.map((banner, index) => (
+                <div
+                  key={`${banner.productId || "default"}-${index}`}
+                  className="h-full w-full shrink-0"
+                >
+                  <HeroCarouselSlide
+                    banner={banner}
+                    priority={index === 0}
+                    loadImage={shouldLoadSlideImage(index, activeIndex, slideCount)}
+                  />
+                </div>
+              ))}
+            </div>
 
-          {slideCount > 1 ? (
-            <>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  goPrev();
-                }}
-                className="absolute left-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:flex sm:left-5 sm:h-11 sm:w-11"
-                aria-label="Slide anterior"
-              >
-                <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.25} />
-              </button>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  goNext();
-                }}
-                className="absolute right-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:flex sm:right-5 sm:h-11 sm:w-11"
-                aria-label="Slide siguiente"
-              >
-                <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.25} />
-              </button>
-
+            {slideCount > 1 ? (
               <div className="pointer-events-auto absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/55 px-3 py-2 backdrop-blur-sm sm:bottom-5 md:bottom-[7.25rem]">
                 {slides.map((banner, index) => {
                   const isActive = index === activeIndex;
@@ -400,6 +377,35 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
                   );
                 })}
               </div>
+            ) : null}
+          </div>
+
+          {slideCount > 1 ? (
+            <>
+              <button
+                type="button"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  goPrev();
+                }}
+                className="absolute left-3 top-1/2 z-40 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-black/80 md:flex sm:left-5"
+                aria-label="Slide anterior"
+              >
+                <ChevronLeft className="h-6 w-6" strokeWidth={2.25} />
+              </button>
+              <button
+                type="button"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  goNext();
+                }}
+                className="absolute right-3 top-1/2 z-40 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-black/80 md:flex sm:right-5"
+                aria-label="Slide siguiente"
+              >
+                <ChevronRight className="h-6 w-6" strokeWidth={2.25} />
+              </button>
             </>
           ) : null}
         </div>

@@ -4,7 +4,7 @@ import SectionHeader from "@/components/SectionHeader";
 import { getCatalogConfig } from "@/lib/catalog-config-server";
 import { getProducts } from "@/lib/products-server";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Productos | Fica Tostadores",
