@@ -1,3 +1,4 @@
+import { parseClpPriceInput } from "@/lib/pricing";
 import { slugifyProductId } from "@/lib/product-utils";
 import type { Product, ProductAddOn } from "@/lib/products";
 import {
@@ -40,7 +41,17 @@ function sanitizeAddOns(value: unknown): ProductAddOn[] {
       throw new RequestValidationError("Complemento inválido.");
     }
 
-    addOns.push({ id, name, description });
+    const price = parseClpPriceInput(record.price);
+    if (record.price !== undefined && record.price !== null && record.price !== "" && price === null) {
+      throw new RequestValidationError("Precio de complemento inválido.");
+    }
+
+    addOns.push({
+      id,
+      name,
+      description,
+      ...(price !== null ? { price } : {}),
+    });
   }
 
   return addOns;
@@ -129,12 +140,23 @@ export function parseProductInput(body: unknown): Product {
       throw new RequestValidationError("Características inválidas.");
     })();
 
+  const listPrice = parseClpPriceInput(record.listPrice);
+  if (
+    record.listPrice !== undefined &&
+    record.listPrice !== null &&
+    record.listPrice !== "" &&
+    listPrice === null
+  ) {
+    throw new RequestValidationError("Precio de lista inválido.");
+  }
+
   return {
     id,
     catalog,
     category,
     name,
     capacity,
+    ...(listPrice !== null ? { listPrice } : {}),
     description,
     longDescription,
     specs,

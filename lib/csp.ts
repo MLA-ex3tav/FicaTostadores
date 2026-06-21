@@ -1,4 +1,7 @@
-export function buildContentSecurityPolicy(isProduction: boolean): string {
+export function buildContentSecurityPolicy(options: {
+  upgradeInsecureRequests?: boolean;
+} = {}): string {
+  const isProduction = process.env.NODE_ENV === "production";
   // Production uses ISR/static pages (revalidate). Nonce-based CSP requires fully
   // dynamic rendering — Next.js inline bootstrap scripts would be blocked otherwise.
   const scriptSrc = isProduction
@@ -32,7 +35,7 @@ export function buildContentSecurityPolicy(isProduction: boolean): string {
     "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com https://*.google.com",
   ];
 
-  if (isProduction) {
+  if (options.upgradeInsecureRequests) {
     directives.push("upgrade-insecure-requests");
   }
 

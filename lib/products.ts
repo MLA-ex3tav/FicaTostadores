@@ -6,6 +6,8 @@ export interface ProductAddOn {
   id: string;
   name: string;
   description: string;
+  /** Precio en CLP (opcional). */
+  price?: number | null;
 }
 
 export interface Product {
@@ -14,6 +16,8 @@ export interface Product {
   category: ProductCategory;
   name: string;
   capacity: string;
+  /** Precio de lista en CLP (opcional). */
+  listPrice?: number | null;
   description: string;
   longDescription: string;
   specs: string[];

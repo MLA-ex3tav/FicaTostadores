@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 import type { ProductAddOn } from "@/lib/products";
+import { formatClpPrice, hasValidListPrice } from "@/lib/pricing";
 
 interface AddOnSelectCardProps {
   addOn: ProductAddOn;
@@ -40,6 +41,11 @@ export default function AddOnSelectCard({
         {addOn.description ? (
           <span className="mt-1 block text-base leading-relaxed text-steel-mid">
             {addOn.description}
+          </span>
+        ) : null}
+        {hasValidListPrice(addOn.price) ? (
+          <span className="mt-1.5 block text-sm font-semibold text-orange">
+            + {formatClpPrice(addOn.price)}
           </span>
         ) : null}
       </span>

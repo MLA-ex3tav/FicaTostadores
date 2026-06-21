@@ -16,6 +16,7 @@ import {
 import { useQuoteSelection } from "@/lib/quote-selection";
 import MediaImage from "./MediaImage";
 import ProductPlaceholder from "./ProductPlaceholder";
+import ProductPrice from "./ProductPrice";
 import QuoteSelectedLabel, { quoteSelectedPanelClass } from "./QuoteSelectedBadge";
 import SteelPanel from "./SteelPanel";
 
@@ -81,6 +82,12 @@ export default function ProductCard({ product, catalogConfig }: ProductCardProps
           <h3 className="font-display text-2xl tracking-wide text-steel-light transition-colors group-hover:text-orange">
             {product.name}
           </h3>
+          <ProductPrice
+            amount={product.listPrice}
+            size="md"
+            className="mt-2"
+            suffix="IVA no incl."
+          />
           <p className="mt-3 flex-1 text-base leading-relaxed text-steel-mid">
             {product.description}
           </p>

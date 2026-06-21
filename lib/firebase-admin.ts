@@ -1,9 +1,11 @@
+import { readFileSync } from "node:fs";
+import { isAbsolute, resolve } from "node:path";
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
 let cachedApp: App | null | undefined;
 
-function parseServiceAccountJson(): Record<string, unknown> | null {
+function parseServiceAccountFromEnvJson(): Record<string, unknown> | null {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
 
   if (!raw) {
@@ -19,6 +21,29 @@ function parseServiceAccountJson(): Record<string, unknown> | null {
   } catch {
     return null;
   }
+}
+
+function parseServiceAccountFromPath(): Record<string, unknown> | null {
+  const pathValue = process.env.FIREBASE_SERVICE_ACCOUNT_PATH?.trim();
+
+  if (!pathValue) {
+    return null;
+  }
+
+  try {
+    const absolutePath = isAbsolute(pathValue)
+      ? pathValue
+      : resolve(process.cwd(), pathValue);
+    const jsonText = readFileSync(absolutePath, "utf8");
+
+    return JSON.parse(jsonText) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function parseServiceAccountJson(): Record<string, unknown> | null {
+  return parseServiceAccountFromEnvJson() ?? parseServiceAccountFromPath();
 }
 
 export function isFirebaseAdminConfigured(): boolean {

@@ -16,7 +16,10 @@ function getClientIp(request: NextRequest): string {
   return request.headers.get("x-real-ip")?.trim() || "unknown";
 }
 
-function applySecurityHeaders(response: NextResponse, isProduction: boolean) {
+function applySecurityHeaders(
+  response: NextResponse,
+  options: { strictTransport?: boolean; upgradeInsecureRequests?: boolean },
+) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -27,10 +30,12 @@ function applySecurityHeaders(response: NextResponse, isProduction: boolean) {
   response.headers.set("X-DNS-Prefetch-Control", "off");
   response.headers.set(
     "Content-Security-Policy",
-    buildContentSecurityPolicy(isProduction),
+    buildContentSecurityPolicy({
+      upgradeInsecureRequests: options.upgradeInsecureRequests,
+    }),
   );
 
-  if (isProduction) {
+  if (options.strictTransport) {
     response.headers.set(
       "Strict-Transport-Security",
       "max-age=63072000; includeSubDomains; preload",
@@ -38,8 +43,19 @@ function applySecurityHeaders(response: NextResponse, isProduction: boolean) {
   }
 }
 
-export async function middleware(request: NextRequest) {
+/** HSTS / upgrade-insecure solo en Vercel HTTPS, no en npm start por LAN. */
+function getProductionSecurityOptions() {
+  const onVercel = process.env.VERCEL === "1";
   const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    strictTransport: onVercel && isProduction,
+    upgradeInsecureRequests: onVercel && isProduction,
+  };
+}
+
+export async function middleware(request: NextRequest) {
+  const securityOptions = getProductionSecurityOptions();
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/api/")) {
@@ -63,7 +79,7 @@ export async function middleware(request: NextRequest) {
         );
       }
 
-      applySecurityHeaders(response, isProduction);
+      applySecurityHeaders(response, securityOptions);
       return response;
     }
   }
@@ -74,7 +90,7 @@ export async function middleware(request: NextRequest) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
   }
 
-  applySecurityHeaders(response, isProduction);
+  applySecurityHeaders(response, securityOptions);
   return response;
 }
 

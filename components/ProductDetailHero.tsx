@@ -14,6 +14,7 @@ import {
 } from "@/lib/product-images";
 import { useQuoteSelection } from "@/lib/quote-selection";
 import MediaImage from "./MediaImage";
+import ProductPrice from "./ProductPrice";
 import QuoteSelectedLabel, { quoteSelectedPanelClass } from "./QuoteSelectedBadge";
 import SteelPanel from "./SteelPanel";
 
@@ -81,6 +82,12 @@ export default function ProductDetailHero({
           <h1 className="mt-2 font-display text-4xl tracking-wide text-steel-light md:text-5xl">
             {product.name}
           </h1>
+          <ProductPrice
+            amount={product.listPrice}
+            size="lg"
+            className="mt-3"
+            suffix="IVA no incl."
+          />
           <ul className="mt-4 flex flex-wrap gap-2">
             {product.specs.map((spec, index) => (
               <li

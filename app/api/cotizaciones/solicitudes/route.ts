@@ -44,10 +44,13 @@ export async function POST(request: Request) {
     if (error instanceof CotizacionesRepositoryError) {
       console.error("[cotizaciones/solicitudes]", error.message);
 
+      const isDev = process.env.NODE_ENV === "development";
+
       return NextResponse.json(
         {
-          error:
-            "No se pudo registrar la solicitud en este momento. Intente más tarde.",
+          error: isDev
+            ? error.message
+            : "No se pudo registrar la solicitud en este momento. Intente más tarde.",
         },
         { status: 503 },
       );

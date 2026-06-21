@@ -112,7 +112,7 @@ function getHealthCheckFetchHeaders(
 }
 
 function deploymentProtectionMessage(path: string): string {
-  return `401 en ${path}: Vercel Deployment Protection está bloqueando el acceso público. En producción desactive la protección global (Settings → Deployment Protection → Production: None). Solo el panel /admin requiere login con Google.`;
+  return `401 en ${path}: capa de Vercel Deployment Protection (no es el login de Firebase). Desactive la protección en producción si el sitio debe ser visitable sin contraseña de Vercel, o configure VERCEL_AUTOMATION_BYPASS_SECRET. Los roles cliente/admin se controlan aparte en Firestore.`;
 }
 
 function evaluateHttpHealthResponse(
@@ -385,8 +385,10 @@ function checkFirebaseAdmin(): HealthCheck {
     name: "Firebase Admin",
     status: "error",
     message:
-      "Falta FIREBASE_SERVICE_ACCOUNT_JSON; el formulario web no puede guardar solicitudes.",
-    details: ["FIREBASE_SERVICE_ACCOUNT_JSON"],
+      "Falta Firebase Admin; el formulario web no puede guardar solicitudes.",
+    details: [
+      "FIREBASE_SERVICE_ACCOUNT_JSON o FIREBASE_SERVICE_ACCOUNT_PATH",
+    ],
   };
 }
 
@@ -504,10 +506,10 @@ function checkVercelDeploymentProtection(): HealthCheck {
     name: "Protección de despliegue",
     status: "warning",
     message:
-      "Deployment Protection activa en Vercel: el sitio completo responde 401 antes de llegar a Next.js. Producción debe ser pública; use protección solo en previews si lo necesita.",
+      "Deployment Protection de Vercel activa: responde 401 antes del login de Firebase. No confundir con roles cliente/admin en Firestore.",
     details: [
-      "Vercel → Settings → Deployment Protection → Production: None (público)",
-      "Opcional en Preview: Standard Protection + Protection Bypass for Automation",
+      "Vercel → Deployment Protection → Production: None (visitantes sin contraseña Vercel)",
+      "Firebase: clientes (rol cliente) vs panel admin (editor/admin) en colección clientes",
     ],
   };
 }
@@ -797,6 +799,51 @@ function summarizeChecks(checks: HealthCheck[]): SystemHealthReport["summary"] {
   );
 }
 
+function isDeploymentProtection401(check: HealthCheck): boolean {
+  return check.message.includes("401");
+}
+
+/** Evita filas rojas duplicadas cuando Vercel bloquea las sondas HTTP del panel. */
+function consolidateHttpRouteChecks(
+  checks: HealthCheck[],
+  probedBaseUrl: string,
+): HealthCheck[] {
+  const httpChecks = checks.filter(
+    (check) => check.category === "paginas" || check.category === "api",
+  );
+
+  if (httpChecks.length === 0) {
+    return checks;
+  }
+
+  const allBlockedBy401 = httpChecks.every(isDeploymentProtection401);
+
+  if (!allBlockedBy401) {
+    return checks;
+  }
+
+  const otherChecks = checks.filter(
+    (check) => check.category !== "paginas" && check.category !== "api",
+  );
+
+  return [
+    ...otherChecks,
+    {
+      id: "http-routes-deployment-protection",
+      category: "paginas",
+      name: "Páginas y APIs públicas",
+      status: "warning",
+      message:
+        "Las comprobaciones automáticas recibieron 401 (protección de Vercel). El sitio no exige login; esto no indica un fallo real para visitantes.",
+      details: [
+        `URL sondada: ${probedBaseUrl}`,
+        "Antes no veía esto porque el panel Conexiones es nuevo.",
+        "Opcional: Protection Bypass for Automation en Vercel para sondas verdes.",
+      ],
+    },
+  ];
+}
+
 export async function getSystemHealthReport(): Promise<SystemHealthReport> {
   const baseUrl = getHealthCheckBaseUrl();
   const publicSiteUrl = getDeploymentBaseUrl();
@@ -835,13 +882,16 @@ export async function getSystemHealthReport(): Promise<SystemHealthReport> {
     checkCotizacionesApiRoute(baseUrl),
   ]);
 
-  const checks = [
-    ...firebaseChecks,
-    ...vercelChecks,
-    ...integrationChecks,
-    ...pageChecks,
-    ...apiChecks,
-  ];
+  const checks = consolidateHttpRouteChecks(
+    [
+      ...firebaseChecks,
+      ...vercelChecks,
+      ...integrationChecks,
+      ...pageChecks,
+      ...apiChecks,
+    ],
+    baseUrl,
+  );
 
   return {
     checkedAt: new Date().toISOString(),

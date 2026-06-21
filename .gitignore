@@ -31,6 +31,10 @@ yarn-error.log*
 .env.local
 .env.*.local
 
+# clave privada Firebase Admin (descargada de Firebase Console)
+firebase-service-account.json
+*-firebase-adminsdk-*.json
+
 # plantilla versionada
 !.env.example
 

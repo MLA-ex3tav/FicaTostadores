@@ -81,25 +81,31 @@ Solo las variables `NEXT_PUBLIC_FIREBASE_*` en `.env.local` (config web de Fireb
 
 No se requiere service account ni claves privadas para el login. Para **solicitudes de cotización** (formulario → Firestore) sí configure `FIREBASE_SERVICE_ACCOUNT_JSON` en el servidor.
 
-## Acceso público vs panel admin
+## Autenticación y roles (Firebase)
 
-| Área | Acceso |
-|------|--------|
-| `/`, `/productos`, `/contacto`, etc. | **Público** (sin login) |
-| `/api/products`, `/api/cotizaciones/solicitudes` | **Público** (con rate limit) |
-| `/admin/*` (panel) | **Solo staff** (`editor` o `admin`) vía Google |
-| `/api/admin/*` | **Solo staff** (token Firebase en la petición) |
+El acceso se controla con **Google + Firestore** (`clientes/{uid}`), no con la protección de despliegue de Vercel.
 
-El middleware **no** bloquea páginas públicas. Si todo el sitio responde **401**, la causa suele ser **Vercel Deployment Protection** (capa anterior a Next.js), no el código.
+| Rol en Firestore | Quién | Qué puede hacer |
+|------------------|-------|-----------------|
+| `cliente` | Usuario que inicia sesión por primera vez | Navegar el sitio, cotizar (login opcional hoy) |
+| `editor` | Staff asignado por un admin | Panel `/admin` (catálogo, cotizaciones, conexiones) |
+| `admin` | Administrador | Todo lo anterior + gestión de usuarios |
 
-### Vercel: producción pública
+Al primer login se crea el documento en `clientes` con `role: "cliente"`. Un administrador cambia el rol desde `/admin/usuarios`.
 
-1. **Project → Settings → Deployment Protection**
-2. **Production → None** (sitio público para clientes)
-3. Opcional: dejar protección solo en **Preview** si no quiere previews abiertos
-4. Redeploy
+| Ruta | Acceso hoy |
+|------|------------|
+| `/`, `/productos`, `/contacto` | Sin login (cualquier visitante) |
+| `/iniciar-sesion` | Login Google → rol en Firestore |
+| `/admin/*` | Solo `editor` o `admin` |
+| `/api/admin/*` | Solo staff (token Firebase) |
 
-Solo `/admin` requiere autenticación (Firebase + rol en Firestore). No active protección de Vercel sobre producción salvo que quiera password para todo el sitio.
+### Vercel Deployment Protection ≠ Firebase
+
+Si **todo** responde **401**, suele ser **Vercel Deployment Protection** (contraseña de Vercel antes de cargar la app). Eso es independiente de los roles `cliente` / `admin` en Firebase.
+
+- **Sitio abierto a visitantes:** Vercel → Deployment Protection → Production → **None**
+- **Previews privados:** protección solo en Preview, o bypass con `VERCEL_AUTOMATION_BYPASS_SECRET`
 
 ## Vercel Blob
 

@@ -7,6 +7,7 @@ import SteelPanel from "@/components/SteelPanel";
 import { sectionEyebrowClass } from "@/components/SectionHeader";
 import { useFirebaseAuth } from "@/lib/firebase-auth";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
+import { getRoleLabel } from "@/lib/permissions";
 import { sanitizeReturnTo } from "@/lib/login-return-to";
 
 const POST_LOGIN_RETURN_KEY = "fica-post-login-return";
@@ -53,6 +54,7 @@ export default function GoogleLoginCard({
   const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
   const {
     user,
+    role,
     isStaff,
     loading,
     configured,
@@ -174,11 +176,20 @@ export default function GoogleLoginCard({
       {user && !loading && (
         <div className="mt-4 rounded-lg border border-steel-dark/30 bg-background/60 px-4 py-3 text-base text-steel-mid">
           Conectado como{" "}
-          <strong className="text-steel-light">{user.email}</strong>.
+          <strong className="text-steel-light">{user.email}</strong>
+          {role ? (
+            <>
+              {" "}
+              · Rol:{" "}
+              <strong className="text-steel-light">{getRoleLabel(role)}</strong>
+            </>
+          ) : null}
+          .
           {adminRedirect && !isStaff && (
             <>
               {" "}
-              Esta cuenta no tiene permisos para el panel de administración.
+              Esta cuenta es de cliente; no tiene permisos para el panel de
+              administración.
             </>
           )}
         </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import DeleteProductButton from "@/components/admin/DeleteProductButton";
+import { formatClpPrice, hasValidListPrice } from "@/lib/pricing";
 import { getCatalogLabel } from "@/lib/catalog-config";
 import { getCategoryLabel } from "@/lib/product-categories";
 import { getCatalogConfig } from "@/lib/catalog-config-server";
@@ -53,6 +54,7 @@ export default async function AdminProductsPage() {
               <th className="px-4 py-3 font-medium">Producto</th>
               <th className="px-4 py-3 font-medium">Catálogo</th>
               <th className="px-4 py-3 font-medium">Categoría</th>
+              <th className="px-4 py-3 font-medium">Precio</th>
               <th className="px-4 py-3 font-medium">Imágenes</th>
               <th className="px-4 py-3 font-medium">Acciones</th>
             </tr>
@@ -74,6 +76,11 @@ export default async function AdminProductsPage() {
                 </td>
                 <td className="px-4 py-4 text-steel-mid">
                   {getCategoryLabel(product.category, catalogConfig)}
+                </td>
+                <td className="px-4 py-4 text-steel-mid">
+                  {hasValidListPrice(product.listPrice)
+                    ? formatClpPrice(product.listPrice)
+                    : "—"}
                 </td>
                 <td className="px-4 py-4 text-steel-mid">
                   {(product.images?.length ?? 0) > 0
@@ -108,4 +115,4 @@ export default async function AdminProductsPage() {
     </div>
   );
 }
-
+

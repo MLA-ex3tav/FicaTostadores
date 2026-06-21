@@ -17,7 +17,7 @@ export async function createSolicitudCotizacion(
 
   if (!db) {
     throw new CotizacionesRepositoryError(
-      "Firebase Admin no configurado (FIREBASE_SERVICE_ACCOUNT_JSON).",
+      "Firebase Admin no configurado. Defina FIREBASE_SERVICE_ACCOUNT_JSON o FIREBASE_SERVICE_ACCOUNT_PATH en .env.local.",
     );
   }
 

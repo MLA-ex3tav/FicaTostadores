@@ -48,7 +48,7 @@ interface ProductFormProps {
 
 function emptyAddOn(): ProductAddOn {
 
-  return { id: "", name: "", description: "" };
+  return { id: "", name: "", description: "", price: null };
 
 }
 
@@ -80,6 +80,8 @@ function createEmptyProduct(): Product {
 
     addOns: [],
 
+    listPrice: null,
+
     images: [],
 
   };
@@ -107,6 +109,12 @@ function cleanAddOns(values: ProductAddOn[]): ProductAddOn[] {
       name: addOn.name.trim(),
 
       description: addOn.description.trim(),
+
+      ...(typeof addOn.price === "number" &&
+      Number.isFinite(addOn.price) &&
+      addOn.price >= 0
+        ? { price: Math.round(addOn.price) }
+        : {}),
 
     }))
 
@@ -605,6 +613,56 @@ export default function ProductForm({
 
         </div>
 
+        <div>
+
+          <label htmlFor="listPrice" className={labelClass}>
+
+            Precio de lista (CLP)
+
+          </label>
+
+          <input
+
+            id="listPrice"
+
+            type="number"
+
+            min={0}
+
+            step={1}
+
+            inputMode="numeric"
+
+            value={product.listPrice ?? ""}
+
+            onChange={(event) => {
+
+              const raw = event.target.value;
+
+              updateField(
+
+                "listPrice",
+
+                raw === "" ? null : Number.parseInt(raw, 10),
+
+              );
+
+            }}
+
+            placeholder="Ej. 2500000"
+
+            className={inputClass}
+
+          />
+
+          <p className="mt-1.5 text-xs text-steel-dark">
+
+            Opcional. Se muestra en el catálogo y ficha del producto.
+
+          </p>
+
+        </div>
+
       </div>
 
 
@@ -1006,6 +1064,40 @@ export default function ProductForm({
                     const next = [...product.addOns];
 
                     next[index] = { ...next[index], name: event.target.value };
+
+                    updateField("addOns", next);
+
+                  }}
+
+                  className={inputClass}
+
+                />
+
+                <input
+
+                  type="number"
+
+                  min={0}
+
+                  step={1}
+
+                  value={addOn.price ?? ""}
+
+                  placeholder="Precio CLP (opcional)"
+
+                  onChange={(event) => {
+
+                    const raw = event.target.value;
+
+                    const next = [...product.addOns];
+
+                    next[index] = {
+
+                      ...next[index],
+
+                      price: raw === "" ? null : Number.parseInt(raw, 10),
+
+                    };
 
                     updateField("addOns", next);
 

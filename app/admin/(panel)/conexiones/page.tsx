@@ -19,9 +19,10 @@ export default async function AdminConexionesPage() {
         ESTADO DEL <span className="text-orange">SISTEMA</span>
       </h1>
       <p className="mt-3 max-w-2xl text-sm text-steel-mid">
-        Comprueba si Firebase, Vercel, la app Electron de cotizaciones, las
-        páginas públicas y las APIs respondiendo están conectadas. Las
-        verificaciones se ejecutan en el servidor sin exponer secretos.
+        Comprueba Firebase, Vercel, la app Electron de cotizaciones y las
+        integraciones. Las sondas HTTP a páginas públicas pueden marcar
+        advertencia si Vercel bloquea peticiones automáticas; eso no implica
+        login obligatorio en el sitio.
       </p>
 
       <div className="mt-8">

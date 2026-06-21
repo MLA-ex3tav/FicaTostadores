@@ -253,6 +253,10 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
   };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest("button")) {
+      return;
+    }
+
     if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
@@ -263,6 +267,9 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
   };
 
   const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest("button")) {
+      return;
+    }
     const startX = pointerStartXRef.current;
     const startY = pointerStartYRef.current;
     pointerStartXRef.current = null;
@@ -352,29 +359,38 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
             <>
               <button
                 type="button"
-                onClick={goPrev}
-                className="absolute left-3 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:flex sm:left-5 sm:h-11 sm:w-11"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  goPrev();
+                }}
+                className="absolute left-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:flex sm:left-5 sm:h-11 sm:w-11"
                 aria-label="Slide anterior"
               >
                 <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.25} />
               </button>
               <button
                 type="button"
-                onClick={goNext}
-                className="absolute right-3 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:flex sm:right-5 sm:h-11 sm:w-11"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  goNext();
+                }}
+                className="absolute right-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:flex sm:right-5 sm:h-11 sm:w-11"
                 aria-label="Slide siguiente"
               >
                 <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.25} />
               </button>
 
-              <div className="pointer-events-auto absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/55 px-3 py-2 backdrop-blur-sm sm:bottom-5 md:bottom-[7.25rem]">
+              <div className="pointer-events-auto absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/55 px-3 py-2 backdrop-blur-sm sm:bottom-5 md:bottom-[7.25rem]">
                 {slides.map((banner, index) => {
                   const isActive = index === activeIndex;
                   return (
                     <button
                       key={`${banner.productId || "default"}-dot-${index}`}
                       type="button"
-                      onClick={() => goTo(index)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        goTo(index);
+                      }}
                       className={`h-2 rounded-full transition-all ${
                         isActive ? "w-5 bg-white" : "w-2 bg-white/40 hover:bg-white/70"
                       }`}
