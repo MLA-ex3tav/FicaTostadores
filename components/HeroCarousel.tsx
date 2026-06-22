@@ -6,16 +6,22 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type KeyboardEvent,
   type MouseEvent,
   type PointerEvent as ReactPointerEvent,
+  type TransitionEvent,
 } from "react";
 import MediaImage from "./MediaImage";
 import type { HeroProductBanner } from "@/lib/images";
-import { DEFAULT_IMAGE_FOCUS, focusToObjectPosition } from "@/lib/product-images";
+import {
+  CAROUSEL_CONTAINER_CLASS,
+  CAROUSEL_DEFAULT_FOCUS,
+  focusToObjectPosition,
+} from "@/lib/product-images";
 
 interface HeroCarouselProps {
   banners: HeroProductBanner[];
@@ -49,7 +55,7 @@ const DEFAULT_BANNERS: HeroProductBanner[] = [
     ],
     categoryLabel: "Ingeniería de tueste",
     catalogLabel: "Catálogo completo",
-    carouselFocus: DEFAULT_IMAGE_FOCUS,
+    carouselFocus: CAROUSEL_DEFAULT_FOCUS,
   },
 ];
 
@@ -66,33 +72,42 @@ function splitHeadline(text: string): [string, string] {
   ];
 }
 
-function shouldLoadSlideImage(
-  index: number,
-  activeIndex: number,
-  slideCount: number,
-): boolean {
+function getRealSlideIndex(trackIndex: number, slideCount: number): number {
   if (slideCount <= 1) {
-    return true;
+    return 0;
   }
 
-  const previous = (activeIndex - 1 + slideCount) % slideCount;
-  const next = (activeIndex + 1) % slideCount;
+  if (trackIndex === 0) {
+    return slideCount - 1;
+  }
 
-  return index === activeIndex || index === previous || index === next;
+  if (trackIndex >= slideCount + 1) {
+    return 0;
+  }
+
+  return trackIndex - 1;
+}
+
+function buildLoopSlides(slides: HeroProductBanner[]): HeroProductBanner[] {
+  if (slides.length <= 1) {
+    return slides;
+  }
+
+  const first = slides[0];
+  const last = slides[slides.length - 1];
+  return [last, ...slides, first];
 }
 
 function HeroCarouselSlide({
   banner,
   priority,
-  loadImage,
 }: {
   banner: HeroProductBanner;
   priority: boolean;
-  loadImage: boolean;
 }) {
   const [headlineTop, headlineBottom] = splitHeadline(banner.name);
   const href = banner.productId ? `/productos/${banner.productId}` : "/productos";
-  const hasImage = banner.src.length > 0 && loadImage;
+  const hasImage = banner.src.length > 0;
 
   return (
     <div className="relative h-full w-full shrink-0 cursor-pointer overflow-hidden">
@@ -201,38 +216,117 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
     () => (banners.length > 0 ? banners : DEFAULT_BANNERS),
     [banners],
   );
-  const [activeIndex, setActiveIndex] = useState(0);
+  const loopSlides = useMemo(() => buildLoopSlides(slides), [slides]);
+  const slideCount = slides.length;
+  const loopSlideCount = loopSlides.length;
+  const [trackIndex, setTrackIndex] = useState(slideCount > 1 ? 1 : 0);
+  const [transitionEnabled, setTransitionEnabled] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const router = useRouter();
   const pointerStartXRef = useRef<number | null>(null);
   const pointerStartYRef = useRef<number | null>(null);
   const didSwipeRef = useRef(false);
-  const slideCount = slides.length;
+  const isBusyRef = useRef(false);
+  const realActiveIndex = getRealSlideIndex(trackIndex, slideCount);
+  const slideWidthPercent = loopSlideCount > 0 ? 100 / loopSlideCount : 100;
+
+  useEffect(() => {
+    setTrackIndex(slideCount > 1 ? 1 : 0);
+    setTransitionEnabled(true);
+    isBusyRef.current = false;
+  }, [slideCount]);
+
+  useLayoutEffect(() => {
+    if (transitionEnabled) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTransitionEnabled(true);
+        isBusyRef.current = false;
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [transitionEnabled, trackIndex]);
+
+  const releaseBusyIfNeeded = useCallback(
+    (index: number) => {
+      if (slideCount <= 1) {
+        isBusyRef.current = false;
+        return;
+      }
+
+      if (index > 0 && index < slideCount + 1) {
+        isBusyRef.current = false;
+      }
+    },
+    [slideCount],
+  );
 
   const getSlideHref = useCallback((banner: HeroProductBanner) => {
     return banner.productId ? `/productos/${banner.productId}` : "/productos";
   }, []);
 
-  const goTo = useCallback(
+  const goToRealIndex = useCallback(
     (index: number) => {
-      if (slideCount === 0) {
+      if (slideCount <= 1 || isBusyRef.current) {
         return;
       }
 
       const normalized =
         ((index % slideCount) + slideCount) % slideCount;
-      setActiveIndex(normalized);
+      isBusyRef.current = true;
+      setTransitionEnabled(true);
+      setTrackIndex(normalized + 1);
     },
     [slideCount],
   );
 
   const goNext = useCallback(() => {
-    goTo(activeIndex + 1);
-  }, [activeIndex, goTo]);
+    if (slideCount <= 1 || isBusyRef.current) {
+      return;
+    }
+
+    isBusyRef.current = true;
+    setTransitionEnabled(true);
+    setTrackIndex((current) => Math.min(current + 1, slideCount + 1));
+  }, [slideCount]);
 
   const goPrev = useCallback(() => {
-    goTo(activeIndex - 1);
-  }, [activeIndex, goTo]);
+    if (slideCount <= 1 || isBusyRef.current) {
+      return;
+    }
+
+    isBusyRef.current = true;
+    setTransitionEnabled(true);
+    setTrackIndex((current) => Math.max(current - 1, 0));
+  }, [slideCount]);
+
+  const onTrackTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
+    if (
+      event.target !== event.currentTarget ||
+      event.propertyName !== "transform" ||
+      slideCount <= 1
+    ) {
+      return;
+    }
+
+    if (trackIndex <= 0) {
+      setTransitionEnabled(false);
+      setTrackIndex(slideCount);
+      return;
+    }
+
+    if (trackIndex >= slideCount + 1) {
+      setTransitionEnabled(false);
+      setTrackIndex(1);
+      return;
+    }
+
+    releaseBusyIfNeeded(trackIndex);
+  };
 
   useEffect(() => {
     if (slideCount <= 1 || isPaused) {
@@ -271,7 +365,7 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
       }
 
       event.preventDefault();
-      router.push(getSlideHref(slides[activeIndex]));
+      router.push(getSlideHref(slides[realActiveIndex]));
     }
   };
 
@@ -323,7 +417,7 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
     }
 
     if (absDeltaX <= TAP_THRESHOLD_PX && absDeltaY <= TAP_THRESHOLD_PX) {
-      router.push(getSlideHref(slides[activeIndex]));
+      router.push(getSlideHref(slides[realActiveIndex]));
     }
   };
 
@@ -359,28 +453,36 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
         onBlur={() => setIsPaused(false)}
         tabIndex={0}
       >
-        <div className="relative aspect-[5/2] min-h-[15rem] max-h-[34rem] w-full bg-panel/40">
+        <div className={`${CAROUSEL_CONTAINER_CLASS} bg-panel/40`}>
           <div
-            className="absolute inset-0 touch-pan-y"
+            className="absolute inset-0 touch-pan-y overflow-hidden"
             onPointerDown={onPointerDown}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
             onClickCapture={onCarouselClickCapture}
           >
             <div
-              className="flex h-full transition-transform duration-700 ease-out motion-reduce:transition-none"
-              style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+              className={`flex h-full ${
+                transitionEnabled
+                  ? "transition-transform duration-700 ease-out motion-reduce:transition-none"
+                  : ""
+              }`}
+              style={{
+                width: `${loopSlideCount * 100}%`,
+                transform: `translateX(-${trackIndex * slideWidthPercent}%)`,
+              }}
+              onTransitionEnd={onTrackTransitionEnd}
               aria-live="polite"
             >
-              {slides.map((banner, index) => (
+              {loopSlides.map((banner, index) => (
                 <div
-                  key={`${banner.productId || "default"}-${index}`}
-                  className="h-full w-full shrink-0"
+                  key={`${banner.productId || "default"}-loop-${index}`}
+                  className="h-full shrink-0"
+                  style={{ width: `${slideWidthPercent}%` }}
                 >
                   <HeroCarouselSlide
                     banner={banner}
-                    priority={index === 0}
-                    loadImage={shouldLoadSlideImage(index, activeIndex, slideCount)}
+                    priority={index === 1}
                   />
                 </div>
               ))}
@@ -389,14 +491,14 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
             {slideCount > 1 ? (
               <div className="pointer-events-auto absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/55 px-3 py-2 backdrop-blur-sm sm:bottom-5 md:bottom-[7.25rem]">
                 {slides.map((banner, index) => {
-                  const isActive = index === activeIndex;
+                  const isActive = index === realActiveIndex;
                   return (
                     <button
                       key={`${banner.productId || "default"}-dot-${index}`}
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
-                        goTo(index);
+                        goToRealIndex(index);
                       }}
                       className={`h-2 rounded-full transition-all ${
                         isActive ? "w-5 bg-white" : "w-2 bg-white/40 hover:bg-white/70"

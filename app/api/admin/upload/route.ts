@@ -4,9 +4,12 @@ import { requireStaffApi } from "@/lib/admin-api-guard";
 import { getBlobErrorMessage } from "@/lib/blob-storage";
 import { detectImageMime } from "@/lib/image-magic-bytes";
 import {
+  optimizeUploadImage,
+  parseUploadImageVariant,
+} from "@/lib/optimize-upload-image";
+import {
   canUploadFiles,
   isAllowedImageUpload,
-  normalizeImageContentType,
   saveUploadedImage,
 } from "@/lib/upload-repository";
 
@@ -68,11 +71,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const contentType = normalizeImageContentType(
-      detectedMime || file.type,
-      file.name,
+    const variant = parseUploadImageVariant(formData.get("variant"));
+    const optimizedBuffer = await optimizeUploadImage(buffer, variant);
+    const url = await saveUploadedImage(
+      optimizedBuffer,
+      "image/webp",
+      "image.webp",
     );
-    const url = await saveUploadedImage(buffer, contentType, file.name);
 
     revalidatePath("/");
 

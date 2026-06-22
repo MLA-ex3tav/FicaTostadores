@@ -3,13 +3,16 @@
 import ImageFocusEditor from "@/components/admin/ImageFocusEditor";
 import { useFirebaseAuth } from "@/lib/firebase-auth";
 import {
+  CAROUSEL_CONTAINER_CLASS,
   CAROUSEL_IMAGE_SPEC,
   createGalleryImage,
   createProductImage,
+  PRODUCT_IMAGE_CONTAINER_CLASS,
   PRODUCT_IMAGE_SPEC,
   type ProductImage,
   type ProductImageView,
 } from "@/lib/product-images";
+import type { UploadImageVariant } from "@/lib/optimize-upload-image";
 import { useRef, useState } from "react";
 
 interface ProductImagesFieldProps {
@@ -33,9 +36,13 @@ export default function ProductImagesField({
   );
   const [error, setError] = useState("");
 
-  async function uploadFile(file: File): Promise<string | null> {
+  async function uploadFile(
+    file: File,
+    variant: UploadImageVariant = "product",
+  ): Promise<string | null> {
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("variant", variant);
 
     const response = await adminFetch("/api/admin/upload", {
       method: "POST",
@@ -66,7 +73,7 @@ export default function ProductImagesField({
 
     try {
       for (const file of Array.from(selected)) {
-        const url = await uploadFile(file);
+        const url = await uploadFile(file, "gallery");
         if (!url) {
           return;
         }
@@ -101,7 +108,7 @@ export default function ProductImagesField({
     setError("");
 
     try {
-      const url = await uploadFile(selected[0]);
+      const url = await uploadFile(selected[0], view);
       if (!url) {
         return;
       }
@@ -146,7 +153,7 @@ export default function ProductImagesField({
     setError("");
 
     try {
-      const url = await uploadFile(selected[0]);
+      const url = await uploadFile(selected[0], "primary");
       if (!url) {
         return;
       }
@@ -195,7 +202,8 @@ export default function ProductImagesField({
           <p className="mt-1 text-xs text-steel-dark">
             La imagen principal puede usar archivos distintos para el carrusel
             (inicio) y la vista de productos (catálogo y ficha). Las imágenes
-            adicionales solo se muestran en la ficha del producto.
+            adicionales solo se muestran en la ficha del producto. Al subir, se
+            optimizan automáticamente a WebP.
           </p>
           <ul className="mt-2 space-y-1 text-[0.65rem] text-steel-mid">
             <li>
@@ -294,7 +302,7 @@ export default function ProductImagesField({
                     src={image.carousel.src}
                     label={CAROUSEL_IMAGE_SPEC.label}
                     resolutionHint={CAROUSEL_IMAGE_SPEC.hint}
-                    aspectClassName="aspect-[5/2] w-full"
+                    aspectClassName={CAROUSEL_CONTAINER_CLASS}
                     focus={image.carousel.focus}
                     onChange={(focus) => updateView(index, "carousel", { focus })}
                     onReplaceImage={() => carouselInputRef.current?.click()}
@@ -306,7 +314,7 @@ export default function ProductImagesField({
                   src={image.product.src}
                   label={PRODUCT_IMAGE_SPEC.label}
                   resolutionHint={PRODUCT_IMAGE_SPEC.hint}
-                  aspectClassName="aspect-[4/3] w-full"
+                  aspectClassName={PRODUCT_IMAGE_CONTAINER_CLASS}
                   focus={image.product.focus}
                   onChange={(focus) => updateView(index, "product", { focus })}
                   onReplaceImage={

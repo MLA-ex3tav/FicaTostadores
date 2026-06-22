@@ -17,21 +17,31 @@ export interface ProductImage {
 
 export const DEFAULT_IMAGE_FOCUS: ProductImageFocus = { x: 50, y: 50 };
 
+/** Punto de encuadre por defecto para carrusel (centrado). */
+export const CAROUSEL_DEFAULT_FOCUS: ProductImageFocus = { x: 50, y: 50 };
+
+/** Contenedor del carrusel: proporción 5:2 a ancho completo. */
+export const CAROUSEL_CONTAINER_CLASS =
+  "relative w-full aspect-[5/2] min-h-[15rem]";
+
 export const CAROUSEL_IMAGE_SPEC = {
   label: "Vista carrusel",
   aspectRatio: "5:2",
   width: 2400,
   height: 960,
-  hint: "2400 × 960 px · proporción 5:2 · JPG o WebP",
+  hint: "2400 × 960 px · proporción 5:2 · JPG o WebP · clic o arrastre para encuadrar",
 } as const;
 
 export const PRODUCT_IMAGE_SPEC = {
   label: "Vista productos",
-  aspectRatio: "4:3",
+  aspectRatio: "3:2",
   width: 1200,
-  height: 900,
-  hint: "1200 × 900 px · proporción 4:3 · JPG o WebP",
+  height: 800,
+  hint: "1200 × 800 px · proporción 3:2 · JPG o WebP · clic o arrastre para encuadrar",
 } as const;
+
+/** Preview del admin para la vista de ficha y catálogo. */
+export const PRODUCT_IMAGE_CONTAINER_CLASS = "relative aspect-[3/2] w-full";
 
 export function clampFocus(value: number): number {
   return Math.min(100, Math.max(0, Math.round(value)));
@@ -41,10 +51,13 @@ export function focusToObjectPosition(focus: ProductImageFocus): string {
   return `${focus.x}% ${focus.y}%`;
 }
 
-function createProductImageView(src: string): ProductImageView {
+function createProductImageView(
+  src: string,
+  focus: ProductImageFocus = DEFAULT_IMAGE_FOCUS,
+): ProductImageView {
   return {
     src,
-    focus: { ...DEFAULT_IMAGE_FOCUS },
+    focus: { ...focus },
   };
 }
 
@@ -53,7 +66,7 @@ export function createProductImage(
   productSrc?: string,
 ): ProductImage {
   return {
-    carousel: createProductImageView(carouselSrc),
+    carousel: createProductImageView(carouselSrc, CAROUSEL_DEFAULT_FOCUS),
     product: createProductImageView(productSrc ?? carouselSrc),
   };
 }

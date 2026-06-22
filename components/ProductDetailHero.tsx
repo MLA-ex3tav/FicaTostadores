@@ -43,11 +43,12 @@ export default function ProductDetailHero({
 
   return (
     <SteelPanel
-      className={`mb-10 overflow-hidden !p-0 ${isSelected ? quoteSelectedPanelClass : ""}`}
+      unpadded
+      className={`mb-10 overflow-hidden ${isSelected ? quoteSelectedPanelClass : ""}`}
     >
       <div className="grid md:grid-cols-2 md:items-stretch">
         <div className="flex min-w-0 flex-col overflow-hidden md:h-full">
-          <div className="relative aspect-[4/3] min-h-[14rem] overflow-hidden md:aspect-auto md:min-h-[18rem] md:flex-1">
+          <div className="relative aspect-[3/2] min-h-[14rem] overflow-hidden md:aspect-auto md:min-h-[18rem] md:flex-1">
             {primaryImage ? (
               <MediaImage
                 src={primaryImage.src}
