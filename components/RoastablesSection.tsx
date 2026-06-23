@@ -28,7 +28,7 @@ export default function RoastablesSection() {
             Múltiples <span className="text-orange">materias primas</span>
           </>
         }
-        description="Una línea de equipos para café, cacao, frutos secos, granos, semillas y especias."
+        description="Equipos para tueste y procesamiento en planta."
       />
 
       <ul className="mt-10 flex flex-wrap gap-x-8 gap-y-5 sm:gap-x-10">

@@ -62,36 +62,6 @@ body {
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
-.rivet-divider {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.rivet-divider::before,
-.rivet-divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--steel-dark) 20%,
-    var(--steel-mid) 50%,
-    var(--steel-dark) 80%,
-    transparent
-  );
-}
-
-.rivet-divider span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, var(--steel-light), var(--steel-dark));
-  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.3);
-  flex-shrink: 0;
-}
-
 /* Industrial input styles */
 .industrial-input {
   box-sizing: border-box;

@@ -174,3 +174,88 @@ export function buildWhatsAppContactUrl(message?: string): string {
 
   return base;
 }
+
+export interface TechnicalServiceWhatsAppContext {
+  equipmentModel: string;
+  issueCategoryLabel: string;
+  issueDescription: string;
+  equipmentLocation?: string | null;
+}
+
+function buildTechnicalServiceText(
+  name: string,
+  phone: string,
+  context: TechnicalServiceWhatsAppContext,
+  options?: { requestId?: string; email?: string },
+): string {
+  const lines = [
+    "Hola, solicito servicio técnico — Fica Tostadores",
+    `Nombre: ${name}`,
+    `Teléfono: ${phone}`,
+  ];
+
+  const country = countryLabelFromPhone(phone);
+  if (country) {
+    lines.push(`País: ${country}`);
+  }
+
+  if (options?.email?.trim()) {
+    lines.push(`Correo: ${options.email.trim()}`);
+  }
+
+  lines.push(`Equipo: ${context.equipmentModel}`);
+  lines.push(`Tipo de solicitud: ${context.issueCategoryLabel}`);
+  lines.push(`Descripción: ${context.issueDescription}`);
+
+  if (context.equipmentLocation?.trim()) {
+    lines.push(`Ubicación del equipo: ${context.equipmentLocation.trim()}`);
+  }
+
+  if (options?.requestId?.trim()) {
+    lines.push(`Referencia: ${options.requestId.trim()}`);
+  }
+
+  return lines.join("\n");
+}
+
+export function buildTechnicalServiceWhatsAppUrl(
+  name: string,
+  phone: string,
+  context: TechnicalServiceWhatsAppContext,
+  options?: { requestId?: string; email?: string },
+): string {
+  const safeName = sanitizeText(name, 120, { required: true }) ?? "";
+  const safeEmail = sanitizeText(options?.email, 200) ?? "";
+  const safeRequestId = sanitizeText(options?.requestId, 80) ?? "";
+  const safeEquipmentModel =
+    sanitizeText(context.equipmentModel, 200, { required: true }) ?? "";
+  const safeIssueCategoryLabel =
+    sanitizeText(context.issueCategoryLabel, 120, { required: true }) ?? "";
+  const safeIssueDescription =
+    sanitizeText(context.issueDescription, 2000, { required: true }) ?? "";
+  const safeEquipmentLocation =
+    sanitizeText(context.equipmentLocation, 300) ?? "";
+
+  const text = encodeURIComponent(
+    buildTechnicalServiceText(
+      safeName,
+      phone,
+      {
+        equipmentModel: safeEquipmentModel,
+        issueCategoryLabel: safeIssueCategoryLabel,
+        issueDescription: safeIssueDescription,
+        equipmentLocation: safeEquipmentLocation || undefined,
+      },
+      {
+        email: safeEmail || undefined,
+        requestId: safeRequestId || undefined,
+      },
+    ),
+  );
+
+  if (isMobileDevice()) {
+    return `https://wa.me/${QUOTE_WHATSAPP.e164}?text=${text}`;
+  }
+
+  return `https://web.whatsapp.com/send?phone=${QUOTE_WHATSAPP.e164}&text=${text}`;
+}

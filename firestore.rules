@@ -1,5 +1,7 @@
 rules_version = '2';
 
+// Reglas alineadas con la app web + delete en solicitudes para sync de la app Electron.
+// Publicar en Firebase Console → Firestore → Reglas (proyecto fica-tostadores).
 service cloud.firestore {
   match /databases/{database}/documents {
     function callerDoc() {
@@ -47,10 +49,17 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Solicitudes desde la web pública (solo datos del formulario; creación vía Admin).
+    // Solicitudes desde la web pública (creación vía Admin SDK).
+    // Electron: leer, actualizar y eliminar (sync local delete_pending).
     match /solicitudes_cotizacion/{solicitudId} {
-      allow read, update: if isStaff();
-      allow create, delete: if false;
+      allow read, update, delete: if isStaff();
+      allow create: if false;
+    }
+
+    // Servicio técnico (mismo patrón que cotizaciones; creación vía Admin SDK).
+    match /solicitudes_soporte_tecnico/{solicitudId} {
+      allow read, update, delete: if isStaff();
+      allow create: if false;
     }
 
     // Catálogo público (escritura solo vía Admin SDK en API routes).

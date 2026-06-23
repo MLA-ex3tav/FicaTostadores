@@ -192,6 +192,25 @@ function checkFirebaseEnv(): HealthCheck {
   };
 }
 
+function authProjectIdsMatch(
+  configuredProjectId: string | undefined,
+  remoteProjectId: string | undefined,
+): boolean {
+  if (!configuredProjectId || !remoteProjectId) {
+    return true;
+  }
+
+  if (configuredProjectId === remoteProjectId) {
+    return true;
+  }
+
+  // Identity Toolkit devuelve el número de proyecto, no el projectId string.
+  const messagingSenderId =
+    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID?.trim();
+
+  return Boolean(messagingSenderId && remoteProjectId === messagingSenderId);
+}
+
 async function checkFirebaseAuthApi(): Promise<HealthCheck> {
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim();
 
@@ -225,11 +244,7 @@ async function checkFirebaseAuthApi(): Promise<HealthCheck> {
       process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim();
     const remoteProjectId = data.projectId?.trim();
 
-    if (
-      configuredProjectId &&
-      remoteProjectId &&
-      configuredProjectId !== remoteProjectId
-    ) {
+    if (!authProjectIdsMatch(configuredProjectId, remoteProjectId)) {
       return {
         id: "firebase-auth",
         category: "firebase",
@@ -244,13 +259,15 @@ async function checkFirebaseAuthApi(): Promise<HealthCheck> {
       };
     }
 
+    const displayProjectId = configuredProjectId ?? remoteProjectId;
+
     return {
       id: "firebase-auth",
       category: "firebase",
       name: "Authentication",
       status: "ok",
-      message: remoteProjectId
-        ? `Identity Toolkit operativo (proyecto ${remoteProjectId}).`
+      message: displayProjectId
+        ? `Identity Toolkit operativo (proyecto ${displayProjectId}).`
         : "Identity Toolkit operativo.",
     };
   } catch {
@@ -279,7 +296,7 @@ async function checkFirestoreApi(): Promise<HealthCheck> {
 
   try {
     const response = await fetchWithTimeout(
-      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents`,
+      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)`,
     );
 
     if (response.status === 401 || response.status === 403) {
@@ -289,7 +306,7 @@ async function checkFirestoreApi(): Promise<HealthCheck> {
         name: "Firestore",
         status: "ok",
         message:
-          "API de Firestore accesible (requiere sesión para leer datos).",
+          "API de Firestore accesible (base de datos existente; requiere credenciales para leer datos).",
       };
     }
 
@@ -300,6 +317,17 @@ async function checkFirestoreApi(): Promise<HealthCheck> {
         name: "Firestore",
         status: "ok",
         message: "API de Firestore responde correctamente.",
+      };
+    }
+
+    if (response.status === 404) {
+      return {
+        id: "firebase-firestore",
+        category: "firebase",
+        name: "Firestore",
+        status: "error",
+        message:
+          "No se encontró la base Firestore (default). Créela en Firebase Console → Firestore Database.",
       };
     }
 
@@ -401,7 +429,19 @@ async function checkCotizacionesApiRoute(baseUrl: string): Promise<HealthCheck> 
     const evaluated = evaluateHttpHealthResponse(response, "/api/cotizaciones/solicitudes", [
       405,
       400,
+      429,
     ]);
+
+    if (response.status === 429) {
+      return {
+        id: "cotizaciones-api",
+        category: "api",
+        name: "API de solicitudes",
+        status: "ok",
+        message:
+          "Endpoint activo; rate limit de envíos operativo (la sonda no consume cupo de cotizaciones).",
+      };
+    }
 
     if (evaluated.status === "ok") {
       return {

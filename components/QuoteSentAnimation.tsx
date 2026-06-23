@@ -7,11 +7,19 @@ import "@/components/quote-sent-animation.css";
 interface QuoteSentAnimationProps {
   requestId?: string | null;
   onSendAnother?: () => void;
+  sendingStatus?: string;
+  arrivedSubtitle?: string;
+  title?: string;
+  description?: string;
 }
 
 export default function QuoteSentAnimation({
   requestId,
   onSendAnother,
+  sendingStatus = "Enviando solicitud…",
+  arrivedSubtitle = "Nuestro equipo la revisará pronto",
+  title = "Solicitud enviada",
+  description = "Recibimos su cotización. Si no se abrió automáticamente, puede continuar la conversación por WhatsApp con nuestro equipo de ventas.",
 }: QuoteSentAnimationProps) {
   const [arrived, setArrived] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -75,11 +83,11 @@ export default function QuoteSentAnimation({
           }`}
           aria-live="polite"
         >
-          {arrived ? "Solicitud recibida" : "Enviando solicitud…"}
+          {arrived ? "Solicitud recibida" : sendingStatus}
         </p>
         {arrived ? (
           <p className="text-xs uppercase tracking-widest text-steel-dark">
-            Nuestro equipo comercial la revisará pronto
+            {arrivedSubtitle}
           </p>
         ) : null}
       </div>
@@ -87,11 +95,10 @@ export default function QuoteSentAnimation({
       {showDetails ? (
         <div className="quote-sent-animation__details space-y-4">
           <p className="font-display text-2xl tracking-wide text-steel-light">
-            Solicitud enviada
+            {title}
           </p>
           <p className="text-base leading-relaxed text-steel-mid">
-            Recibimos su cotización. Si no se abrió automáticamente, puede
-            continuar la conversación por WhatsApp con nuestro equipo de ventas.
+            {description}
           </p>
           {requestId ? (
             <p className="text-sm text-steel-dark">

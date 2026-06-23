@@ -161,6 +161,7 @@ export const RATE_LIMITS = {
   uploadPerUser: { windowMs: 60_000, max: 10 },
   electronHeartbeat: { windowMs: 60_000, max: 120 },
   cotizacionesSubmit: { windowMs: 900_000, max: 5 },
+  soporteTecnicoSubmit: { windowMs: 900_000, max: 5 },
 } as const satisfies Record<string, RateLimitConfig>;
 
 export function getRateLimitKey(
@@ -175,10 +176,23 @@ export function getRateLimitKey(
     };
   }
 
-  if (pathname.startsWith("/api/cotizaciones/solicitudes")) {
+  if (
+    pathname.startsWith("/api/cotizaciones/solicitudes") &&
+    method === "POST"
+  ) {
     return {
       keys: [`${ip}:cotizaciones:submit`],
       config: RATE_LIMITS.cotizacionesSubmit,
+    };
+  }
+
+  if (
+    pathname.startsWith("/api/soporte-tecnico/solicitudes") &&
+    method === "POST"
+  ) {
+    return {
+      keys: [`${ip}:soporte-tecnico:submit`],
+      config: RATE_LIMITS.soporteTecnicoSubmit,
     };
   }
 

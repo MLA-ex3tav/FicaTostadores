@@ -5,10 +5,6 @@ export default function Footer() {
   return (
     <footer className="mt-auto border-t border-steel-dark/30 bg-panel">
       <div className="mx-auto max-w-6xl px-4 py-10 md:px-6">
-        <div className="rivet-divider mb-8">
-          <span />
-        </div>
-
         <div className="grid gap-8 md:grid-cols-3">
           <div>
             <p className="font-display text-xl tracking-widest text-orange">

@@ -1,10 +1,10 @@
-import { Globe, Headphones, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Globe, MapPin, ShieldCheck, type LucideIcon } from "lucide-react";
 import HeroSection from "@/components/HeroSection";
+import HomeContactSection from "@/components/HomeContactSection";
 import RoastablesSection from "@/components/RoastablesSection";
 import SectionHeader from "@/components/SectionHeader";
 import ServicesSection from "@/components/ServicesSection";
 import StatsSection from "@/components/StatsSection";
-import TrustSealsSection from "@/components/TrustSealsSection";
 import { getHeroProductBanners } from "@/lib/hero-images-server";
 
 export const revalidate = 300;
@@ -15,20 +15,18 @@ const features: {
   Icon: LucideIcon;
 }[] = [
   {
-    title: "Calidad industrial",
-    description:
-      "Materiales de alta resistencia para operación continua en planta.",
+    title: "Fabricado en Chile",
+    description: "Ingeniería y producción en la IX Región.",
+    Icon: MapPin,
+  },
+  {
+    title: "Calidad certificada",
+    description: "Acero inoxidable y cumplimiento de norma sanitaria.",
     Icon: ShieldCheck,
   },
   {
-    title: "Soporte técnico",
-    description:
-      "Instalación, puesta en marcha y mantenimiento preventivo.",
-    Icon: Headphones,
-  },
-  {
     title: "Exportación",
-    description: "Maquinaria certificada con envíos a Latinoamérica.",
+    description: "Maquinaria con envíos a Latinoamérica.",
     Icon: Globe,
   },
 ];
@@ -39,6 +37,7 @@ export default async function Home() {
   return (
     <>
       <HeroSection banners={banners} />
+      <HomeContactSection />
       <StatsSection />
       <RoastablesSection />
       <ServicesSection />
@@ -70,8 +69,6 @@ export default async function Home() {
           ))}
         </ul>
       </section>
-
-      <TrustSealsSection />
     </>
   );
 }

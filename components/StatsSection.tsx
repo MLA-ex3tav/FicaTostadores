@@ -1,7 +1,7 @@
 const stats: { value: string; label: string }[] = [
   { value: "6+", label: "Líneas de producto" },
   { value: "6+", label: "Países atendidos" },
-  { value: "100%", label: "Soporte postventa" },
+  { value: "100%", label: "Acero inoxidable" },
 ];
 
 export default function StatsSection() {

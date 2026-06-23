@@ -542,12 +542,6 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
           ) : null}
         </div>
       </div>
-
-      <div className="mx-auto max-w-6xl px-4 md:px-6">
-        <div className="rivet-divider relative py-8">
-          <span />
-        </div>
-      </div>
     </section>
   );
 }

@@ -38,9 +38,6 @@ export default async function ProductosPage() {
             </>
           }
         />
-        <div className="rivet-divider mt-8 max-w-md">
-          <span />
-        </div>
       </div>
 
       <Suspense fallback={<ProductsCatalogFallback />}>

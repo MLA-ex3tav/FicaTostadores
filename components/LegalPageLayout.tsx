@@ -29,11 +29,7 @@ export default function LegalPageLayout({
         Última actualización: {lastUpdated}
       </p>
 
-      <div className="rivet-divider my-10">
-        <span />
-      </div>
-
-      <article className="legal-prose space-y-8 text-base leading-relaxed text-steel-mid">
+      <article className="legal-prose mt-10 space-y-8 text-base leading-relaxed text-steel-mid">
         {children}
       </article>
 

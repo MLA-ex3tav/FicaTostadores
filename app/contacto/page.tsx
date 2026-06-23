@@ -48,15 +48,7 @@ export default function ContactoPage() {
 
 
 
-          <div className="lg:hidden">
-
-            <div className="rivet-divider my-8 max-w-xs">
-
-              <span />
-
-            </div>
-
-
+          <div className="lg:hidden mt-8">
 
             <div>
 

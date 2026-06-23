@@ -24,7 +24,7 @@ const services: {
   {
     title: "Soporte técnico",
     description: "Instalación, puesta en marcha, mantenimiento y repuestos.",
-    href: "/contacto",
+    href: "/servicio-tecnico",
     cta: "Solicitar soporte",
     Icon: Headphones,
   },
@@ -41,7 +41,7 @@ export default function ServicesSection() {
               Soluciones <span className="text-orange">completas</span>
             </>
           }
-          description="Equipamiento y soporte postventa para cada etapa de su planta."
+          description="Equipamiento y acompañamiento para cada etapa de su planta."
         />
 
         <div className="mt-10 grid gap-10 md:grid-cols-2 md:gap-12">
