@@ -1,5 +1,6 @@
 "use client";
 
+import type { AdminImageUploadProgress } from "@/lib/admin-image-upload";
 import {
   clampFocus,
   focusToObjectPosition,
@@ -17,6 +18,7 @@ interface ImageFocusEditorProps {
   onReplaceImage?: () => void;
   replaceImageLabel?: string;
   replacingImage?: boolean;
+  uploadStatus?: AdminImageUploadProgress | null;
 }
 
 export default function ImageFocusEditor({
@@ -29,6 +31,7 @@ export default function ImageFocusEditor({
   onReplaceImage,
   replaceImageLabel,
   replacingImage = false,
+  uploadStatus = null,
 }: ImageFocusEditorProps) {
   const updateFromPointer = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -51,9 +54,13 @@ export default function ImageFocusEditor({
             type="button"
             disabled={replacingImage}
             onClick={onReplaceImage}
-            className="text-[0.65rem] text-orange hover:text-orange-hover disabled:opacity-60"
+            className="max-w-[55%] truncate text-right text-[0.65rem] text-orange hover:text-orange-hover disabled:opacity-60"
           >
-            {replacingImage ? "Subiendo…" : (replaceImageLabel ?? "Cambiar imagen")}
+            {replacingImage && uploadStatus
+              ? `${uploadStatus.percent}% · ${uploadStatus.message}`
+              : replacingImage
+                ? "Subiendo…"
+                : (replaceImageLabel ?? "Cambiar imagen")}
           </button>
         ) : null}
       </div>

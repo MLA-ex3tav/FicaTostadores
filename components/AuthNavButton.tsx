@@ -2,43 +2,39 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { buildLoginHref } from "@/lib/login-return-to";
+import { FileText, LayoutDashboard, Loader2, LogOut, User } from "lucide-react";
+import { googleLogout } from "@react-oauth/google";
+import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useFirebaseAuth } from "@/lib/firebase-auth";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
+import { buildLoginHref } from "@/lib/login-return-to";
+import { isGoogleOAuthConfigured } from "@/lib/google-oauth-config";
 
 interface AuthNavButtonProps {
   className?: string;
   onAction?: () => void;
 }
 
-interface AuthNavUser {
-  email: string | null;
-  label: string;
-  isStaff: boolean;
-}
+function getInitials(displayName: string | null, email: string | null): string {
+  if (displayName?.trim()) {
+    const parts = displayName.trim().split(/\s+/);
 
-function getAccountLabel(email: string | null): string {
-  const localPart = email?.split("@")[0]?.trim();
-
-  if (!localPart) {
-    return "Mi cuenta";
+    return parts
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("");
   }
 
-  if (localPart.length > 16) {
-    return `${localPart.slice(0, 14)}…`;
-  }
-
-  return localPart;
-}
-
-function isFirebaseConfiguredClient(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim() &&
-      process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim() &&
-      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim() &&
-      process.env.NEXT_PUBLIC_FIREBASE_APP_ID?.trim(),
-  );
+  return email?.[0]?.toUpperCase() ?? "?";
 }
 
 export default function AuthNavButton({
@@ -47,142 +43,10 @@ export default function AuthNavButton({
 }: AuthNavButtonProps) {
   const pathname = usePathname();
   const loginHref = buildLoginHref(pathname);
-  const accountHref = buildLoginHref(pathname);
-  const [authUser, setAuthUser] = useState<AuthNavUser | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { user, isStaff, loading, configured, signOut } = useFirebaseAuth();
   const [signingOut, setSigningOut] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isFirebaseConfiguredClient()) {
-      return;
-    }
-
-    let cancelled = false;
-    let unsubscribe: (() => void) | undefined;
-
-    const startAuthListener = () => {
-      void (async () => {
-        const [{ onAuthStateChanged }, { getFirebaseAuth }, { getClienteRole }, { isStaffRole }] =
-          await Promise.all([
-            import("firebase/auth"),
-            import("@/lib/firebase/client"),
-            import("@/lib/auth-sync-client"),
-            import("@/lib/permissions"),
-          ]);
-
-        if (cancelled) {
-          return;
-        }
-
-        const auth = getFirebaseAuth();
-
-        if (!auth) {
-          return;
-        }
-
-        unsubscribe = onAuthStateChanged(auth, (nextUser) => {
-          void (async () => {
-            if (!nextUser) {
-              if (!cancelled) {
-                setAuthUser(null);
-                setMenuOpen(false);
-              }
-              return;
-            }
-
-            const role = await getClienteRole(nextUser.uid);
-
-            if (!cancelled) {
-              setAuthUser({
-                email: nextUser.email,
-                label: getAccountLabel(nextUser.email),
-                isStaff: isStaffRole(role),
-              });
-            }
-          })();
-        });
-      })();
-    };
-
-    let idleHandle = 0;
-    let usedIdleCallback = false;
-
-    if (typeof window.requestIdleCallback === "function") {
-      usedIdleCallback = true;
-      idleHandle = window.requestIdleCallback(startAuthListener, { timeout: 2500 });
-    } else {
-      idleHandle = window.setTimeout(startAuthListener, 1500);
-    }
-
-    return () => {
-      cancelled = true;
-
-      if (usedIdleCallback) {
-        window.cancelIdleCallback(idleHandle);
-      } else {
-        window.clearTimeout(idleHandle);
-      }
-
-      unsubscribe?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!menuOpen) {
-      return;
-    }
-
-    function handlePointerDown(event: MouseEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [menuOpen]);
-
-  async function handleSignOut() {
-    if (signingOut) {
-      return;
-    }
-
-    setSigningOut(true);
-    setMenuOpen(false);
-
-    try {
-      const [{ signOut }, { getFirebaseAuth }] = await Promise.all([
-        import("firebase/auth"),
-        import("@/lib/firebase/client"),
-      ]);
-
-      const auth = getFirebaseAuth();
-
-      if (auth) {
-        await signOut(auth);
-      }
-
-      onAction?.();
-    } catch (signOutError) {
-      console.error(getFirebaseAuthErrorMessage(signOutError));
-    } finally {
-      setSigningOut(false);
-    }
-  }
-
-  if (!authUser) {
+  if (!configured) {
     return (
       <Link
         href={loginHref}
@@ -194,68 +58,106 @@ export default function AuthNavButton({
     );
   }
 
-  const menuId = "auth-nav-menu";
+  if (!user) {
+    return (
+      <Link
+        href={loginHref}
+        onClick={onAction}
+        className={`text-base uppercase tracking-wider transition-colors text-steel-mid hover:text-orange ${className}`}
+      >
+        Ingresar
+      </Link>
+    );
+  }
+
+  async function handleSignOut() {
+    if (signingOut) {
+      return;
+    }
+
+    setSigningOut(true);
+
+    try {
+      if (isGoogleOAuthConfigured()) {
+        try {
+          googleLogout();
+        } catch {
+          // Ignorar si GIS no está montado (p. ej. sin provider).
+        }
+      }
+
+      await signOut();
+      onAction?.();
+    } catch (signOutError) {
+      console.error(getFirebaseAuthErrorMessage(signOutError));
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
+  const displayName = user.displayName ?? "Mi cuenta";
 
   return (
-    <div ref={menuRef} className={`relative ${className}`}>
-      <button
-        type="button"
-        aria-expanded={menuOpen}
-        aria-controls={menuId}
-        aria-haspopup="menu"
-        title={authUser.email ?? undefined}
-        disabled={signingOut}
-        onClick={() => setMenuOpen((open) => !open)}
-        className="inline-flex items-center gap-1.5 text-base uppercase tracking-wider text-steel-light transition-colors hover:text-orange disabled:opacity-60"
-      >
-        {authUser.label}
-        <ChevronDown
-          className={`h-4 w-4 transition-transform ${menuOpen ? "rotate-180" : ""}`}
-          aria-hidden
-        />
-      </button>
-
-      {menuOpen ? (
-        <div
-          id={menuId}
-          role="menu"
-          className="absolute right-0 top-full z-50 mt-2 min-w-[11rem] overflow-hidden rounded-lg border border-steel-dark/30 bg-panel py-1 shadow-lg"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          title={user.email ?? displayName}
+          disabled={signingOut || loading}
+          className={`inline-flex items-center justify-center rounded-full p-0 align-middle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 ${className}`}
         >
-          <Link
-            href={accountHref}
-            role="menuitem"
-            onClick={() => {
-              setMenuOpen(false);
-              onAction?.();
-            }}
-            className="block px-4 py-2.5 text-sm uppercase tracking-wider text-steel-mid transition-colors hover:bg-background/80 hover:text-orange"
-          >
-            Cuenta
+          <Avatar size="sm" className="size-9 shrink-0 ring-1 ring-steel-dark/30">
+            <AvatarImage src={user.photoURL ?? undefined} alt={displayName} />
+            <AvatarFallback className="bg-panel text-sm font-medium text-steel-light">
+              {getInitials(user.displayName, user.email)}
+            </AvatarFallback>
+          </Avatar>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="min-w-48 border-steel-dark/30 bg-panel text-steel-light"
+      >
+        <DropdownMenuLabel className="font-normal">
+          <p className="truncate text-sm text-steel-light">{displayName}</p>
+          <p className="truncate text-xs text-steel-mid">{user.email}</p>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator className="bg-steel-dark/20" />
+        <DropdownMenuItem asChild className="cursor-pointer text-steel-mid focus:bg-background/80 focus:text-orange">
+          <Link href="/perfil" onClick={onAction}>
+            <User aria-hidden />
+            Mi perfil
           </Link>
-          {authUser.isStaff ? (
-            <Link
-              href="/admin/productos"
-              role="menuitem"
-              onClick={() => {
-                setMenuOpen(false);
-                onAction?.();
-              }}
-              className="block px-4 py-2.5 text-sm uppercase tracking-wider text-steel-mid transition-colors hover:bg-background/80 hover:text-orange"
-            >
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="cursor-pointer text-steel-mid focus:bg-background/80 focus:text-orange">
+          <Link href="/perfil#cotizaciones" onClick={onAction}>
+            <FileText aria-hidden />
+            Mis cotizaciones
+          </Link>
+        </DropdownMenuItem>
+        {isStaff ? (
+          <DropdownMenuItem asChild className="cursor-pointer text-steel-mid focus:bg-background/80 focus:text-orange">
+            <Link href="/admin/productos" onClick={onAction}>
+              <LayoutDashboard aria-hidden />
               Panel
             </Link>
-          ) : null}
-          <button
-            type="button"
-            role="menuitem"
-            disabled={signingOut}
-            onClick={() => void handleSignOut()}
-            className="block w-full px-4 py-2.5 text-left text-sm uppercase tracking-wider text-steel-mid transition-colors hover:bg-background/80 hover:text-orange disabled:opacity-60"
-          >
-            {signingOut ? "Cerrando…" : "Cerrar sesión"}
-          </button>
-        </div>
-      ) : null}
-    </div>
+          </DropdownMenuItem>
+        ) : null}
+        <DropdownMenuSeparator className="bg-steel-dark/20" />
+        <DropdownMenuItem
+          variant="destructive"
+          disabled={signingOut}
+          className="cursor-pointer"
+          onClick={() => void handleSignOut()}
+        >
+          {signingOut ? (
+            <Loader2 className="animate-spin" aria-hidden />
+          ) : (
+            <LogOut aria-hidden />
+          )}
+          {signingOut ? "Cerrando…" : "Cerrar sesión"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

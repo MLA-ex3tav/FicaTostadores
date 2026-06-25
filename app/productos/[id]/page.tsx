@@ -1,12 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
-import ProductAddOnsQuotePicker from "@/components/ProductAddOnsQuotePicker";
-import ProductDetailContent from "@/components/ProductDetailContent";
-import ProductDetailHero from "@/components/ProductDetailHero";
 import ProductDetailPageShell from "@/components/ProductDetailPageShell";
-import ProductQuoteActions from "@/components/ProductQuoteActions";
-import SectionLabel from "@/components/SectionLabel";
+import ProductDetailSections from "@/components/ProductDetailSections";
+import Reveal from "@/components/motion/Reveal";
 import { getCatalogConfig } from "@/lib/catalog-config-server";
 import { getProductById, getProducts } from "@/lib/products-server";
 
@@ -48,41 +45,23 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
-      <Link
-        href="/productos"
-        className="mb-8 inline-flex items-center gap-2 text-sm text-steel-mid transition-colors hover:text-orange"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Volver al catálogo
-      </Link>
+      <Reveal>
+        <Link
+          href="/productos"
+          className="mb-8 inline-flex items-center gap-2 text-sm text-steel-mid transition-colors hover:text-orange"
+        >
+          <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+          Volver al catálogo
+        </Link>
+      </Reveal>
 
       <ProductDetailPageShell product={product}>
-      <ProductDetailHero product={product} catalogConfig={catalogConfig} />
-
-      <ProductDetailContent product={product} />
-
-      {product.addOns.length > 0 && (
-        <section className="mt-20">
-          <SectionLabel>
-            Agregados y <span className="text-orange">opciones</span>
-          </SectionLabel>
-          <ProductAddOnsQuotePicker
-            productId={product.id}
-            productName={product.name}
-            productCapacity={product.capacity}
-            listPrice={product.listPrice}
-            addOns={product.addOns}
+        <Reveal>
+          <ProductDetailSections
+            product={product}
+            catalogConfig={catalogConfig}
           />
-        </section>
-      )}
-
-      <ProductQuoteActions
-        productId={product.id}
-        productName={product.name}
-        productCapacity={product.capacity}
-        listPrice={product.listPrice}
-        addOns={product.addOns}
-      />
+        </Reveal>
       </ProductDetailPageShell>
     </div>
   );

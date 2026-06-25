@@ -20,7 +20,6 @@ import {
 } from "@/lib/catalog-config";
 
 import { formatCapacity, parseCapacity, type CapacityUnit } from "@/lib/capacity";
-import { parseClpPriceInput } from "@/lib/pricing";
 
 import type { Product, ProductAddOn } from "@/lib/products";
 
@@ -49,7 +48,7 @@ interface ProductFormProps {
 
 function emptyAddOn(): ProductAddOn {
 
-  return { id: "", name: "", description: "", price: null };
+  return { id: "", name: "", description: "" };
 
 }
 
@@ -81,8 +80,6 @@ function createEmptyProduct(): Product {
 
     addOns: [],
 
-    listPrice: null,
-
     images: [],
 
   };
@@ -111,29 +108,9 @@ function cleanAddOns(values: ProductAddOn[]): ProductAddOn[] {
 
       description: addOn.description.trim(),
 
-      ...(typeof addOn.price === "number" &&
-      Number.isFinite(addOn.price) &&
-      addOn.price >= 0
-        ? { price: Math.round(addOn.price) }
-        : {}),
-
     }))
 
     .filter((addOn) => addOn.name);
-
-}
-
-
-
-function formatListPriceInputValue(value: number | null | undefined): string {
-
-  if (value == null || !Number.isFinite(value)) {
-
-    return "";
-
-  }
-
-  return String(value);
 
 }
 
@@ -174,12 +151,6 @@ export default function ProductForm({
   const [capacityUnit, setCapacityUnit] = useState<CapacityUnit>(() =>
 
     parseCapacity(initialProduct?.capacity ?? "").unit,
-
-  );
-
-  const [listPriceInput, setListPriceInput] = useState(() =>
-
-    formatListPriceInputValue(initialProduct?.listPrice),
 
   );
 
@@ -376,28 +347,6 @@ export default function ProductForm({
 
 
 
-    if (
-
-      listPriceInput.trim() !== "" &&
-
-      parseClpPriceInput(listPriceInput) === null
-
-    ) {
-
-      setError("Precio de lista inválido.");
-
-      setSaving(false);
-
-      return;
-
-    }
-
-
-
-    const parsedListPrice = parseClpPriceInput(listPriceInput);
-
-
-
     const payload: Product = {
 
       ...product,
@@ -405,8 +354,6 @@ export default function ProductForm({
       id: product.id.trim() || slugifyProductId(product.name),
 
       capacity: formattedCapacity,
-
-      listPrice: parsedListPrice,
 
       images: product.images?.filter(hasProductImageContent) ?? [],
 
@@ -485,8 +432,6 @@ export default function ProductForm({
           images: data.product.images ?? [],
 
         });
-
-        setListPriceInput(formatListPriceInputValue(data.product.listPrice));
 
         const parsedCapacity = parseCapacity(data.product.capacity);
 
@@ -711,56 +656,6 @@ export default function ProductForm({
             </p>
 
           )}
-
-        </div>
-
-        <div>
-
-          <label htmlFor="listPrice" className={labelClass}>
-
-            Precio de lista (CLP)
-
-          </label>
-
-          <input
-
-            id="listPrice"
-
-            type="text"
-
-            inputMode="numeric"
-
-            value={listPriceInput}
-
-            onChange={(event) => {
-
-              setListPriceInput(event.target.value);
-
-            }}
-
-            onBlur={() => {
-
-              const parsed = parseClpPriceInput(listPriceInput);
-
-              if (parsed !== null) {
-
-                setListPriceInput(formatListPriceInputValue(parsed));
-
-              }
-
-            }}
-
-            placeholder="Ej. 2500000 o 2.500.000"
-
-            className={inputClass}
-
-          />
-
-          <p className="mt-1.5 text-xs text-steel-dark">
-
-            Opcional. Se muestra en el catálogo y ficha del producto.
-
-          </p>
 
         </div>
 
@@ -1165,40 +1060,6 @@ export default function ProductForm({
                     const next = [...product.addOns];
 
                     next[index] = { ...next[index], name: event.target.value };
-
-                    updateField("addOns", next);
-
-                  }}
-
-                  className={inputClass}
-
-                />
-
-                <input
-
-                  type="number"
-
-                  min={0}
-
-                  step={1}
-
-                  value={addOn.price ?? ""}
-
-                  placeholder="Precio CLP (opcional)"
-
-                  onChange={(event) => {
-
-                    const raw = event.target.value;
-
-                    const next = [...product.addOns];
-
-                    next[index] = {
-
-                      ...next[index],
-
-                      price: raw === "" ? null : Number.parseInt(raw, 10),
-
-                    };
 
                     updateField("addOns", next);
 

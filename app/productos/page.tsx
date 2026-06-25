@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import ProductsCatalog from "@/components/ProductsCatalog";
+import Reveal from "@/components/motion/Reveal";
 import SectionHeader from "@/components/SectionHeader";
 import { getCatalogConfig } from "@/lib/catalog-config-server";
 import { getProducts } from "@/lib/products-server";
@@ -28,7 +29,7 @@ export default async function ProductosPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
-      <div className="mb-12">
+      <Reveal className="mb-12">
         <SectionHeader
           as="h1"
           eyebrow="Catálogo"
@@ -38,7 +39,7 @@ export default async function ProductosPage() {
             </>
           }
         />
-      </div>
+      </Reveal>
 
       <Suspense fallback={<ProductsCatalogFallback />}>
         <ProductsCatalog products={products} catalogConfig={catalogConfig} />

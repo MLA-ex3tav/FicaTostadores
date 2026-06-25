@@ -70,7 +70,7 @@ export default function Navbar() {
                 ? pathname === "/"
                 : pathname.startsWith(link.href);
             return (
-              <li key={link.href}>
+              <li key={link.href} className="flex items-center">
                 <Link
                   href={link.href}
                   className={`text-base uppercase tracking-wider transition-colors ${
@@ -84,10 +84,10 @@ export default function Navbar() {
               </li>
             );
           })}
-          <li>
+          <li className="flex items-center">
             <AuthNavButton />
           </li>
-          <li>
+          <li className="flex items-center">
             <CotizarButton />
           </li>
         </ul>

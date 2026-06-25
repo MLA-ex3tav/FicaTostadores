@@ -1,6 +1,12 @@
 "use client";
 
 import ImageFocusEditor from "@/components/admin/ImageFocusEditor";
+import UploadProgressBar from "@/components/admin/UploadProgressBar";
+import {
+  uploadAdminImage,
+  type AdminImageUploadProgress,
+} from "@/lib/admin-image-upload";
+import { getFirebaseAuth } from "@/lib/firebase/client";
 import { useFirebaseAuth } from "@/lib/firebase-auth";
 import {
   CAROUSEL_CONTAINER_CLASS,
@@ -13,7 +19,7 @@ import {
   type ProductImageView,
 } from "@/lib/product-images";
 import type { UploadImageVariant } from "@/lib/optimize-upload-image";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 interface ProductImagesFieldProps {
   images: ProductImage[];
@@ -26,7 +32,7 @@ export default function ProductImagesField({
   images,
   onChange,
 }: ProductImagesFieldProps) {
-  const { adminFetch } = useFirebaseAuth();
+  const { user } = useFirebaseAuth();
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const carouselInputRef = useRef<HTMLInputElement>(null);
   const productInputRef = useRef<HTMLInputElement>(null);
@@ -34,31 +40,38 @@ export default function ProductImagesField({
   const [replacingView, setReplacingView] = useState<PrimaryViewKey | null>(
     null,
   );
+  const [uploadProgress, setUploadProgress] =
+    useState<AdminImageUploadProgress | null>(null);
   const [error, setError] = useState("");
+
+  const getAuthToken = useCallback(async () => {
+    const currentUser = getFirebaseAuth()?.currentUser ?? user;
+
+    if (!currentUser) {
+      throw new Error("Debe iniciar sesi?n para subir im?genes.");
+    }
+
+    return currentUser.getIdToken();
+  }, [user]);
+
+  const clearUploadState = useCallback(() => {
+    setUploading(false);
+    setReplacingView(null);
+    setUploadProgress(null);
+  }, []);
 
   async function uploadFile(
     file: File,
     variant: UploadImageVariant = "product",
-  ): Promise<string | null> {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("variant", variant);
-
-    const response = await adminFetch("/api/admin/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = (await response.json()) as { url?: string; error?: string };
-
-    if (!response.ok || !data.url) {
-      setError(
-        data.error ?? `No se pudo subir una imagen (${response.status}).`,
-      );
-      return null;
-    }
-
-    return data.url;
+    options?: { fileIndex?: number; fileCount?: number },
+  ): Promise<string> {
+    return uploadAdminImage(
+      file,
+      variant,
+      getAuthToken,
+      setUploadProgress,
+      options,
+    );
   }
 
   async function handleGalleryFiles(selected: FileList | null) {
@@ -66,18 +79,19 @@ export default function ProductImagesField({
       return;
     }
 
+    const files = Array.from(selected);
     setUploading(true);
     setError("");
+    setUploadProgress(null);
 
     const nextImages = [...images];
 
     try {
-      for (const file of Array.from(selected)) {
-        const url = await uploadFile(file, "gallery");
-        if (!url) {
-          return;
-        }
-
+      for (const [index, file] of files.entries()) {
+        const url = await uploadFile(file, "gallery", {
+          fileIndex: index + 1,
+          fileCount: files.length,
+        });
         nextImages.push(createGalleryImage(url));
       }
 
@@ -86,10 +100,10 @@ export default function ProductImagesField({
       setError(
         uploadError instanceof Error
           ? uploadError.message
-          : "Error de conexión al subir imágenes.",
+          : "Error de conexi?n al subir im?genes.",
       );
     } finally {
-      setUploading(false);
+      clearUploadState();
       if (galleryInputRef.current) {
         galleryInputRef.current.value = "";
       }
@@ -105,13 +119,12 @@ export default function ProductImagesField({
     }
 
     setReplacingView(view);
+    setUploading(true);
     setError("");
+    setUploadProgress(null);
 
     try {
       const url = await uploadFile(selected[0], view);
-      if (!url) {
-        return;
-      }
 
       onChange(
         images.map((image, index) => {
@@ -132,10 +145,10 @@ export default function ProductImagesField({
       setError(
         uploadError instanceof Error
           ? uploadError.message
-          : "Error de conexión al subir imágenes.",
+          : "Error de conexi?n al subir im?genes.",
       );
     } finally {
-      setReplacingView(null);
+      clearUploadState();
       const inputRef =
         view === "carousel" ? carouselInputRef : productInputRef;
       if (inputRef.current) {
@@ -151,22 +164,19 @@ export default function ProductImagesField({
 
     setUploading(true);
     setError("");
+    setUploadProgress(null);
 
     try {
       const url = await uploadFile(selected[0], "primary");
-      if (!url) {
-        return;
-      }
-
       onChange([createProductImage(url)]);
     } catch (uploadError) {
       setError(
         uploadError instanceof Error
           ? uploadError.message
-          : "Error de conexión al subir imágenes.",
+          : "Error de conexi?n al subir im?genes.",
       );
     } finally {
-      setUploading(false);
+      clearUploadState();
       if (galleryInputRef.current) {
         galleryInputRef.current.value = "";
       }
@@ -194,16 +204,18 @@ export default function ProductImagesField({
     );
   }
 
+  const isBusy = uploading || replacingView !== null;
+
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-lg text-steel-light">Imágenes</h2>
+          <h2 className="font-display text-lg text-steel-light">Im?genes</h2>
           <p className="mt-1 text-xs text-steel-dark">
             La imagen principal puede usar archivos distintos para el carrusel
-            (inicio) y la vista de productos (catálogo y ficha). Las imágenes
+            (inicio) y la vista de productos (cat?logo y ficha). Las im?genes
             adicionales solo se muestran en la ficha del producto. Al subir, se
-            optimizan automáticamente a WebP.
+            optimizan autom?ticamente a WebP.
           </p>
           <ul className="mt-2 space-y-1 text-[0.65rem] text-steel-mid">
             <li>
@@ -218,24 +230,19 @@ export default function ProductImagesField({
         </div>
         <button
           type="button"
-          disabled={uploading}
-          onClick={() => {
-            if (images.length === 0) {
-              galleryInputRef.current?.click();
-              return;
-            }
-
-            galleryInputRef.current?.click();
-          }}
+          disabled={isBusy}
+          onClick={() => galleryInputRef.current?.click()}
           className="text-xs text-orange hover:text-orange-hover disabled:opacity-60"
         >
-          {uploading
-            ? "Subiendo…"
+          {isBusy
+            ? "Subiendo?"
             : images.length === 0
               ? "+ Agregar imagen principal"
-              : "+ Agregar imágenes"}
+              : "+ Agregar im?genes"}
         </button>
       </div>
+
+      {uploadProgress ? <UploadProgressBar progress={uploadProgress} /> : null}
 
       <input
         ref={galleryInputRef}
@@ -286,7 +293,8 @@ export default function ProductImagesField({
                 <button
                   type="button"
                   onClick={() => removeImage(index)}
-                  className="shrink-0 text-xs text-steel-mid hover:text-orange"
+                  disabled={isBusy}
+                  className="shrink-0 text-xs text-steel-mid hover:text-orange disabled:opacity-60"
                 >
                   Quitar
                 </button>
@@ -308,6 +316,9 @@ export default function ProductImagesField({
                     onReplaceImage={() => carouselInputRef.current?.click()}
                     replaceImageLabel="Cambiar imagen carrusel"
                     replacingImage={replacingView === "carousel"}
+                    uploadStatus={
+                      replacingView === "carousel" ? uploadProgress : null
+                    }
                   />
                 ) : null}
                 <ImageFocusEditor
@@ -324,6 +335,11 @@ export default function ProductImagesField({
                   }
                   replaceImageLabel="Cambiar imagen productos"
                   replacingImage={index === 0 && replacingView === "product"}
+                  uploadStatus={
+                    index === 0 && replacingView === "product"
+                      ? uploadProgress
+                      : null
+                  }
                 />
               </div>
             </div>
@@ -331,16 +347,16 @@ export default function ProductImagesField({
         </div>
       ) : (
         <p className="mt-4 rounded-lg border border-dashed border-steel-dark/40 px-4 py-6 text-sm text-steel-mid">
-          Sin imágenes. Suba fotos del equipo y encuadre cómo se verán en el
+          Sin im?genes. Suba fotos del equipo y encuadre c?mo se ver?n en el
           sitio.
           <span className="mt-3 block text-xs leading-relaxed text-steel-dark">
-            Resolución recomendada — Carrusel: {CAROUSEL_IMAGE_SPEC.hint}.
+            Resoluci?n recomendada ? Carrusel: {CAROUSEL_IMAGE_SPEC.hint}.
             Productos: {PRODUCT_IMAGE_SPEC.hint}.
           </span>
         </p>
       )}
 
-      {error && <p className="mt-3 text-sm text-orange">{error}</p>}
+      {error ? <p className="mt-3 text-sm text-orange">{error}</p> : null}
     </section>
   );
 }

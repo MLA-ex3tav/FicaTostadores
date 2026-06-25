@@ -9,6 +9,7 @@ import {
 } from "@/lib/quoting";
 import { useQuoteSelection } from "@/lib/quote-selection";
 import "@/components/site-chat-widget.css";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_MESSAGE =
   "Hola, quisiera información sobre equipos Fica Tostadores.";
@@ -24,7 +25,7 @@ function WhatsAppIcon() {
 
 export default function WhatsAppFloatButton() {
   const pathname = usePathname();
-  const { products } = useQuoteSelection();
+  const { products, desktopDockOpen } = useQuoteSelection();
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -36,9 +37,11 @@ export default function WhatsAppFloatButton() {
   const hasQuoteDock =
     products.length > 0 && pathname !== "/contacto";
 
+  const hiddenByQuoteDock = hasQuoteDock && desktopDockOpen;
+
   const positionClass = hasQuoteDock
-    ? "bottom-24 right-5 md:bottom-28 md:right-6"
-    : "bottom-5 right-5 md:bottom-6 md:right-6";
+    ? "bottom-28 right-5 md:bottom-24 md:right-5"
+    : "bottom-8 right-5 md:bottom-10 md:right-6";
 
   const handleClose = useCallback(() => {
     if (closing) {
@@ -93,6 +96,14 @@ export default function WhatsAppFloatButton() {
   }, [open, isAdmin, handleClose]);
 
   useEffect(() => {
+    if (!hiddenByQuoteDock || !open) {
+      return;
+    }
+
+    handleClose();
+  }, [hiddenByQuoteDock, open, handleClose]);
+
+  useEffect(() => {
     return () => {
       if (closeTimerRef.current) {
         window.clearTimeout(closeTimerRef.current);
@@ -121,7 +132,12 @@ export default function WhatsAppFloatButton() {
   return (
     <div
       ref={panelRef}
-      className={`fixed z-50 flex flex-col items-end gap-3 ${positionClass}`}
+      className={cn(
+        "fixed z-50 flex flex-col items-end gap-3 transition-opacity duration-350 motion-reduce:transition-none",
+        positionClass,
+        hiddenByQuoteDock && "md:pointer-events-none md:opacity-0",
+      )}
+      aria-hidden={hiddenByQuoteDock ? true : undefined}
     >
       {visible ? (
         <div

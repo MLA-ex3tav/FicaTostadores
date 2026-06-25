@@ -4,7 +4,6 @@ import type {
   CotizacionProductAddOn,
   CotizacionProductLine,
 } from "@/lib/cotizaciones/types";
-import { parseClpPriceInput } from "@/lib/pricing";
 import { sanitizeShippingInfo, type ShippingInfo } from "@/lib/shipping-profile";
 
 export interface CreateSolicitudCotizacionInput {
@@ -31,11 +30,7 @@ function sanitizeAddOn(value: unknown): CotizacionProductAddOn | null {
     return null;
   }
 
-  return {
-    id,
-    name,
-    price: parseClpPriceInput(record.price),
-  };
+  return { id, name };
 }
 
 function sanitizeProductLine(value: unknown): CotizacionProductLine | null {
@@ -63,14 +58,17 @@ function sanitizeProductLine(value: unknown): CotizacionProductLine | null {
         .slice(0, 20)
     : [];
 
+  const selectedColor = sanitizeText(record.selectedColor, 120) || null;
+  const selectedColorId = sanitizeSlug(record.selectedColorId, 80) || null;
+
   return {
     productId,
     name,
     capacity,
     catalog,
-    listPrice: null,
+    selectedColor,
+    selectedColorId,
     selectedAddOns,
-    lineTotal: null,
   };
 }
 

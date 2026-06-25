@@ -10,13 +10,12 @@ import flags from "react-phone-number-input/flags";
 import es from "react-phone-number-input/locale/es";
 import PhoneCountrySelect from "@/components/PhoneCountrySelect";
 import QuoteSentAnimation from "@/components/QuoteSentAnimation";
-import QuoteTotalSummary from "@/components/QuoteTotalSummary";
 import {
   getClienteShippingProfile,
   saveClienteShippingProfile,
 } from "@/lib/auth-sync-client";
 import { useFirebaseAuth } from "@/lib/firebase-auth";
-import { buildQuoteProductItem } from "@/lib/quote-pricing";
+import { buildQuoteProductItem } from "@/lib/quote-product";
 import type { Product } from "@/lib/products";
 import {
   buildQuoteWhatsAppUrl,
@@ -234,10 +233,11 @@ export default function ContactForm() {
             id: product.id,
             name: product.name,
             capacity: product.capacity,
+            selectedColor: product.selectedColor ?? undefined,
+            selectedColorId: product.selectedColorId ?? undefined,
             selectedAddOns: product.selectedAddOns?.map((addOn) => ({
               id: addOn.id,
               name: addOn.name,
-              price: addOn.price ?? null,
             })),
           })),
         }),
@@ -271,6 +271,8 @@ export default function ContactForm() {
       const submittedProducts = products.map((product) => ({
         name: product.name,
         capacity: product.capacity,
+        selectedColor: product.selectedColor ?? undefined,
+        selectedColorId: product.selectedColorId ?? undefined,
         selectedAddOns: product.selectedAddOns?.map((addOn) => ({
           id: addOn.id,
           name: addOn.name,
@@ -564,10 +566,6 @@ export default function ContactForm() {
 
         {submitError ? (
           <p className="text-base text-orange md:text-sm">{submitError}</p>
-        ) : null}
-
-        {products.length > 0 ? (
-          <QuoteTotalSummary products={products} />
         ) : null}
 
         <button

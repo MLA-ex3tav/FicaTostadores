@@ -4,7 +4,6 @@ import type { ShippingInfo } from "@/lib/shipping-profile";
 export interface CotizacionProductAddOn {
   id: string;
   name: string;
-  price: number | null;
 }
 
 export interface CotizacionProductLine {
@@ -12,9 +11,9 @@ export interface CotizacionProductLine {
   name: string;
   capacity: string;
   catalog: string | null;
-  listPrice: number | null;
+  selectedColor: string | null;
+  selectedColorId: string | null;
   selectedAddOns: CotizacionProductAddOn[];
-  lineTotal: number | null;
 }
 
 /** Datos que envía la web pública al crear una solicitud. */
@@ -28,7 +27,23 @@ export interface WebSolicitudCotizacionRecord {
   shipping: ShippingInfo | null;
   clientUserId: string | null;
   products: CotizacionProductLine[];
-  finalTotal: number | null;
-  pricingComplete: boolean;
   createdAt: Timestamp;
+}
+
+/** Vista de una solicitud para el perfil del cliente (API pública autenticada). */
+export interface ClientSolicitudCotizacion {
+  id: string;
+  createdAt: string | null;
+  products: CotizacionProductLine[];
+  message: string | null;
+  estado: string | null;
+  cotizacionEstado: string | null;
+  cotizacionEstadoLabel: string | null;
+  enOT: boolean;
+  enEnsamblado: boolean;
+  produccionEtapa: string | null;
+  produccionEtapaLabel: string | null;
+  produccion: boolean | string | null;
+  estadoActualizadoAt: string | null;
+  estadoActualizadoPor: string | null;
 }

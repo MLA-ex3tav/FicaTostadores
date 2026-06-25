@@ -4,12 +4,14 @@ import Footer from "@/components/Footer";
 import MainWithQuotePadding from "@/components/MainWithQuotePadding";
 import Navbar from "@/components/Navbar";
 import QuoteSelectionSidebar from "@/components/QuoteSelectionSidebar";
+import AppProviders from "@/components/providers/AppProviders";
 import { companyInfo } from "@/lib/company";
 import { QuoteSelectionProvider } from "@/lib/quote-selection";
 import PageLoadingBar from "@/components/PageLoadingBar";
 import TermsConsentBanner from "@/components/TermsConsentBanner";
 import WhatsAppFloatButton from "@/components/WhatsAppFloatButton";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
@@ -48,17 +50,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${inter.variable} ${oswald.variable} h-full`}>
+    <html
+      lang="es"
+      className={cn("dark h-full", inter.variable, oswald.variable)}
+    >
       <body className="flex min-h-full flex-col antialiased">
-        <QuoteSelectionProvider>
-          <PageLoadingBar />
-          <TermsConsentBanner />
-          <Navbar />
-          <QuoteSelectionSidebar />
-          <MainWithQuotePadding>{children}</MainWithQuotePadding>
-          <Footer />
-          <WhatsAppFloatButton />
-        </QuoteSelectionProvider>
+        <AppProviders>
+          <QuoteSelectionProvider>
+            <PageLoadingBar />
+            <TermsConsentBanner />
+            <Navbar />
+            <QuoteSelectionSidebar />
+            <MainWithQuotePadding>{children}</MainWithQuotePadding>
+            <Footer />
+            <WhatsAppFloatButton />
+          </QuoteSelectionProvider>
+        </AppProviders>
       </body>
     </html>
   );

@@ -1,3 +1,6 @@
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 export const quoteSelectedPanelClass = "border-orange/50";
 
 interface QuoteSelectedLabelProps {
@@ -9,10 +12,14 @@ export default function QuoteSelectedLabel({
 }: QuoteSelectedLabelProps) {
   return (
     <span
-      className={`inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.3em] text-orange ${className}`}
+      className={cn(
+        "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-orange/45 bg-orange/10 text-orange",
+        className,
+      )}
+      title="En cotización"
     >
-      <span className="h-2 w-2 shrink-0 rounded-full bg-orange" aria-hidden />
-      En cotización
+      <Check className="h-3 w-3" strokeWidth={2} aria-hidden />
+      <span className="sr-only">En cotización</span>
     </span>
   );
 }

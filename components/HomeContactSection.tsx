@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
+import Reveal from "@/components/motion/Reveal";
+import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import SectionHeader from "@/components/SectionHeader";
 import { companyInfo } from "@/lib/company";
 
@@ -7,7 +9,8 @@ export default function HomeContactSection() {
   return (
     <section className="border-b border-steel-dark/15 py-10 md:py-14">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
-        <SectionHeader
+        <Reveal>
+          <SectionHeader
           eyebrow="Contacto"
           title={
             <>
@@ -15,9 +18,11 @@ export default function HomeContactSection() {
             </>
           }
           description="Cotizaciones y consultas comerciales."
-        />
+          />
+        </Reveal>
 
-        <dl className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Stagger className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StaggerItem>
           <div>
             <dt className="flex items-center gap-2 text-sm uppercase tracking-widest text-steel-dark">
               <Mail className="h-4 w-4 text-orange" strokeWidth={1.75} />
@@ -32,9 +37,11 @@ export default function HomeContactSection() {
               </a>
             </dd>
           </div>
+          </StaggerItem>
 
           {companyInfo.phones.map((phone) => (
-            <div key={phone.href}>
+            <StaggerItem key={phone.href}>
+            <div>
               <dt className="flex items-center gap-2 text-sm uppercase tracking-widest text-steel-dark">
                 <Phone className="h-4 w-4 text-orange" strokeWidth={1.75} />
                 {phone.label}
@@ -50,8 +57,10 @@ export default function HomeContactSection() {
                 </a>
               </dd>
             </div>
+            </StaggerItem>
           ))}
 
+          <StaggerItem>
           <div>
             <dt className="flex items-center gap-2 text-sm uppercase tracking-widest text-steel-dark">
               <Phone className="h-4 w-4 text-orange" strokeWidth={1.75} />
@@ -66,8 +75,10 @@ export default function HomeContactSection() {
               </a>
             </dd>
           </div>
+          </StaggerItem>
 
-          <div className="sm:col-span-2 lg:col-span-4">
+          <StaggerItem className="sm:col-span-2 lg:col-span-4">
+          <div>
             <dt className="flex items-center gap-2 text-sm uppercase tracking-widest text-steel-dark">
               <MapPin className="h-4 w-4 text-orange" strokeWidth={1.75} />
               Fábrica
@@ -76,8 +87,10 @@ export default function HomeContactSection() {
               {companyInfo.address}
             </dd>
           </div>
-        </dl>
+          </StaggerItem>
+        </Stagger>
 
+        <Reveal delay={0.15}>
         <Link
           href="/contacto"
           className="mt-8 inline-flex items-center gap-1.5 text-base font-medium text-orange transition-colors hover:text-orange-hover"
@@ -85,6 +98,7 @@ export default function HomeContactSection() {
           Solicitar cotización
           <ArrowRight className="h-4 w-4" strokeWidth={2} />
         </Link>
+        </Reveal>
       </div>
     </section>
   );

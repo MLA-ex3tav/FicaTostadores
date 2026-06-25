@@ -53,6 +53,8 @@ service cloud.firestore {
     // Electron: leer, actualizar y eliminar (sync local delete_pending).
     match /solicitudes_cotizacion/{solicitudId} {
       allow read, update, delete: if isStaff();
+      allow read: if request.auth != null
+        && resource.data.clientUserId == request.auth.uid;
       allow create: if false;
     }
 

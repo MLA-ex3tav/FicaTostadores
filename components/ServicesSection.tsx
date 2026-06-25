@@ -5,6 +5,8 @@ import {
   Headphones,
   type LucideIcon,
 } from "lucide-react";
+import Reveal from "@/components/motion/Reveal";
+import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import SectionHeader from "@/components/SectionHeader";
 
 const services: {
@@ -34,19 +36,21 @@ export default function ServicesSection() {
   return (
     <section className="border-t border-steel-dark/15 py-14 md:py-16">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
-        <SectionHeader
-          eyebrow="Servicios"
-          title={
-            <>
-              Soluciones <span className="text-orange">completas</span>
-            </>
-          }
-          description="Equipamiento y acompañamiento para cada etapa de su planta."
-        />
+        <Reveal>
+          <SectionHeader
+            eyebrow="Servicios"
+            title={
+              <>
+                Soluciones <span className="text-orange">completas</span>
+              </>
+            }
+            description="Equipamiento y acompañamiento para cada etapa de su planta."
+          />
+        </Reveal>
 
-        <div className="mt-10 grid gap-10 md:grid-cols-2 md:gap-12">
+        <Stagger className="mt-10 grid gap-10 md:grid-cols-2 md:gap-12">
           {services.map((service) => (
-            <article key={service.title}>
+            <StaggerItem as="article" key={service.title}>
               <service.Icon
                 className="h-5 w-5 text-orange"
                 strokeWidth={1.75}
@@ -64,9 +68,9 @@ export default function ServicesSection() {
                 {service.cta}
                 <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
               </Link>
-            </article>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </div>
     </section>
   );

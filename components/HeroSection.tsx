@@ -1,4 +1,5 @@
 import HeroCarousel from "./HeroCarousel";
+import HeroEntrance from "@/components/motion/HeroEntrance";
 import type { HeroProductBanner } from "@/lib/images";
 import { shouldBypassImageOptimizer } from "@/lib/blob-storage";
 import { getImageProps } from "next/image";
@@ -41,5 +42,9 @@ export default function HeroSection({ banners }: HeroSectionProps) {
     }
   }
 
-  return <HeroCarousel banners={banners} />;
+  return (
+    <HeroEntrance>
+      <HeroCarousel banners={banners} />
+    </HeroEntrance>
+  );
 }

@@ -10,23 +10,19 @@ import {
   type ReactNode,
 } from "react";
 
-import { withQuoteLineTotal } from "@/lib/quote-pricing";
-import { parseClpPriceInput } from "@/lib/pricing";
-
 const STORAGE_KEY = "fica-quote-selection";
 
 export interface QuoteProductAddOn {
   id: string;
   name: string;
-  price?: number | null;
 }
 
 export interface QuoteProductItem {
   id: string;
   name: string;
   capacity: string;
-  listPrice?: number | null;
-  lineTotal?: number | null;
+  selectedColor?: string | null;
+  selectedColorId?: string | null;
   selectedAddOns?: QuoteProductAddOn[];
 }
 
@@ -37,6 +33,8 @@ interface QuoteSelectionContextValue {
   removeProduct: (id: string) => void;
   hasProduct: (id: string) => boolean;
   clearProducts: () => void;
+  desktopDockOpen: boolean;
+  setDesktopDockOpen: (open: boolean) => void;
 }
 
 const QuoteSelectionContext = createContext<QuoteSelectionContextValue | null>(
@@ -59,13 +57,7 @@ function normalizeAddOn(value: unknown): QuoteProductAddOn | null {
     return null;
   }
 
-  const price = parseClpPriceInput(record.price);
-
-  return {
-    id,
-    name,
-    price: price ?? null,
-  };
+  return { id, name };
 }
 
 function normalizeStoredProduct(value: unknown): QuoteProductItem | null {
@@ -89,20 +81,30 @@ function normalizeStoredProduct(value: unknown): QuoteProductItem | null {
     return null;
   }
 
-  const listPrice = parseClpPriceInput(record.listPrice);
   const selectedAddOns = Array.isArray(record.selectedAddOns)
     ? record.selectedAddOns
         .map(normalizeAddOn)
         .filter((addOn): addOn is QuoteProductAddOn => addOn !== null)
     : [];
 
-  return withQuoteLineTotal({
+  const selectedColor =
+    typeof record.selectedColor === "string" && record.selectedColor.trim()
+      ? record.selectedColor.trim()
+      : null;
+
+  const selectedColorId =
+    typeof record.selectedColorId === "string" && record.selectedColorId.trim()
+      ? record.selectedColorId.trim()
+      : null;
+
+  return {
     id,
     name,
     capacity,
-    listPrice: listPrice ?? null,
+    selectedColor,
+    selectedColorId,
     selectedAddOns,
-  });
+  };
 }
 
 function readStoredProducts(): QuoteProductItem[] {
@@ -132,6 +134,7 @@ function readStoredProducts(): QuoteProductItem[] {
 export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<QuoteProductItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [desktopDockOpen, setDesktopDockOpen] = useState(false);
 
   useEffect(() => {
     setProducts(readStoredProducts());
@@ -148,10 +151,10 @@ export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
 
   const addProduct = useCallback((product: QuoteProductItem) => {
     setProducts((current) => {
-      const normalized = withQuoteLineTotal({
+      const normalized: QuoteProductItem = {
         ...product,
         selectedAddOns: product.selectedAddOns ?? [],
-      });
+      };
       const existingIndex = current.findIndex((item) => item.id === product.id);
 
       if (existingIndex >= 0) {
@@ -160,9 +163,9 @@ export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
           ...next[existingIndex],
           name: normalized.name,
           capacity: normalized.capacity,
-          listPrice: normalized.listPrice,
+          selectedColor: normalized.selectedColor,
+          selectedColorId: normalized.selectedColorId,
           selectedAddOns: normalized.selectedAddOns,
-          lineTotal: normalized.lineTotal,
         };
         return next;
       }
@@ -175,9 +178,7 @@ export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
     (id: string, selectedAddOns: QuoteProductAddOn[]) => {
       setProducts((current) =>
         current.map((item) =>
-          item.id === id
-            ? withQuoteLineTotal({ ...item, selectedAddOns })
-            : item,
+          item.id === id ? { ...item, selectedAddOns } : item,
         ),
       );
     },
@@ -205,6 +206,8 @@ export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
       removeProduct,
       hasProduct,
       clearProducts,
+      desktopDockOpen,
+      setDesktopDockOpen,
     }),
     [
       products,
@@ -213,6 +216,7 @@ export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
       removeProduct,
       hasProduct,
       clearProducts,
+      desktopDockOpen,
     ],
   );
 

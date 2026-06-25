@@ -1,13 +1,19 @@
 interface ProductPlaceholderProps {
   className?: string;
+  flat?: boolean;
 }
 
 export default function ProductPlaceholder({
   className = "h-48",
+  flat = false,
 }: ProductPlaceholderProps) {
   return (
     <div
-      className={`relative flex items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-[#4a5059] via-[#3a3f48] to-[#525862] ${className}`}
+      className={`relative flex items-center justify-center overflow-hidden rounded-t-xl ${
+        flat
+          ? "bg-surface"
+          : "bg-gradient-to-br from-[#4a5059] via-[#3a3f48] to-[#525862]"
+      } ${className}`}
     >
       <div
         className="absolute inset-0 opacity-20"

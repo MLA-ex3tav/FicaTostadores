@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ProductAddOn } from "@/lib/products";
-import { buildQuoteProductItem } from "@/lib/quote-pricing";
+import { buildQuoteProductItem } from "@/lib/quote-product";
 import { useQuoteSelection } from "@/lib/quote-selection";
 import QuoteAddOnSelector from "./QuoteAddOnSelector";
 
@@ -10,16 +10,18 @@ interface ProductAddOnsQuotePickerProps {
   productId: string;
   productName: string;
   productCapacity: string;
-  listPrice?: number | null;
   addOns: ProductAddOn[];
+  selectedColorId: string;
+  selectedColor?: string | null;
 }
 
 export default function ProductAddOnsQuotePicker({
   productId,
   productName,
   productCapacity,
-  listPrice,
   addOns,
+  selectedColorId,
+  selectedColor,
 }: ProductAddOnsQuotePickerProps) {
   const { hasProduct, products, addProduct } = useQuoteSelection();
   const inQuote = hasProduct(productId);
@@ -51,10 +53,10 @@ export default function ProductAddOnsQuotePicker({
           id: productId,
           name: productName,
           capacity: productCapacity,
-          listPrice: listPrice ?? null,
           addOns,
         },
         ids,
+        { id: selectedColorId, name: selectedColor },
       ),
     );
   }

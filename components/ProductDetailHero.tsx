@@ -14,7 +14,6 @@ import {
 } from "@/lib/product-images";
 import { useQuoteSelection } from "@/lib/quote-selection";
 import MediaImage from "./MediaImage";
-import ProductPrice from "./ProductPrice";
 import QuoteSelectedLabel, { quoteSelectedPanelClass } from "./QuoteSelectedBadge";
 import SteelPanel from "./SteelPanel";
 
@@ -90,6 +89,9 @@ export default function ProductDetailHero({
         </div>
 
         <div className="relative z-10 flex min-w-0 flex-col p-6 md:p-8 lg:p-10">
+          {isSelected ? (
+            <QuoteSelectedLabel className="absolute right-6 top-6 md:right-8 md:top-8" />
+          ) : null}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="text-sm uppercase tracking-widest text-steel-dark">
               {getCatalogLabel(product.catalog, catalogConfig)}
@@ -97,7 +99,6 @@ export default function ProductDetailHero({
                 <> · {getCategoryLabel(product.category, catalogConfig)}</>
               )}
             </p>
-            {isSelected && <QuoteSelectedLabel />}
           </div>
           <p className="mt-1 text-sm uppercase tracking-widest text-orange">
             {product.capacity}
@@ -105,12 +106,6 @@ export default function ProductDetailHero({
           <h1 className="mt-2 font-display text-4xl tracking-wide text-steel-light lg:text-5xl">
             {product.name}
           </h1>
-          <ProductPrice
-            amount={product.listPrice}
-            size="lg"
-            className="mt-3"
-            suffix="IVA no incl."
-          />
           <ul className="mt-4 flex flex-wrap gap-2">
             {product.specs.map((spec, index) => (
               <li

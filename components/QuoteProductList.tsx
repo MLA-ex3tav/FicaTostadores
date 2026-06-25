@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { ChevronDown, X } from "lucide-react";
 import { useQuoteSelection } from "@/lib/quote-selection";
-import QuoteTotalSummary, { QuoteLinePrice } from "./QuoteTotalSummary";
 
 export const quoteEyebrowClass =
   "text-sm font-semibold uppercase tracking-[0.3em] text-orange";
@@ -56,17 +55,16 @@ export default function QuoteProductList({
                   {product.name}
                 </p>
                 <p className="mt-0.5 text-xs text-steel-dark">{product.capacity}</p>
+                {product.selectedColor ? (
+                  <p className="mt-1 text-xs text-steel-mid">
+                    Color: {product.selectedColor}
+                  </p>
+                ) : null}
                 {product.selectedAddOns && product.selectedAddOns.length > 0 ? (
                   <p className="mt-1 text-xs text-steel-mid">
                     + {product.selectedAddOns.map((addOn) => addOn.name).join(", ")}
                   </p>
                 ) : null}
-                <QuoteLinePrice
-                  lineTotal={product.lineTotal}
-                  listPrice={product.listPrice}
-                  selectedAddOns={product.selectedAddOns}
-                  compact
-                />
               </div>
               <button
                 type="button"
@@ -79,8 +77,6 @@ export default function QuoteProductList({
             </li>
           ))}
         </ul>
-
-        <QuoteTotalSummary products={products} className="pt-3" compact />
       </div>
     );
   }
@@ -134,16 +130,16 @@ export default function QuoteProductList({
                 {product.name}
               </p>
               <p className="mt-1 text-base text-steel-dark">{product.capacity}</p>
+              {product.selectedColor ? (
+                <p className="mt-1 text-sm text-steel-mid">
+                  Color: {product.selectedColor}
+                </p>
+              ) : null}
               {product.selectedAddOns && product.selectedAddOns.length > 0 ? (
                 <p className="mt-1.5 text-base text-orange/80">
                   + {product.selectedAddOns.map((addOn) => addOn.name).join(", ")}
                 </p>
               ) : null}
-              <QuoteLinePrice
-                lineTotal={product.lineTotal}
-                listPrice={product.listPrice}
-                selectedAddOns={product.selectedAddOns}
-              />
             </div>
             <button
               type="button"
@@ -156,8 +152,6 @@ export default function QuoteProductList({
           </li>
         ))}
       </ul>
-
-      <QuoteTotalSummary products={products} className="mt-4" />
 
       {showCta && (
         <Link

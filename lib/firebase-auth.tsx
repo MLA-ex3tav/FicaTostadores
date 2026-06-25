@@ -5,6 +5,7 @@ import {
   GoogleAuthProvider,
   getRedirectResult,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithPopup,
   signInWithRedirect,
   signOut as firebaseSignOut,
@@ -51,6 +52,7 @@ interface FirebaseAuthContextValue {
   pendingAuthError: string | null;
   clearPendingAuthError: () => void;
   signInWithGoogle: () => Promise<void>;
+  signInWithGoogleCredential: (idToken: string) => Promise<void>;
   signOut: () => Promise<void>;
   adminFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 }
@@ -116,6 +118,19 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
         }
       })();
     });
+  }, []);
+
+  const signInWithGoogleCredential = useCallback(async (idToken: string) => {
+    const auth = getFirebaseAuth();
+
+    if (!auth) {
+      throw new Error(
+        "Firebase no está configurado. Agregue las variables NEXT_PUBLIC_FIREBASE_* en .env.local",
+      );
+    }
+
+    const credential = GoogleAuthProvider.credential(idToken);
+    await signInWithCredential(auth, credential);
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
@@ -199,6 +214,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       pendingAuthError,
       clearPendingAuthError,
       signInWithGoogle,
+      signInWithGoogleCredential,
       signOut,
       adminFetch,
     }),
@@ -212,6 +228,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       pendingAuthError,
       clearPendingAuthError,
       signInWithGoogle,
+      signInWithGoogleCredential,
       signOut,
       adminFetch,
     ],

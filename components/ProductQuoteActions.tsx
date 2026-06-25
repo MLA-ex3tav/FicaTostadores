@@ -10,7 +10,7 @@ import { useState } from "react";
 
 import type { ProductAddOn } from "@/lib/products";
 
-import { buildQuoteProductItem } from "@/lib/quote-pricing";
+import { buildQuoteProductItem } from "@/lib/quote-product";
 
 import { useQuoteSelection } from "@/lib/quote-selection";
 
@@ -28,9 +28,11 @@ interface ProductQuoteActionsProps {
 
   productCapacity: string;
 
-  listPrice?: number | null;
-
   addOns: ProductAddOn[];
+
+  selectedColor?: string | null;
+
+  selectedColorId: string;
 
 }
 
@@ -44,9 +46,11 @@ export default function ProductQuoteActions({
 
   productCapacity,
 
-  listPrice,
-
   addOns,
+
+  selectedColor,
+
+  selectedColorId,
 
 }: ProductQuoteActionsProps) {
 
@@ -70,10 +74,10 @@ export default function ProductQuoteActions({
         id: productId,
         name: productName,
         capacity: productCapacity,
-        listPrice: listPrice ?? null,
         addOns,
       },
       selectedIds,
+      { id: selectedColorId, name: selectedColor },
     );
   }
 
@@ -288,6 +292,13 @@ export default function ProductQuoteActions({
                   <span className="text-orange">{productName}</span> quedó
 
                   seleccionado.
+
+                  {selectedColor ? (
+                    <>
+                      {" "}
+                      Color: <span className="text-steel-light">{selectedColor}</span>.
+                    </>
+                  ) : null}
 
                   {selectedAddOnIds.length > 0 ? (
 

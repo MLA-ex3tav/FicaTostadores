@@ -7,6 +7,8 @@ import {
   Wheat,
   type LucideIcon,
 } from "lucide-react";
+import Reveal from "@/components/motion/Reveal";
+import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import SectionHeader from "@/components/SectionHeader";
 
 const roastables: { name: string; Icon: LucideIcon }[] = [
@@ -21,19 +23,25 @@ const roastables: { name: string; Icon: LucideIcon }[] = [
 export default function RoastablesSection() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-16">
-      <SectionHeader
-        eyebrow="Aplicaciones"
-        title={
-          <>
-            Múltiples <span className="text-orange">materias primas</span>
-          </>
-        }
-        description="Equipos para tueste y procesamiento en planta."
-      />
+      <Reveal>
+        <SectionHeader
+          eyebrow="Aplicaciones"
+          title={
+            <>
+              Múltiples <span className="text-orange">materias primas</span>
+            </>
+          }
+          description="Equipos para tueste y procesamiento en planta."
+        />
+      </Reveal>
 
-      <ul className="mt-10 flex flex-wrap gap-x-8 gap-y-5 sm:gap-x-10">
+      <Stagger
+        as="ul"
+        className="mt-10 flex flex-wrap gap-x-8 gap-y-5 sm:gap-x-10"
+      >
         {roastables.map((item) => (
-          <li
+          <StaggerItem
+            as="li"
             key={item.name}
             className="flex items-center gap-2.5 text-steel-mid"
           >
@@ -42,9 +50,9 @@ export default function RoastablesSection() {
               strokeWidth={1.75}
             />
             <span className="text-base">{item.name}</span>
-          </li>
+          </StaggerItem>
         ))}
-      </ul>
+      </Stagger>
     </section>
   );
 }

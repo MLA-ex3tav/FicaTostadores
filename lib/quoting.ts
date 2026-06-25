@@ -16,6 +16,7 @@ export interface QuoteProductAddOnContext {
 export interface QuoteProductContext {
   name: string;
   capacity: string;
+  selectedColor?: string | null;
   selectedAddOns?: QuoteProductAddOnContext[];
 }
 
@@ -66,6 +67,9 @@ function buildQuoteText(
     if (products.length === 1) {
       lines.push(`Producto: ${products[0].name}`);
       lines.push(`Capacidad: ${products[0].capacity}`);
+      if (products[0].selectedColor) {
+        lines.push(`Color: ${products[0].selectedColor}`);
+      }
       const addOnsLine = formatAddOnsLine(products[0].selectedAddOns);
       if (addOnsLine) {
         lines.push(addOnsLine);
@@ -74,6 +78,9 @@ function buildQuoteText(
       lines.push("Productos:");
       products.forEach((product, index) => {
         lines.push(`${index + 1}. ${product.name} — ${product.capacity}`);
+        if (product.selectedColor) {
+          lines.push(`   Color: ${product.selectedColor}`);
+        }
         const addOnsLine = formatAddOnsLine(product.selectedAddOns);
         if (addOnsLine) {
           lines.push(`   ${addOnsLine}`);
@@ -117,6 +124,7 @@ export function buildQuoteWhatsAppUrl(
     ?.map((product) => ({
       name: sanitizeText(product.name, 200, { required: true }) ?? "",
       capacity: sanitizeText(product.capacity, 100, { required: true }) ?? "",
+      selectedColor: sanitizeText(product.selectedColor, 120) || undefined,
       selectedAddOns: product.selectedAddOns
         ?.map((addOn) => ({
           id: sanitizeText(addOn.id, 80, { required: true }) ?? "",

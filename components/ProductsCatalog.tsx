@@ -1,8 +1,13 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
+import Reveal from "@/components/motion/Reveal";
+import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import { sectionEyebrowClass } from "@/components/SectionHeader";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getCategoriesForCatalog,
   shouldShowCategoryForCatalog,
@@ -19,19 +24,14 @@ type SubFilterId = string | "all";
 
 const PRODUCTS_PER_PAGE = 15;
 
-const catalogTabClass = (isActive: boolean) =>
-  `shrink-0 whitespace-nowrap border-b-2 px-1 pb-3 pt-1 font-display text-base tracking-wide transition-colors ${
-    isActive
-      ? "border-orange text-steel-light"
-      : "border-transparent text-steel-mid hover:text-steel-light"
-  }`;
+const catalogTabTriggerClass =
+  "h-auto shrink-0 flex-none rounded-none bg-transparent px-1 pb-3 pt-1 font-display text-base tracking-wide shadow-none border-b-2 border-transparent -mb-px data-active:border-orange data-active:bg-transparent data-active:text-steel-light data-active:shadow-none after:!hidden";
 
-const categoryTabClass = (isActive: boolean) =>
-  `shrink-0 whitespace-nowrap border-b-2 px-1 pb-2 pt-1 text-sm tracking-wide transition-colors ${
-    isActive
-      ? "border-orange text-steel-light"
-      : "border-transparent text-steel-dark hover:text-steel-mid"
-  }`;
+const categoryTabTriggerClass =
+  "h-auto shrink-0 flex-none rounded-none bg-transparent px-1 pb-2 pt-1 text-sm tracking-wide shadow-none border-b-2 border-transparent -mb-px data-active:border-orange data-active:bg-transparent data-active:text-steel-light data-active:shadow-none after:!hidden";
+
+const catalogTabsScrollerClass =
+  "-mx-4 overflow-x-auto overflow-y-hidden overscroll-y-none px-4 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden";
 
 function parseCatalog(value: string | null, config: CatalogConfig): string {
   if (value && config.catalogs.some((catalog) => catalog.id === value)) {
@@ -138,113 +138,110 @@ export default function ProductsCatalog({
 
   return (
     <>
-      <nav
-        aria-label="Catálogos"
-        className="mb-6 border-b border-steel-dark/15"
-      >
-        <div
-          className="-mx-4 flex gap-6 overflow-x-auto px-4 md:mx-0 md:px-0"
-          role="tablist"
-        >
-          {catalogConfig.catalogs.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={catalog === item.id}
-              onClick={() => handleCatalogChange(item.id)}
-              className={catalogTabClass(catalog === item.id)}
+      <Reveal>
+        <Tabs value={catalog} onValueChange={handleCatalogChange}>
+          <div className={catalogTabsScrollerClass}>
+            <TabsList
+              variant="line"
+              aria-label="Catálogos"
+              className="mb-6 h-auto w-max min-w-full flex-nowrap items-end justify-start gap-6 rounded-none border-b border-steel-dark/15 bg-transparent p-0"
             >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      {showSubFilters && (
-        <nav
-          aria-label="Tipos de equipo"
-          className="mb-8 border-b border-steel-dark/10"
-        >
-          <p className={`mb-2 ${sectionEyebrowClass}`}>
-            Tipo
-          </p>
-          <div
-            className="-mx-4 flex gap-5 overflow-x-auto px-4 md:mx-0 md:px-0"
-            role="tablist"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={subFilter === "all"}
-              onClick={() => handleSubFilterChange("all")}
-              className={categoryTabClass(subFilter === "all")}
-            >
-              Todos
-            </button>
-            {subCategories.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                role="tab"
-                aria-selected={subFilter === category.id}
-                onClick={() => handleSubFilterChange(category.id)}
-                className={categoryTabClass(subFilter === category.id)}
+            {catalogConfig.catalogs.map((item) => (
+              <TabsTrigger
+                key={item.id}
+                value={item.id}
+                className={catalogTabTriggerClass}
               >
-                {category.label}
-              </button>
+                {item.label}
+              </TabsTrigger>
             ))}
+            </TabsList>
           </div>
-        </nav>
-      )}
+        </Tabs>
+      </Reveal>
 
-      <p className="mb-6 text-base text-steel-dark">
-        {filtered.length} {filtered.length === 1 ? "equipo" : "equipos"}
-        {totalPages > 1 ? (
-          <>
-            {" "}
-            · Página {page} de {totalPages}
-          </>
-        ) : null}
-      </p>
+      {showSubFilters ? (
+        <Reveal delay={0.05}>
+          <div className="mb-8">
+            <p className={`mb-2 ${sectionEyebrowClass}`}>Tipo</p>
+            <Tabs value={subFilter} onValueChange={handleSubFilterChange}>
+              <div className={catalogTabsScrollerClass}>
+                <TabsList
+                  variant="line"
+                  aria-label="Tipos de equipo"
+                  className="h-auto w-max min-w-full flex-nowrap items-end justify-start gap-5 rounded-none border-b border-steel-dark/15 bg-transparent p-0"
+                >
+                <TabsTrigger value="all" className={categoryTabTriggerClass}>
+                  Todos
+                </TabsTrigger>
+                {subCategories.map((category) => (
+                  <TabsTrigger
+                    key={category.id}
+                    value={category.id}
+                    className={categoryTabTriggerClass}
+                  >
+                    {category.label}
+                  </TabsTrigger>
+                ))}
+                </TabsList>
+              </div>
+            </Tabs>
+          </div>
+        </Reveal>
+      ) : null}
 
-      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      <Reveal delay={0.08}>
+        <p className="mb-6 text-base text-steel-dark">
+          {filtered.length} {filtered.length === 1 ? "equipo" : "equipos"}
+          {totalPages > 1 ? (
+            <>
+              {" "}
+              · Página {page} de {totalPages}
+            </>
+          ) : null}
+        </p>
+      </Reveal>
+
+      <Stagger className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {paginatedProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            catalogConfig={catalogConfig}
-          />
+          <StaggerItem key={product.id} className="h-full">
+            <ProductCard product={product} catalogConfig={catalogConfig} />
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
 
       {totalPages > 1 ? (
         <nav
           className="mt-12 flex flex-wrap items-center justify-center gap-3"
           aria-label="Paginación del catálogo"
         >
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => handlePageChange(page - 1)}
             disabled={page <= 1}
-            className="rounded-lg border border-steel-dark/40 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-steel-mid transition-colors hover:border-orange hover:text-orange disabled:cursor-not-allowed disabled:opacity-40"
+            className="text-steel-mid hover:text-orange"
           >
+            <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
             Anterior
-          </button>
+          </Button>
           <span className="text-base text-steel-mid">
             {page} / {totalPages}
           </span>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => handlePageChange(page + 1)}
             disabled={page >= totalPages}
-            className="rounded-lg border border-steel-dark/40 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-steel-mid transition-colors hover:border-orange hover:text-orange disabled:cursor-not-allowed disabled:opacity-40"
+            className="text-steel-mid hover:text-orange"
           >
             Siguiente
-          </button>
+            <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+          </Button>
         </nav>
       ) : null}
     </>
   );
 }
-
