@@ -48,3 +48,6 @@ firebase-service-account.json
 /data/products.json
 /data/catalog-config.json
 /public/uploads/
+
+.vercel
+.env*
