@@ -248,13 +248,11 @@ export async function POST(request: Request) {
     const now = FieldValue.serverTimestamp();
 
     const productsData = products.map((line) => ({
-      id: line.productId || undefined,
       productId: line.productId || null,
       name: line.name,
       quantity: line.quantity,
       unitPrice: line.unitPrice,
       lineTotal: line.unitPrice * line.quantity,
-      capacity: undefined,
       catalog: "movil",
     }));
 
