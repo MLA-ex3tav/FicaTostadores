@@ -1,0 +1,50 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+Thumbs.db
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env local (secretos reales)
+.env
+.env.local
+.env.*.local
+
+# clave privada Firebase Admin (descargada de Firebase Console)
+firebase-service-account.json
+*-firebase-adminsdk-*.json
+
+# plantilla versionada
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+
+# catálogo editado en local (dev)
+/data/products.json
+/data/catalog-config.json
+/public/uploads/

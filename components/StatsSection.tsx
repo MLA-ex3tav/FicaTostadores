@@ -1,0 +1,32 @@
+import Reveal from "@/components/motion/Reveal";
+import { Stagger, StaggerItem } from "@/components/motion/Stagger";
+
+const stats: { value: string; label: string }[] = [
+  { value: "6+", label: "Líneas de producto" },
+  { value: "6+", label: "Países atendidos" },
+  { value: "100%", label: "Acero inoxidable" },
+];
+
+export default function StatsSection() {
+  return (
+    <section className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
+      <Reveal>
+      <Stagger className="flex flex-col divide-y divide-steel-dark/15 border-y border-steel-dark/15 sm:flex-row sm:divide-x sm:divide-y-0">
+        {stats.map((stat) => (
+          <StaggerItem
+            key={stat.label}
+            className="flex-1 px-4 py-6 text-center sm:py-7"
+          >
+            <p className="font-display text-4xl tabular-nums tracking-wide text-orange md:text-5xl">
+              {stat.value}
+            </p>
+            <p className="mt-1 text-base leading-snug text-steel-mid">
+              {stat.label}
+            </p>
+          </StaggerItem>
+        ))}
+      </Stagger>
+      </Reveal>
+    </section>
+  );
+}

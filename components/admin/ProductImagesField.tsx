@@ -1,0 +1,362 @@
+"use client";
+
+import ImageFocusEditor from "@/components/admin/ImageFocusEditor";
+import UploadProgressBar from "@/components/admin/UploadProgressBar";
+import {
+  uploadAdminImage,
+  type AdminImageUploadProgress,
+} from "@/lib/admin-image-upload";
+import { getFirebaseAuth } from "@/lib/firebase/client";
+import { useFirebaseAuth } from "@/lib/firebase-auth";
+import {
+  CAROUSEL_CONTAINER_CLASS,
+  CAROUSEL_IMAGE_SPEC,
+  createGalleryImage,
+  createProductImage,
+  PRODUCT_IMAGE_CONTAINER_CLASS,
+  PRODUCT_IMAGE_SPEC,
+  type ProductImage,
+  type ProductImageView,
+} from "@/lib/product-images";
+import type { UploadImageVariant } from "@/lib/optimize-upload-image";
+import { useCallback, useRef, useState } from "react";
+
+interface ProductImagesFieldProps {
+  images: ProductImage[];
+  onChange: (images: ProductImage[]) => void;
+}
+
+type PrimaryViewKey = "carousel" | "product";
+
+export default function ProductImagesField({
+  images,
+  onChange,
+}: ProductImagesFieldProps) {
+  const { user } = useFirebaseAuth();
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const carouselInputRef = useRef<HTMLInputElement>(null);
+  const productInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [replacingView, setReplacingView] = useState<PrimaryViewKey | null>(
+    null,
+  );
+  const [uploadProgress, setUploadProgress] =
+    useState<AdminImageUploadProgress | null>(null);
+  const [error, setError] = useState("");
+
+  const getAuthToken = useCallback(async () => {
+    const currentUser = getFirebaseAuth()?.currentUser ?? user;
+
+    if (!currentUser) {
+      throw new Error("Debe iniciar sesión para subir imágenes.");
+    }
+
+    return currentUser.getIdToken();
+  }, [user]);
+
+  const clearUploadState = useCallback(() => {
+    setUploading(false);
+    setReplacingView(null);
+    setUploadProgress(null);
+  }, []);
+
+  async function uploadFile(
+    file: File,
+    variant: UploadImageVariant = "product",
+    options?: { fileIndex?: number; fileCount?: number },
+  ): Promise<string> {
+    return uploadAdminImage(
+      file,
+      variant,
+      getAuthToken,
+      setUploadProgress,
+      options,
+    );
+  }
+
+  async function handleGalleryFiles(selected: FileList | null) {
+    if (!selected?.length) {
+      return;
+    }
+
+    const files = Array.from(selected);
+    setUploading(true);
+    setError("");
+    setUploadProgress(null);
+
+    const nextImages = [...images];
+
+    try {
+      for (const [index, file] of files.entries()) {
+        const url = await uploadFile(file, "gallery", {
+          fileIndex: index + 1,
+          fileCount: files.length,
+        });
+        nextImages.push(createGalleryImage(url));
+      }
+
+      onChange(nextImages);
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Error de conexión al subir imágenes.",
+      );
+    } finally {
+      clearUploadState();
+      if (galleryInputRef.current) {
+        galleryInputRef.current.value = "";
+      }
+    }
+  }
+
+  async function handlePrimaryViewFile(
+    view: PrimaryViewKey,
+    selected: FileList | null,
+  ) {
+    if (!selected?.length || images.length === 0) {
+      return;
+    }
+
+    setReplacingView(view);
+    setUploading(true);
+    setError("");
+    setUploadProgress(null);
+
+    try {
+      const url = await uploadFile(selected[0], view);
+
+      onChange(
+        images.map((image, index) => {
+          if (index !== 0) {
+            return image;
+          }
+
+          return {
+            ...image,
+            [view]: {
+              ...image[view],
+              src: url,
+            } satisfies ProductImageView,
+          };
+        }),
+      );
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Error de conexión al subir imágenes.",
+      );
+    } finally {
+      clearUploadState();
+      const inputRef =
+        view === "carousel" ? carouselInputRef : productInputRef;
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
+    }
+  }
+
+  async function handleInitialPrimaryUpload(selected: FileList | null) {
+    if (!selected?.length) {
+      return;
+    }
+
+    setUploading(true);
+    setError("");
+    setUploadProgress(null);
+
+    try {
+      const url = await uploadFile(selected[0], "primary");
+      onChange([createProductImage(url)]);
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Error de conexión al subir imágenes.",
+      );
+    } finally {
+      clearUploadState();
+      if (galleryInputRef.current) {
+        galleryInputRef.current.value = "";
+      }
+    }
+  }
+
+  function removeImage(index: number) {
+    onChange(images.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  function updateView(
+    index: number,
+    view: keyof ProductImage,
+    patch: Partial<ProductImageView>,
+  ) {
+    onChange(
+      images.map((image, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...image,
+              [view]: { ...image[view], ...patch },
+            }
+          : image,
+      ),
+    );
+  }
+
+  const isBusy = uploading || replacingView !== null;
+
+  return (
+    <section>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="font-display text-lg text-steel-light">Imágenes</h2>
+          <p className="mt-1 text-xs text-steel-dark">
+            La imagen principal puede usar archivos distintos para el carrusel
+            (inicio) y la vista de productos (catálogo y ficha). Las imágenes
+            adicionales solo se muestran en la ficha del producto. Al subir, se
+            optimizan automáticamente a WebP.
+          </p>
+          <ul className="mt-2 space-y-1 text-[0.65rem] text-steel-mid">
+            <li>
+              <span className="text-orange">Carrusel:</span>{" "}
+              {CAROUSEL_IMAGE_SPEC.hint}
+            </li>
+            <li>
+              <span className="text-orange">Productos:</span>{" "}
+              {PRODUCT_IMAGE_SPEC.hint}
+            </li>
+          </ul>
+        </div>
+        <button
+          type="button"
+          disabled={isBusy}
+          onClick={() => galleryInputRef.current?.click()}
+          className="text-xs text-orange hover:text-orange-hover disabled:opacity-60"
+        >
+          {isBusy
+            ? "Subiendo…"
+            : images.length === 0
+              ? "+ Agregar imagen principal"
+              : "+ Agregar imágenes"}
+        </button>
+      </div>
+
+      {uploadProgress ? <UploadProgressBar progress={uploadProgress} /> : null}
+
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        multiple={images.length > 0}
+        className="hidden"
+        onChange={(event) => {
+          const files = event.target.files;
+          if (images.length === 0) {
+            void handleInitialPrimaryUpload(files);
+            return;
+          }
+
+          void handleGalleryFiles(files);
+        }}
+      />
+      <input
+        ref={carouselInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) =>
+          void handlePrimaryViewFile("carousel", event.target.files)
+        }
+      />
+      <input
+        ref={productInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) =>
+          void handlePrimaryViewFile("product", event.target.files)
+        }
+      />
+
+      {images.length > 0 ? (
+        <div className="mt-4 space-y-6">
+          {images.map((image, index) => (
+            <div
+              key={`${image.carousel.src}-${image.product.src}-${index}`}
+              className="rounded-xl border border-white/[0.06] bg-[var(--input-bg)] p-4"
+            >
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-steel-mid">
+                  {index === 0 ? "Imagen principal" : `Imagen ${index + 1}`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  disabled={isBusy}
+                  className="shrink-0 text-xs text-steel-mid hover:text-orange disabled:opacity-60"
+                >
+                  Quitar
+                </button>
+              </div>
+
+              <div
+                className={`grid gap-4 ${
+                  index === 0 ? "md:grid-cols-2" : "max-w-md"
+                }`}
+              >
+                {index === 0 ? (
+                  <ImageFocusEditor
+                    src={image.carousel.src}
+                    label={CAROUSEL_IMAGE_SPEC.label}
+                    resolutionHint={CAROUSEL_IMAGE_SPEC.hint}
+                    aspectClassName={CAROUSEL_CONTAINER_CLASS}
+                    focus={image.carousel.focus}
+                    onChange={(focus) => updateView(index, "carousel", { focus })}
+                    onReplaceImage={() => carouselInputRef.current?.click()}
+                    replaceImageLabel="Cambiar imagen carrusel"
+                    replacingImage={replacingView === "carousel"}
+                    uploadStatus={
+                      replacingView === "carousel" ? uploadProgress : null
+                    }
+                  />
+                ) : null}
+                <ImageFocusEditor
+                  src={image.product.src}
+                  label={PRODUCT_IMAGE_SPEC.label}
+                  resolutionHint={PRODUCT_IMAGE_SPEC.hint}
+                  aspectClassName={PRODUCT_IMAGE_CONTAINER_CLASS}
+                  focus={image.product.focus}
+                  onChange={(focus) => updateView(index, "product", { focus })}
+                  onReplaceImage={
+                    index === 0
+                      ? () => productInputRef.current?.click()
+                      : undefined
+                  }
+                  replaceImageLabel="Cambiar imagen productos"
+                  replacingImage={index === 0 && replacingView === "product"}
+                  uploadStatus={
+                    index === 0 && replacingView === "product"
+                      ? uploadProgress
+                      : null
+                  }
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-lg border border-dashed border-steel-dark/40 px-4 py-6 text-sm text-steel-mid">
+          Sin imágenes. Suba fotos del equipo y encuadre cómo se verán en el
+          sitio.
+          <span className="mt-3 block text-xs leading-relaxed text-steel-dark">
+            Resolución recomendada · Carrusel: {CAROUSEL_IMAGE_SPEC.hint}.
+            Productos: {PRODUCT_IMAGE_SPEC.hint}.
+          </span>
+        </p>
+      )}
+
+      {error ? <p className="mt-3 text-sm text-orange">{error}</p> : null}
+    </section>
+  );
+}

@@ -1,0 +1,72 @@
+import type { Metadata } from "next";
+import { Inter, Oswald } from "next/font/google";
+import Footer from "@/components/Footer";
+import MainWithQuotePadding from "@/components/MainWithQuotePadding";
+import Navbar from "@/components/Navbar";
+import QuoteSelectionSidebar from "@/components/QuoteSelectionSidebar";
+import AppProviders from "@/components/providers/AppProviders";
+import { companyInfo } from "@/lib/company";
+import { QuoteSelectionProvider } from "@/lib/quote-selection";
+import PageLoadingBar from "@/components/PageLoadingBar";
+import TermsConsentBanner from "@/components/TermsConsentBanner";
+import WhatsAppFloatButton from "@/components/WhatsAppFloatButton";
+import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  companyInfo.website ||
+  "http://localhost:3000";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const oswald = Oswald({
+  variable: "--font-oswald",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: "Fica Tostadores | Maquinaria Industrial de Tostado",
+  description:
+    "Tostadores de café TLC, tostadores comerciales e industriales, molinos y equipos de procesamiento. Fabricación chilena, IX Región.",
+  openGraph: {
+    type: "website",
+    locale: "es_CL",
+    siteName: companyInfo.brand,
+    title: "Fica Tostadores | Maquinaria Industrial de Tostado",
+    description:
+      "Tostadores de café TLC, tostadores comerciales e industriales, molinos y equipos de procesamiento. Fabricación chilena, IX Región.",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html
+      lang="es"
+      className={cn("dark h-full", inter.variable, oswald.variable)}
+    >
+      <body className="flex min-h-full flex-col antialiased">
+        <AppProviders>
+          <QuoteSelectionProvider>
+            <PageLoadingBar />
+            <TermsConsentBanner />
+            <Navbar />
+            <QuoteSelectionSidebar />
+            <MainWithQuotePadding>{children}</MainWithQuotePadding>
+            <Footer />
+            <WhatsAppFloatButton />
+          </QuoteSelectionProvider>
+        </AppProviders>
+      </body>
+    </html>
+  );
+}
