@@ -625,7 +625,26 @@ function formatPresenceTimestamp(iso: string): string {
 }
 
 async function checkElectronCotizacionesApp(): Promise<HealthCheck> {
-  const presence = await getElectronPresenceStatus();
+  let presence: Awaited<ReturnType<typeof getElectronPresenceStatus>>;
+
+  try {
+    presence = await getElectronPresenceStatus();
+  } catch (error) {
+    const detail =
+      error instanceof Error && error.message.trim()
+        ? error.message
+        : "Error desconocido";
+
+    return {
+      id: "electron-cotizaciones-app",
+      category: "integraciones",
+      name: "App de cotizaciones (Electron)",
+      status: "error",
+      message: "No se pudo consultar la presencia de la app.",
+      details: [detail],
+    };
+  }
+
   const details: string[] = [
     `Umbral de desconexión: ${presence.heartbeatTimeoutSec} s sin heartbeat`,
     `Almacenamiento: ${presence.storage === "redis" ? "Upstash Redis" : "memoria local (por instancia)"}`,
@@ -866,58 +885,82 @@ export async function getSystemHealthReport(): Promise<SystemHealthReport> {
   const baseUrl = getHealthCheckBaseUrl();
   const publicSiteUrl = getDeploymentBaseUrl();
 
-  const firebaseChecks = await Promise.all([
-    Promise.resolve(checkFirebaseEnv()),
-    Promise.resolve(checkFirebaseClient()),
-    Promise.resolve(checkFirebaseAdmin()),
-    checkFirebaseAuthApi(),
-    checkFirestoreApi(),
-    Promise.resolve(checkFirebaseStorage()),
-  ]);
+  try {
+    const firebaseChecks = await Promise.all([
+      Promise.resolve(checkFirebaseEnv()),
+      Promise.resolve(checkFirebaseClient()),
+      Promise.resolve(checkFirebaseAdmin()),
+      checkFirebaseAuthApi(),
+      checkFirestoreApi(),
+      Promise.resolve(checkFirebaseStorage()),
+    ]);
 
-  const vercelChecks = await Promise.all([
-    Promise.resolve(checkVercelRuntime()),
-    Promise.resolve(checkVercelDeploymentProtection()),
-    Promise.resolve(checkSiteUrl()),
-    checkVercelBlob(),
-  ]);
+    const vercelChecks = await Promise.all([
+      Promise.resolve(checkVercelRuntime()),
+      Promise.resolve(checkVercelDeploymentProtection()),
+      Promise.resolve(checkSiteUrl()),
+      checkVercelBlob(),
+    ]);
 
-  const integrationChecks = await Promise.all([
-    checkElectronCotizacionesApp(),
-    checkUpstashRedis(),
-  ]);
+    const integrationChecks = await Promise.all([
+      checkElectronCotizacionesApp(),
+      checkUpstashRedis(),
+    ]);
 
-  const pageChecks = await Promise.all(
-    PUBLIC_PAGES.map((page) =>
-      checkRouteReachability(baseUrl, page.path, page.label, "paginas"),
-    ),
-  );
+    const pageChecks = await Promise.all(
+      PUBLIC_PAGES.map((page) =>
+        checkRouteReachability(baseUrl, page.path, page.label, "paginas"),
+      ),
+    );
 
-  const apiChecks = await Promise.all([
-    ...PUBLIC_APIS.map((route) =>
-      checkRouteReachability(baseUrl, route.path, route.label, "api"),
-    ),
-    checkCotizacionesApiRoute(baseUrl),
-  ]);
+    const apiChecks = await Promise.all([
+      ...PUBLIC_APIS.map((route) =>
+        checkRouteReachability(baseUrl, route.path, route.label, "api"),
+      ),
+      checkCotizacionesApiRoute(baseUrl),
+    ]);
 
-  const checks = consolidateHttpRouteChecks(
-    [
-      ...firebaseChecks,
-      ...vercelChecks,
-      ...integrationChecks,
-      ...pageChecks,
-      ...apiChecks,
-    ],
-    baseUrl,
-  );
+    const checks = consolidateHttpRouteChecks(
+      [
+        ...firebaseChecks,
+        ...vercelChecks,
+        ...integrationChecks,
+        ...pageChecks,
+        ...apiChecks,
+      ],
+      baseUrl,
+    );
 
-  return {
-    checkedAt: new Date().toISOString(),
-    environment: getRuntimeEnvironment(),
-    deploymentUrl: publicSiteUrl,
-    checks,
-    summary: summarizeChecks(checks),
-  };
+    return {
+      checkedAt: new Date().toISOString(),
+      environment: getRuntimeEnvironment(),
+      deploymentUrl: publicSiteUrl,
+      checks,
+      summary: summarizeChecks(checks),
+    };
+  } catch (error) {
+    const detail =
+      error instanceof Error && error.message.trim()
+        ? error.message
+        : "Error desconocido";
+
+    return {
+      checkedAt: new Date().toISOString(),
+      environment: getRuntimeEnvironment(),
+      deploymentUrl: publicSiteUrl,
+      checks: [
+        {
+          id: "report-parcial",
+          category: "integraciones",
+          name: "Reporte de salud",
+          status: "error",
+          message: "No se pudo completar el reporte de salud.",
+          details: [detail],
+        },
+      ],
+      summary: { ok: 0, warning: 0, error: 1 },
+    };
+  }
 }
 
 export const HEALTH_CATEGORY_LABELS: Record<HealthCategory, string> = {
