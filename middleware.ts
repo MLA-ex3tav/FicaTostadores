@@ -59,28 +59,39 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/api/")) {
-    const ip = getClientIp(request);
-    const { keys, config } = getRateLimitKey(ip, pathname, request.method);
-    const result = await assertRateLimits(keys, config);
-
-    if (!result.ok) {
-      const response = NextResponse.json(
-        {
-          error:
-            "Demasiadas solicitudes. Intente de nuevo en unos segundos.",
-        },
-        { status: 429 },
-      );
-
-      if (result.retryAfterSeconds) {
-        response.headers.set(
-          "Retry-After",
-          String(result.retryAfterSeconds),
-        );
-      }
-
+    if (request.method === "OPTIONS") {
+      const response = NextResponse.next();
       applySecurityHeaders(response, securityOptions);
       return response;
+    }
+
+    const ip = getClientIp(request);
+    const { keys, config } = getRateLimitKey(ip, pathname, request.method);
+
+    try {
+      const result = await assertRateLimits(keys, config);
+
+      if (!result.ok) {
+        const response = NextResponse.json(
+          {
+            error:
+              "Demasiadas solicitudes. Intente de nuevo en unos segundos.",
+          },
+          { status: 429 },
+        );
+
+        if (result.retryAfterSeconds) {
+          response.headers.set(
+            "Retry-After",
+            String(result.retryAfterSeconds),
+          );
+        }
+
+        applySecurityHeaders(response, securityOptions);
+        return response;
+      }
+    } catch (error) {
+      console.error("[middleware] rate-limit falló, continuando:", error);
     }
   }
 

@@ -124,17 +124,22 @@ export async function checkRateLimit(
     return checkMemoryRateLimit(key, config);
   }
 
-  const result = await limiter.limit(key);
-  const retryAfterSeconds = Math.max(
-    0,
-    Math.ceil((result.reset - Date.now()) / 1000),
-  );
+  try {
+    const result = await limiter.limit(key);
+    const retryAfterSeconds = Math.max(
+      0,
+      Math.ceil((result.reset - Date.now()) / 1000),
+    );
 
-  return {
-    ok: result.success,
-    retryAfterSeconds: result.success ? undefined : retryAfterSeconds,
-    remaining: result.remaining,
-  };
+    return {
+      ok: result.success,
+      retryAfterSeconds: result.success ? undefined : retryAfterSeconds,
+      remaining: result.remaining,
+    };
+  } catch (error) {
+    console.warn("[rate-limit] Upstash falló, usando memoria local:", error);
+    return checkMemoryRateLimit(key, config);
+  }
 }
 
 export async function assertRateLimits(
