@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuoteSelection } from "@/lib/quote-selection";
@@ -9,6 +10,7 @@ import QuoteProductList from "./QuoteProductList";
 const dockDuration = "duration-350";
 
 export default function QuoteDesktopDock() {
+  const pathname = usePathname();
   const { products, setDesktopDockOpen } = useQuoteSelection();
   const [open, setOpen] = useState(false);
 
@@ -20,7 +22,11 @@ export default function QuoteDesktopDock() {
     };
   }, [open, setDesktopDockOpen]);
 
-  if (products.length === 0) {
+  if (
+    products.length === 0 ||
+    pathname === "/contacto" ||
+    pathname === "/cotizar"
+  ) {
     return null;
   }
 

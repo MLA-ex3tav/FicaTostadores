@@ -1,6 +1,8 @@
 import HeroSection from "@/components/HeroSection";
-import HomeContactSection from "@/components/HomeContactSection";
+import HomeCtaBanner from "@/components/HomeCtaBanner";
+import HomeFeaturedProducts from "@/components/HomeFeaturedProducts";
 import HomeFeaturesSection from "@/components/HomeFeaturesSection";
+import HomeProcessSection from "@/components/HomeProcessSection";
 import RoastablesSection from "@/components/RoastablesSection";
 import ServicesSection from "@/components/ServicesSection";
 import StatsSection from "@/components/StatsSection";
@@ -12,13 +14,30 @@ export default async function Home() {
   const banners = await getHeroProductBanners();
 
   return (
-    <>
+    <main className="min-h-screen">
+      {/* Top Hero Slider (Height & Size preserved) */}
       <HeroSection banners={banners} />
-      <HomeContactSection />
+
+      {/* Trust & Impact Metrics */}
       <StatsSection />
+
+      {/* Featured Machinery Showcase with Quick Quote */}
+      <HomeFeaturedProducts />
+
+      {/* 3-Step Manufacturing & Delivery Process */}
+      <HomeProcessSection />
+
+      {/* Commodities & Roastable Products */}
       <RoastablesSection />
-      <ServicesSection />
+
+      {/* Engineering & Why Choose Fica */}
       <HomeFeaturesSection />
-    </>
+
+      {/* Full Services */}
+      <ServicesSection />
+
+      {/* Final High-Converting Quote CTA */}
+      <HomeCtaBanner />
+    </main>
   );
 }

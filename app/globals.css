@@ -232,6 +232,60 @@ body {
   --sidebar-ring: #e85d04;
 }
 
+/* Product detail tabs */
+.product-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.product-tab-btn {
+  position: relative;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--steel-dark);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+.product-tab-btn:hover {
+  color: var(--steel-light);
+}
+
+.product-tab-btn[data-active="true"] {
+  color: var(--orange);
+}
+
+/* Image zoom on hover */
+.img-zoom-hover {
+  overflow: hidden;
+}
+
+.img-zoom-hover img {
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.img-zoom-hover:hover img {
+  transform: scale(1.06);
+}
+
+/* Spec badge hover micro-animation */
+.spec-badge {
+  transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.spec-badge:hover {
+  border-color: rgba(232, 93, 4, 0.5);
+  background-color: rgba(232, 93, 4, 0.06);
+  transform: translateY(-1px);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

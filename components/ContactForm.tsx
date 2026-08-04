@@ -68,7 +68,17 @@ function buildProfilePayload(
   };
 }
 
-export default function ContactForm() {
+interface ContactFormProps {
+  formId?: string;
+  hideSubmitButton?: boolean;
+  onSuccess?: (requestId: string | null) => void;
+}
+
+export default function ContactForm({
+  formId = "solicitud-cotizacion-form",
+  hideSubmitButton = false,
+  onSuccess,
+}: ContactFormProps) {
   const searchParams = useSearchParams();
   const productId = searchParams.get("producto");
   const { products, addProduct, clearProducts } = useQuoteSelection();
@@ -86,6 +96,7 @@ export default function ContactForm() {
   const [country, setCountry] = useState("Chile");
   const [message, setMessage] = useState("");
   const [saveProfileForFuture, setSaveProfileForFuture] = useState(false);
+  const [showShippingFields, setShowShippingFields] = useState(false);
   const [phoneError, setPhoneError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -296,6 +307,9 @@ export default function ContactForm() {
 
       setSubmitSuccess(true);
       setRequestId(submittedRequestId);
+      if (onSuccess) {
+        onSuccess(submittedRequestId);
+      }
       resetForm();
       clearProducts();
     } catch {
@@ -339,43 +353,77 @@ export default function ContactForm() {
   }
 
   return (
-    <section className="min-w-0 w-full rounded-lg border border-white/[0.06] bg-panel/40 px-4 py-6 sm:px-5 sm:py-7">
-      <p className="mb-6 text-sm leading-relaxed text-steel-mid">{introText}</p>
+    <section className="min-w-0 w-full rounded-2xl border border-white/[0.08] bg-panel p-6 sm:p-8 shadow-xl shadow-black/30">
+      <div className="mb-6 flex items-center justify-between border-b border-white/[0.06] pb-4">
+        <div>
+          <h2 className="font-display text-2xl uppercase tracking-wide text-steel-light">
+            Datos de Solicitud
+          </h2>
+          <p className="mt-1 text-xs text-steel-mid">
+            Complete sus datos para recibir la propuesta comercial oficial.
+          </p>
+        </div>
+      </div>
 
       <form
+        id={formId}
         onSubmit={handleSubmit}
-        className="min-w-0 w-full space-y-7 md:space-y-6"
+        className="min-w-0 w-full space-y-6"
         noValidate
       >
-        <fieldset className="min-w-0 w-full space-y-7 md:space-y-6">
+        <fieldset className="min-w-0 w-full space-y-6">
           <legend className="sr-only">Datos de contacto</legend>
 
-          <div>
-            <label htmlFor="name" className={fieldLabelClass}>
-              Nombre
-            </label>
-            <input
-              id="name"
-              type="text"
-              required
-              maxLength={120}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Su nombre completo"
-              className="industrial-input max-md:min-h-12 max-md:text-base"
-            />
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <label htmlFor="name" className={fieldLabelClass}>
+                Nombre Completo *
+              </label>
+              <input
+                id="name"
+                type="text"
+                required
+                maxLength={120}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Su nombre completo"
+                className="industrial-input max-md:min-h-12 max-md:text-base"
+              />
+            </div>
+
+            <div className="min-w-0">
+              <label htmlFor="phone" className={fieldLabelClass}>
+                WhatsApp / Teléfono *
+              </label>
+              <div className="min-w-0 w-full">
+                <PhoneInput
+                  id="phone"
+                  defaultCountry="CL"
+                  labels={es}
+                  flags={flags}
+                  countrySelectComponent={PhoneCountrySelect}
+                  placeholder="912345678"
+                  value={phone}
+                  onChange={setPhone}
+                  className="phone-input-wrapper"
+                />
+              </div>
+              {phoneError ? (
+                <p className="mt-1.5 text-xs text-orange">{phoneError}</p>
+              ) : null}
+            </div>
           </div>
 
           <div>
             {usesGoogleEmail ? (
-              <p className="rounded-lg border border-steel-dark/30 bg-background/60 px-4 py-3 text-sm leading-relaxed text-steel-mid">
-                Correo de contacto:{" "}
+              <p className="rounded-xl border border-steel-dark/30 bg-background/60 px-4 py-3 text-sm leading-relaxed text-steel-mid">
+                Correo de contacto vinculante:{" "}
                 <strong className="text-steel-light">{googleEmail}</strong>
               </p>
             ) : (
-              <>
+              <div>
                 <label htmlFor="email" className={fieldLabelClass}>
-                  Correo <span className="text-steel-dark">(opcional)</span>
+                  Correo Electrónico <span className="text-steel-dark">(opcional)</span>
                 </label>
                 <input
                   id="email"
@@ -386,197 +434,180 @@ export default function ContactForm() {
                   placeholder="correo@ejemplo.com"
                   className="industrial-input max-md:min-h-12 max-md:text-base"
                 />
-              </>
+              </div>
             )}
           </div>
-
-          <div className="min-w-0">
-            <label htmlFor="phone" className={fieldLabelClass}>
-              WhatsApp / teléfono
-            </label>
-            <div className="min-w-0 w-full">
-              <PhoneInput
-                id="phone"
-                defaultCountry="CL"
-                labels={es}
-                flags={flags}
-                countrySelectComponent={PhoneCountrySelect}
-                placeholder="912345678"
-                value={phone}
-                onChange={setPhone}
-                className="phone-input-wrapper"
-              />
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-steel-dark md:mt-1.5 md:text-xs">
-              Ingrese solo el número local, sin repetir el código del país.
-            </p>
-            {phoneError ? (
-              <p className="mt-2 text-sm text-orange md:mt-1 md:text-xs">{phoneError}</p>
-            ) : null}
-            {phone && !isPhoneValid && !phoneError ? (
-              <p className="mt-2 text-sm text-steel-dark md:mt-1 md:text-xs">
-                Verifique que el número sea correcto.
-              </p>
-            ) : null}
-          </div>
         </fieldset>
 
-        <fieldset className="min-w-0 w-full space-y-7 border-t border-white/[0.06] pt-7 md:space-y-6 md:pt-6">
-          <legend className="mb-1 font-display text-lg tracking-wide text-steel-light md:text-base">
-            Datos de envío{" "}
-            <span className="text-sm font-normal normal-case text-steel-dark">
-              (opcional)
-            </span>
-          </legend>
-          <p className="text-sm leading-relaxed text-steel-mid">
-            Si necesita despacho del equipo, indique la dirección de entrega.
-          </p>
-
-          <div>
-            <label htmlFor="addressLine1" className={fieldLabelClass}>
-              Calle y número
-            </label>
-            <input
-              id="addressLine1"
-              type="text"
-              maxLength={200}
-              value={addressLine1}
-              onChange={(e) => setAddressLine1(e.target.value)}
-              placeholder="Av. Principal 1234"
-              className="industrial-input max-md:min-h-12 max-md:text-base"
-            />
+        {/* Optional Shipping Address Accordion / Toggle with Smooth Animation */}
+        <div className="border-t border-white/[0.06] pt-6">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setShowShippingFields((prev) => !prev)}
+              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-orange hover:underline focus:outline-none transition-colors"
+              aria-expanded={showShippingFields}
+            >
+              {showShippingFields
+                ? "− Ocultar datos de despacho"
+                : "+ Agregar dirección de despacho o entrega (Opcional)"}
+            </button>
           </div>
 
-          <div>
-            <label htmlFor="addressLine2" className={fieldLabelClass}>
-              Depto / block / referencia{" "}
-              <span className="text-steel-dark">(opcional)</span>
-            </label>
-            <input
-              id="addressLine2"
-              type="text"
-              maxLength={120}
-              value={addressLine2}
-              onChange={(e) => setAddressLine2(e.target.value)}
-              placeholder="Depto 502, bodega 3, etc."
-              className="industrial-input max-md:min-h-12 max-md:text-base"
-            />
+          <div
+            className={`grid transition-all duration-300 ease-in-out ${
+              showShippingFields
+                ? "grid-rows-[1fr] opacity-100 mt-4"
+                : "grid-rows-[0fr] opacity-0"
+            }`}
+            style={{ transitionProperty: "grid-template-rows, opacity, margin-top" }}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <fieldset className="min-w-0 w-full space-y-6 pt-2">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                  <legend className="font-display text-base uppercase tracking-wide text-steel-light">
+                    Datos de Envío y Despacho
+                  </legend>
+                  <span className="text-[11px] text-steel-dark font-normal">
+                    (Dirección de entrega de la maquinaria)
+                  </span>
+                </div>
+
+                <div>
+                  <label htmlFor="addressLine1" className={fieldLabelClass}>
+                    Calle y número
+                  </label>
+                  <input
+                    id="addressLine1"
+                    type="text"
+                    maxLength={200}
+                    value={addressLine1}
+                    onChange={(e) => setAddressLine1(e.target.value)}
+                    placeholder="Av. Principal 1234"
+                    className="industrial-input max-md:min-h-12 max-md:text-base"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="addressLine2" className={fieldLabelClass}>
+                    Depto / block / referencia{" "}
+                    <span className="text-steel-dark">(opcional)</span>
+                  </label>
+                  <input
+                    id="addressLine2"
+                    type="text"
+                    maxLength={120}
+                    value={addressLine2}
+                    onChange={(e) => setAddressLine2(e.target.value)}
+                    placeholder="Depto 502, bodega 3, etc."
+                    className="industrial-input max-md:min-h-12 max-md:text-base"
+                  />
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label htmlFor="city" className={fieldLabelClass}>
+                      Comuna / Ciudad
+                    </label>
+                    <input
+                      id="city"
+                      type="text"
+                      maxLength={80}
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Temuco"
+                      className="industrial-input max-md:min-h-12 max-md:text-base"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="region" className={fieldLabelClass}>
+                      Región
+                    </label>
+                    <input
+                      id="region"
+                      type="text"
+                      maxLength={80}
+                      value={region}
+                      onChange={(e) => setRegion(e.target.value)}
+                      placeholder="Araucanía"
+                      className="industrial-input max-md:min-h-12 max-md:text-base"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label htmlFor="postalCode" className={fieldLabelClass}>
+                      Código postal{" "}
+                      <span className="text-steel-dark">(opcional)</span>
+                    </label>
+                    <input
+                      id="postalCode"
+                      type="text"
+                      maxLength={20}
+                      value={postalCode}
+                      onChange={(e) => setPostalCode(e.target.value)}
+                      placeholder="4780000"
+                      className="industrial-input max-md:min-h-12 max-md:text-base"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="country" className={fieldLabelClass}>
+                      País
+                    </label>
+                    <input
+                      id="country"
+                      type="text"
+                      maxLength={80}
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      placeholder="Chile"
+                      className="industrial-input max-md:min-h-12 max-md:text-base"
+                    />
+                  </div>
+                </div>
+              </fieldset>
+            </div>
           </div>
+        </div>
 
-          <div className="grid gap-7 md:grid-cols-2 md:gap-6">
-            <div>
-              <label htmlFor="city" className={fieldLabelClass}>
-                Comuna / ciudad
-              </label>
-              <input
-                id="city"
-                type="text"
-                maxLength={80}
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="Temuco"
-                className="industrial-input max-md:min-h-12 max-md:text-base"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="region" className={fieldLabelClass}>
-                Región
-              </label>
-              <input
-                id="region"
-                type="text"
-                maxLength={80}
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                placeholder="Araucanía"
-                className="industrial-input max-md:min-h-12 max-md:text-base"
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-7 md:grid-cols-2 md:gap-6">
-            <div>
-              <label htmlFor="postalCode" className={fieldLabelClass}>
-                Código postal{" "}
-                <span className="text-steel-dark">(opcional)</span>
-              </label>
-              <input
-                id="postalCode"
-                type="text"
-                maxLength={20}
-                value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
-                placeholder="4780000"
-                className="industrial-input max-md:min-h-12 max-md:text-base"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="country" className={fieldLabelClass}>
-                País
-              </label>
-              <input
-                id="country"
-                type="text"
-                maxLength={80}
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                placeholder="Chile"
-                className="industrial-input max-md:min-h-12 max-md:text-base"
-              />
-            </div>
-          </div>
-        </fieldset>
-
-        <div className="border-t border-white/[0.06] pt-7 md:pt-6">
+        {/* Message / Specifications */}
+        <div className="border-t border-white/[0.06] pt-6">
           <label htmlFor="message" className={fieldLabelClass}>
-            Mensaje <span className="text-steel-dark">(opcional)</span>
+            Mensaje o requerimientos especiales <span className="text-steel-dark">(opcional)</span>
           </label>
           <textarea
             id="message"
-            rows={4}
+            rows={3}
             maxLength={1000}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder={
               products.length > 0
-                ? "Detalles adicionales sobre su consulta..."
+                ? "Escriba aquí dudas sobre voltaje, instalación o requerimientos especiales de su proyecto..."
                 : "Cuéntenos qué equipo necesita o su consulta..."
             }
-            className="industrial-input max-md:min-h-24 max-md:text-base resize-y"
+            className="industrial-input max-md:min-h-20 max-md:text-base resize-y"
           />
         </div>
 
-        {user ? (
-          <label className="flex items-start gap-3 rounded-lg border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-sm leading-relaxed text-steel-mid">
-            <input
-              type="checkbox"
-              checked={saveProfileForFuture}
-              onChange={(event) => setSaveProfileForFuture(event.target.checked)}
-              className="mt-1 h-4 w-4 shrink-0 accent-orange"
-            />
-            <span>
-              Guardar nombre, contacto
-              {shippingFilled ? " y dirección de envío" : ""} para futuras
-              cotizaciones en esta cuenta de Google.
-            </span>
-          </label>
-        ) : null}
-
         {submitError ? (
-          <p className="text-base text-orange md:text-sm">{submitError}</p>
+          <p className="text-sm text-orange">{submitError}</p>
         ) : null}
 
-        <button
-          type="submit"
-          disabled={!name || !isPhoneValid || isSubmitting}
-          className="min-h-12 w-full rounded-xl bg-orange py-4 text-base font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover disabled:cursor-not-allowed disabled:opacity-40 md:min-h-0 md:py-3 md:text-sm"
-        >
-          {isSubmitting ? "Enviando solicitud..." : "Enviar solicitud de cotización"}
-        </button>
+        {!hideSubmitButton && (
+          <button
+            type="submit"
+            disabled={!name || !isPhoneValid || isSubmitting}
+            className="min-h-12 w-full rounded-xl bg-orange py-3.5 text-sm font-semibold uppercase tracking-wider text-white transition-all hover:bg-orange-hover shadow-lg shadow-orange/20 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isSubmitting ? "Enviando..." : "Enviar Solicitud"}
+          </button>
+        )}
 
-        <p className="text-center text-sm leading-relaxed text-steel-dark md:text-xs">
+        <p className="text-center text-xs text-steel-dark">
           Al enviar, acepta nuestros{" "}
           <Link href="/terminos" className="text-orange hover:underline">
             Términos y condiciones

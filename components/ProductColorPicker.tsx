@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   PRODUCT_COLORS,
-  type ProductColorOption,
+  getProductColorById,
 } from "@/lib/product-colors";
 
 interface ProductColorPickerProps {
@@ -17,58 +18,57 @@ export default function ProductColorPicker({
   onChange,
   className,
 }: ProductColorPickerProps) {
-  return (
-    <ul
-      className={cn(
-        "flex min-w-0 flex-nowrap items-start justify-between gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-        className,
-      )}
-    >
-      {PRODUCT_COLORS.map((color) => (
-        <li key={color.id} className="w-[2.75rem] shrink-0 sm:w-[3rem]">
-          <ColorSwatch
-            color={color}
-            selected={value === color.id}
-            onSelect={() => onChange(color.id)}
-          />
-        </li>
-      ))}
-    </ul>
-  );
-}
+  const [hoveredColorId, setHoveredColorId] = useState<string | null>(null);
 
-function ColorSwatch({
-  color,
-  selected,
-  onSelect,
-}: {
-  color: ProductColorOption;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  const isLight =
-    color.id === "blanco" || color.id === "amarillo" || color.id === "verde-claro";
+  const activeColor = getProductColorById(hoveredColorId ?? value);
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-      aria-label={`Color ${color.name}`}
-      title={color.name}
-      className="group flex w-full flex-col items-center gap-1 text-center"
-    >
-      <span
-        className={cn(
-          "size-[2.75rem] shrink-0 rounded-lg border-2 border-steel-dark/20 shadow-sm transition-all group-hover:border-orange/50 sm:size-[3rem]",
-          isLight && "ring-1 ring-inset ring-steel-dark/15",
-          selected && "border-orange ring-2 ring-orange/35",
-        )}
-        style={{ backgroundColor: color.hex }}
-      />
-      <span className="line-clamp-2 w-full text-[8px] leading-tight tracking-wide text-steel-mid group-hover:text-steel-light sm:text-[9px]">
-        {color.name}
-      </span>
-    </button>
+    <div className={cn("flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between", className)}>
+      <div className="flex items-center gap-2.5 text-sm">
+        <span className="text-xs uppercase tracking-[0.18em] font-semibold text-steel-dark">
+          Color del equipo:
+        </span>
+        <span className="font-medium text-steel-light transition-colors">
+          {activeColor?.name ?? "Seleccionar color"}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+        {PRODUCT_COLORS.map((color) => {
+          const isSelected = value === color.id;
+          const isLight =
+            color.id === "blanco" ||
+            color.id === "amarillo" ||
+            color.id === "verde-claro";
+
+          return (
+            <button
+              key={color.id}
+              type="button"
+              onClick={() => onChange(color.id)}
+              onMouseEnter={() => setHoveredColorId(color.id)}
+              onMouseLeave={() => setHoveredColorId(null)}
+              aria-pressed={isSelected}
+              aria-label={`Color ${color.name}`}
+              title={color.name}
+              className={cn(
+                "group relative h-7 w-7 rounded-full transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-orange",
+                isSelected
+                  ? "scale-110 ring-2 ring-orange ring-offset-2 ring-offset-panel"
+                  : "opacity-75 hover:opacity-100 hover:scale-110",
+              )}
+            >
+              <span
+                className={cn(
+                  "block h-full w-full rounded-full border border-black/30 shadow-inner",
+                  isLight && "border-steel-dark/40",
+                )}
+                style={{ backgroundColor: color.hex }}
+              />
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

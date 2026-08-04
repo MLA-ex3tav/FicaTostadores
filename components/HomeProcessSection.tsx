@@ -1,51 +1,58 @@
 "use client";
 
-import { Globe, MapPin, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Flame, Truck, Wrench, type LucideIcon } from "lucide-react";
 import Reveal from "@/components/motion/Reveal";
 import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import SectionHeader from "@/components/SectionHeader";
 
-const features: {
+const STEPS: {
   title: string;
+  subtitle: string;
   description: string;
   Icon: LucideIcon;
 }[] = [
   {
-    title: "Fabricado en Chile",
-    description: "Ingeniería y producción 100% nacional en la IX Región de La Araucanía.",
-    Icon: MapPin,
+    title: "Asesoría & Configuración",
+    subtitle: "Definición del proyecto",
+    description:
+      "Evaluamos la capacidad necesaria para tu negocio y configuramos el tipo de gas, voltaje, acabados de color y accesorios opcionales.",
+    Icon: Flame,
   },
   {
-    title: "Calidad Certificada",
-    description: "Construcción integral en acero inoxidable 304 y cumplimiento de norma sanitaria.",
-    Icon: ShieldCheck,
+    title: "Fabricación Industrial",
+    subtitle: "IX Región, Chile",
+    description:
+      "Construimos tu equipo en acero inoxidable 304 con corte de precisión, soldaduras sanitarias y sistemas de control de temperatura.",
+    Icon: Wrench,
   },
   {
-    title: "Exportación & Respaldo",
-    description: "Maquinaria instalada en Latinoamérica con garantía de 2 años y repuestos directos.",
-    Icon: Globe,
+    title: "Entrega & Puesta en Marcha",
+    subtitle: "Garantía de 2 Años",
+    description:
+      "Entregamos tu tostador listo para operar, con capacitación en perfilado de tueste y respaldo técnico directo de fábrica.",
+    Icon: Truck,
   },
 ];
 
-export default function HomeFeaturesSection() {
+export default function HomeProcessSection() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
       <Reveal>
         <SectionHeader
-          eyebrow="Por qué Elegirnos"
+          eyebrow="Proceso de Trabajo"
           title={
             <>
-              Ingeniería de <span className="text-orange">Tueste Nacional</span>
+              De Nuestra Fábrica a <span className="text-orange">tu Planta</span>
             </>
           }
-          description="Estándares industriales con tecnología de precisión y acompañamiento directo de fábrica."
+          description="Acompañamos tu proyecto desde la ingeniería inicial hasta la producción continua de tu tostaduría."
         />
       </Reveal>
 
       <Stagger className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
-        {features.map((feature) => (
+        {STEPS.map((step) => (
           <StaggerItem
-            key={feature.title}
+            key={step.title}
             className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-panel/70 p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-orange/60 hover:shadow-2xl hover:shadow-black/50"
           >
             {/* Ambient Gradient Glow from Right Edge */}
@@ -56,13 +63,16 @@ export default function HomeFeaturesSection() {
 
             <div className="relative z-10">
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-orange/40 bg-orange/10 text-orange transition-colors group-hover:bg-orange group-hover:text-white">
-                <feature.Icon className="h-6 w-6" strokeWidth={1.75} />
+                <step.Icon className="h-6 w-6" strokeWidth={1.75} />
               </span>
               <h3 className="mt-5 font-display text-xl font-bold uppercase tracking-wide text-steel-light">
-                {feature.title}
+                {step.title}
               </h3>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-orange">
+                {step.subtitle}
+              </p>
               <p className="mt-2 text-sm leading-relaxed text-steel-mid">
-                {feature.description}
+                {step.description}
               </p>
             </div>
           </StaggerItem>

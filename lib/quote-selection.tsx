@@ -28,13 +28,18 @@ export interface QuoteProductItem {
 
 interface QuoteSelectionContextValue {
   products: QuoteProductItem[];
-  addProduct: (product: QuoteProductItem) => void;
+  addProduct: (product: QuoteProductItem, openDrawerOnAdd?: boolean) => void;
   updateProductAddOns: (id: string, selectedAddOns: QuoteProductAddOn[]) => void;
   removeProduct: (id: string) => void;
   hasProduct: (id: string) => boolean;
   clearProducts: () => void;
   desktopDockOpen: boolean;
   setDesktopDockOpen: (open: boolean) => void;
+  isDrawerOpen: boolean;
+  setIsDrawerOpen: (open: boolean) => void;
+  openDrawer: () => void;
+  closeDrawer: () => void;
+  toggleDrawer: () => void;
 }
 
 const QuoteSelectionContext = createContext<QuoteSelectionContextValue | null>(
@@ -135,6 +140,11 @@ export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<QuoteProductItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [desktopDockOpen, setDesktopDockOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const openDrawer = useCallback(() => setIsDrawerOpen(true), []);
+  const closeDrawer = useCallback(() => setIsDrawerOpen(false), []);
+  const toggleDrawer = useCallback(() => setIsDrawerOpen((prev) => !prev), []);
 
   useEffect(() => {
     setProducts(readStoredProducts());
@@ -149,30 +159,37 @@ export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
   }, [products, hydrated]);
 
-  const addProduct = useCallback((product: QuoteProductItem) => {
-    setProducts((current) => {
-      const normalized: QuoteProductItem = {
-        ...product,
-        selectedAddOns: product.selectedAddOns ?? [],
-      };
-      const existingIndex = current.findIndex((item) => item.id === product.id);
-
-      if (existingIndex >= 0) {
-        const next = [...current];
-        next[existingIndex] = {
-          ...next[existingIndex],
-          name: normalized.name,
-          capacity: normalized.capacity,
-          selectedColor: normalized.selectedColor,
-          selectedColorId: normalized.selectedColorId,
-          selectedAddOns: normalized.selectedAddOns,
+  const addProduct = useCallback(
+    (product: QuoteProductItem, openDrawerOnAdd = true) => {
+      setProducts((current) => {
+        const normalized: QuoteProductItem = {
+          ...product,
+          selectedAddOns: product.selectedAddOns ?? [],
         };
-        return next;
-      }
+        const existingIndex = current.findIndex((item) => item.id === product.id);
 
-      return [...current, normalized];
-    });
-  }, []);
+        if (existingIndex >= 0) {
+          const next = [...current];
+          next[existingIndex] = {
+            ...next[existingIndex],
+            name: normalized.name,
+            capacity: normalized.capacity,
+            selectedColor: normalized.selectedColor,
+            selectedColorId: normalized.selectedColorId,
+            selectedAddOns: normalized.selectedAddOns,
+          };
+          return next;
+        }
+
+        return [...current, normalized];
+      });
+
+      if (openDrawerOnAdd) {
+        setIsDrawerOpen(true);
+      }
+    },
+    [],
+  );
 
   const updateProductAddOns = useCallback(
     (id: string, selectedAddOns: QuoteProductAddOn[]) => {
@@ -208,6 +225,11 @@ export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
       clearProducts,
       desktopDockOpen,
       setDesktopDockOpen,
+      isDrawerOpen,
+      setIsDrawerOpen,
+      openDrawer,
+      closeDrawer,
+      toggleDrawer,
     }),
     [
       products,
@@ -217,6 +239,10 @@ export function QuoteSelectionProvider({ children }: { children: ReactNode }) {
       hasProduct,
       clearProducts,
       desktopDockOpen,
+      isDrawerOpen,
+      openDrawer,
+      closeDrawer,
+      toggleDrawer,
     ],
   );
 

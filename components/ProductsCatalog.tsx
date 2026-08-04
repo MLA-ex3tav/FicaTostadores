@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Filter, Layers } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import Reveal from "@/components/motion/Reveal";
 import { Stagger, StaggerItem } from "@/components/motion/Stagger";
@@ -160,15 +160,18 @@ export default function ProductsCatalog({
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-8">
+    <div className="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
       <aside
         className="hidden lg:block"
         aria-label="Filtros del catálogo"
       >
-        <div className="space-y-9 lg:sticky lg:top-24">
+        <div className="lg:sticky lg:top-24 space-y-8 rounded-2xl border border-steel-dark/25 bg-panel/75 backdrop-blur-md p-5 shadow-2xl heat-glow">
           <nav aria-label="Catálogos">
-            <p className={sectionEyebrowClass}>Catálogos</p>
-            <ul className="mt-3 space-y-1">
+            <div className="flex items-center gap-2 border-b border-steel-dark/15 pb-2.5 mb-3">
+              <Filter className="h-4 w-4 text-orange" />
+              <p className="text-xs font-bold uppercase tracking-widest text-steel-light">Catálogos</p>
+            </div>
+            <ul className="space-y-1.5">
               {catalogConfig.catalogs.map((item) => {
                 const isActive = catalog === item.id;
                 const count = catalogCounts.get(item.id) ?? 0;
@@ -180,17 +183,17 @@ export default function ProductsCatalog({
                       onClick={() => handleCatalogChange(item.id)}
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
-                        "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
+                        "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm transition-all duration-200 cursor-pointer",
                         isActive
-                          ? "bg-orange/15 text-orange ring-1 ring-inset ring-orange/30"
-                          : "text-steel-mid hover:bg-panel/60 hover:text-steel-light",
+                          ? "bg-orange/15 text-orange border-l-4 border-orange font-semibold rounded-r-xl rounded-l-xs shadow-sm"
+                          : "text-steel-mid hover:bg-surface/80 hover:text-white rounded-xl",
                       )}
                     >
-                      <span className="font-medium">{item.label}</span>
+                      <span className="font-medium truncate">{item.label}</span>
                       {isActive ? (
-                        <Check className="h-4 w-4 shrink-0" aria-hidden />
+                        <Check className="h-4 w-4 shrink-0 text-orange" aria-hidden />
                       ) : count > 0 ? (
-                        <span className="text-xs tabular-nums text-steel-dark">
+                        <span className="rounded-full bg-steel-dark/15 px-2 py-0.5 text-[11px] font-mono font-medium text-steel-mid">
                           {count}
                         </span>
                       ) : null}
@@ -203,9 +206,12 @@ export default function ProductsCatalog({
 
           {showSubFilters ? (
             <nav aria-label="Tipos de equipo">
-              <p className={sectionEyebrowClass}>Tipos</p>
-              <ul className="mt-3 space-y-1">
-                {[{ id: "all", label: "Todos", description: "" }, ...subCategories].map(
+              <div className="flex items-center gap-2 border-b border-steel-dark/15 pb-2.5 mb-3">
+                <Layers className="h-4 w-4 text-orange" />
+                <p className="text-xs font-bold uppercase tracking-widest text-steel-light">Tipos de Equipo</p>
+              </div>
+              <ul className="space-y-1.5">
+                {[{ id: "all", label: "Todos los tipos", description: "" }, ...subCategories].map(
                   (category) => {
                     const isActive = subFilter === category.id;
                     const count =
@@ -222,10 +228,10 @@ export default function ProductsCatalog({
                           }
                           aria-pressed={isActive}
                           className={cn(
-                            "block w-full rounded-lg px-3 py-2.5 text-left transition-colors",
+                            "block w-full px-3.5 py-2.5 text-left transition-all duration-200 cursor-pointer rounded-xl",
                             isActive
-                              ? "bg-orange/15 ring-1 ring-inset ring-orange/30"
-                              : "hover:bg-panel/60",
+                              ? "bg-surface/90 text-orange border border-orange/40 font-semibold shadow-sm"
+                              : "text-steel-mid hover:bg-surface/60 hover:text-white border border-transparent",
                           )}
                         >
                           <span
@@ -236,15 +242,18 @@ export default function ProductsCatalog({
                                 : "text-steel-light",
                             )}
                           >
-                            {category.label}
+                            <span className="truncate">{category.label}</span>
                             {count > 0 ? (
-                              <span className="text-xs font-normal tabular-nums text-steel-dark">
+                              <span className={cn(
+                                "rounded-full px-2 py-0.5 text-[11px] font-mono font-medium",
+                                isActive ? "bg-orange/20 text-orange" : "bg-steel-dark/15 text-steel-mid"
+                              )}>
                                 {count}
                               </span>
                             ) : null}
                           </span>
                           {category.description ? (
-                            <span className="mt-0.5 block text-xs leading-snug text-steel-dark">
+                            <span className="mt-1 block text-xs leading-snug text-steel-dark font-normal line-clamp-1">
                               {category.description}
                             </span>
                           ) : null}
@@ -259,7 +268,7 @@ export default function ProductsCatalog({
         </div>
       </aside>
 
-      <div className="min-w-0 max-w-[50rem]">
+      <div className="min-w-0 w-full">
         <Reveal className="lg:hidden">
           <Tabs value={catalog} onValueChange={handleCatalogChange}>
             <div className={catalogTabsScrollerClass}>
@@ -331,7 +340,7 @@ export default function ProductsCatalog({
           </p>
         </Reveal>
 
-        <Stagger className="grid gap-8 sm:grid-cols-2">
+        <Stagger className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
           {paginatedProducts.map((product) => (
             <StaggerItem key={product.id} className="h-full">
               <ProductCard product={product} catalogConfig={catalogConfig} />

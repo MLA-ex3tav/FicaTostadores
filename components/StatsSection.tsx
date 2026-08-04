@@ -1,31 +1,37 @@
+"use client";
+
 import Reveal from "@/components/motion/Reveal";
 import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 
-const stats: { value: string; label: string }[] = [
-  { value: "6+", label: "Líneas de producto" },
-  { value: "6+", label: "Países atendidos" },
-  { value: "100%", label: "Acero inoxidable" },
+const STATS = [
+  { value: "+15", label: "Años de Experiencia", detail: "Líderes en tueste industrial" },
+  { value: "+350", label: "Tostadores Entregados", detail: "En Chile y Latinoamérica" },
+  { value: "100%", label: "Acero Inoxidable 304", detail: "Cumplimiento norma sanitaria" },
+  { value: "2 Años", label: "Garantía Total", detail: "Respaldo directo de fábrica" },
 ];
 
 export default function StatsSection() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
+    <section className="mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-14">
       <Reveal>
-      <Stagger className="flex flex-col divide-y divide-steel-dark/15 border-y border-steel-dark/15 sm:flex-row sm:divide-x sm:divide-y-0">
-        {stats.map((stat) => (
-          <StaggerItem
-            key={stat.label}
-            className="flex-1 px-4 py-6 text-center sm:py-7"
-          >
-            <p className="font-display text-4xl tabular-nums tracking-wide text-orange md:text-5xl">
-              {stat.value}
-            </p>
-            <p className="mt-1 text-base leading-snug text-steel-mid">
-              {stat.label}
-            </p>
-          </StaggerItem>
-        ))}
-      </Stagger>
+        <Stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+          {STATS.map((stat) => (
+            <StaggerItem
+              key={stat.label}
+              className="rounded-2xl border border-white/[0.08] bg-panel/60 p-6 text-center shadow-lg transition-all hover:border-orange/40 hover:bg-panel"
+            >
+              <p className="font-display text-4xl sm:text-5xl font-extrabold tabular-nums tracking-wide text-orange">
+                {stat.value}
+              </p>
+              <p className="mt-2 font-display text-lg uppercase tracking-wide text-steel-light">
+                {stat.label}
+              </p>
+              <p className="mt-1 text-xs text-steel-mid">
+                {stat.detail}
+              </p>
+            </StaggerItem>
+          ))}
+        </Stagger>
       </Reveal>
     </section>
   );

@@ -28,8 +28,8 @@ export default async function ProductosPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
-      <Reveal className="mb-12">
+    <div className="mx-auto w-full max-w-[1550px] px-4 py-12 md:px-8 md:py-16 lg:px-12">
+      <Reveal className="mb-10">
         <SectionHeader
           as="h1"
           eyebrow="Catálogo"

@@ -1,8 +1,3 @@
-export type CotizacionEstadoKnown =
-  | "en_revision"
-  | "aprobado"
-  | "rechazado";
-
 export type CotizacionStatusTone = "pending" | "success" | "danger" | "neutral";
 
 export interface CotizacionStatusDisplay {
@@ -10,69 +5,82 @@ export interface CotizacionStatusDisplay {
   tone: CotizacionStatusTone;
 }
 
-function normalizeEstadoId(value: string | null | undefined): string | null {
+function normalize(value: string | null | undefined): string {
   if (!value || typeof value !== "string") {
-    return null;
+    return "";
   }
-
-  const normalized = value
+  return value
     .trim()
     .toLowerCase()
     .replace(/\s+/g, "_")
     .replace(/-/g, "_");
-
-  return normalized || null;
-}
-
-function isKnownEstado(value: string): value is CotizacionEstadoKnown {
-  return value === "en_revision" || value === "aprobado" || value === "rechazado";
 }
 
 export function resolveCotizacionStatusDisplay(
   cotizacionEstado: string | null | undefined,
   cotizacionEstadoLabel: string | null | undefined,
 ): CotizacionStatusDisplay {
-  const estadoId = normalizeEstadoId(cotizacionEstado);
+  const normEstado = normalize(cotizacionEstado);
+  const normLabel = normalize(cotizacionEstadoLabel);
+  const combined = `${normEstado} ${normLabel}`;
 
-  if (estadoId && isKnownEstado(estadoId)) {
-    switch (estadoId) {
-      case "en_revision":
-        return {
-          label: cotizacionEstadoLabel?.trim() || "En revisión",
-          tone: "pending",
-        };
-      case "aprobado":
-        return {
-          label: cotizacionEstadoLabel?.trim() || "Aprobado",
-          tone: "success",
-        };
-      case "rechazado":
-        return {
-          label: cotizacionEstadoLabel?.trim() || "Rechazado",
-          tone: "danger",
-        };
-      default: {
-        const _exhaustive: never = estadoId;
-        return { label: String(_exhaustive), tone: "neutral" };
-      }
-    }
+  // 🔴 RECHAZADA / CANCELADA -> RED (danger)
+  if (
+    combined.includes("rechazad") ||
+    combined.includes("cancelad") ||
+    combined.includes("anulad")
+  ) {
+    return {
+      label: cotizacionEstadoLabel?.trim() || "Rechazada",
+      tone: "danger",
+    };
   }
 
-  if (cotizacionEstadoLabel?.trim()) {
-    return { label: cotizacionEstadoLabel.trim(), tone: "neutral" };
+  // 🟢 APROBADA / OT / ENVIADA -> GREEN (success)
+  if (
+    combined.includes("aprob") ||
+    combined.includes("ot") ||
+    combined.includes("orden_de_trabajo") ||
+    combined.includes("aceptad") ||
+    combined.includes("enviad")
+  ) {
+    const isOT = combined.includes("ot") || combined.includes("orden");
+    return {
+      label:
+        cotizacionEstadoLabel?.trim() ||
+        (isOT ? "Aprobada (OT)" : "Aprobada"),
+      tone: "success",
+    };
   }
 
-  return { label: "En revisión", tone: "pending" };
+  // 🟧 EN REVISIÓN / PENDIENTE -> ORANGE (pending)
+  if (
+    combined.includes("revis") ||
+    combined.includes("pendien") ||
+    combined.includes("proceso") ||
+    combined.includes("recibid") ||
+    !normEstado
+  ) {
+    return {
+      label: cotizacionEstadoLabel?.trim() || "En revisión",
+      tone: "pending",
+    };
+  }
+
+  return {
+    label: cotizacionEstadoLabel?.trim() || cotizacionEstado?.trim() || "En revisión",
+    tone: "pending",
+  };
 }
 
 export function cotizacionStatusToneClass(tone: CotizacionStatusTone): string {
   switch (tone) {
     case "pending":
-      return "border-orange/40 bg-orange/10 text-orange";
+      return "border-orange/50 bg-orange/15 text-orange shadow-md shadow-orange/10";
     case "success":
-      return "border-emerald-500/40 bg-emerald-500/10 text-emerald-300";
+      return "border-emerald-500/50 bg-emerald-500/15 text-emerald-300 shadow-md shadow-emerald-500/10";
     case "danger":
-      return "border-red-500/40 bg-red-500/10 text-red-300";
+      return "border-red-500/50 bg-red-500/15 text-red-300 shadow-md shadow-red-500/10";
     case "neutral":
       return "border-steel-dark/40 bg-white/[0.04] text-steel-mid";
     default: {

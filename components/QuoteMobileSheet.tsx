@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuoteSelection } from "@/lib/quote-selection";
 import QuoteProductList from "./QuoteProductList";
@@ -12,6 +13,7 @@ const sheetEase = "cubic-bezier(0.32, 0.72, 0, 1)";
 const sheetDuration = "duration-500";
 
 export default function QuoteMobileSheet() {
+  const pathname = usePathname();
   const { products } = useQuoteSelection();
   const [expanded, setExpanded] = useState(false);
   const lastScrollY = useRef(0);
@@ -62,7 +64,11 @@ export default function QuoteMobileSheet() {
     }
   }
 
-  if (products.length === 0) {
+  if (
+    products.length === 0 ||
+    pathname === "/contacto" ||
+    pathname === "/cotizar"
+  ) {
     return null;
   }
 

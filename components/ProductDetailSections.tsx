@@ -14,6 +14,7 @@ import ProductColorSection from "@/components/ProductColorSection";
 import ProductDetailContent from "@/components/ProductDetailContent";
 import ProductDetailHero from "@/components/ProductDetailHero";
 import ProductQuoteActions from "@/components/ProductQuoteActions";
+import Reveal from "@/components/motion/Reveal";
 import SectionLabel from "@/components/SectionLabel";
 
 interface ProductDetailSectionsProps {
@@ -74,37 +75,45 @@ export default function ProductDetailSections({
     <>
       <ProductDetailHero product={product} catalogConfig={catalogConfig} />
 
-      <ProductColorSection
-        selectedColorId={selectedColorId}
-        onColorChange={handleColorChange}
-      />
+      <Reveal delay={0.1}>
+        <ProductColorSection
+          selectedColorId={selectedColorId}
+          onColorChange={handleColorChange}
+        />
+      </Reveal>
 
-      <ProductDetailContent product={product} />
+      <Reveal delay={0.15}>
+        <ProductDetailContent product={product} />
+      </Reveal>
 
       {product.addOns.length > 0 && (
-        <section className="mt-20">
-          <SectionLabel>
-            Agregados y <span className="text-orange">opciones</span>
-          </SectionLabel>
-          <ProductAddOnsQuotePicker
-            productId={product.id}
-            productName={product.name}
-            productCapacity={product.capacity}
-            addOns={product.addOns}
-            selectedColorId={selectedColorId}
-            selectedColor={selectedColorName}
-          />
-        </section>
+        <Reveal delay={0.2}>
+          <section className="mt-20">
+            <SectionLabel>
+              Agregados y <span className="text-orange">opciones</span>
+            </SectionLabel>
+            <ProductAddOnsQuotePicker
+              productId={product.id}
+              productName={product.name}
+              productCapacity={product.capacity}
+              addOns={product.addOns}
+              selectedColorId={selectedColorId}
+              selectedColor={selectedColorName}
+            />
+          </section>
+        </Reveal>
       )}
 
-      <ProductQuoteActions
-        productId={product.id}
-        productName={product.name}
-        productCapacity={product.capacity}
-        addOns={product.addOns}
-        selectedColorId={selectedColorId}
-        selectedColor={selectedColorName}
-      />
+      <Reveal delay={0.25}>
+        <ProductQuoteActions
+          productId={product.id}
+          productName={product.name}
+          productCapacity={product.capacity}
+          addOns={product.addOns}
+          selectedColorId={selectedColorId}
+          selectedColor={selectedColorName}
+        />
+      </Reveal>
     </>
   );
 }

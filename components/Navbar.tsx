@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Mail, Menu, X } from "lucide-react";
+import { Menu, ShoppingBag, X } from "lucide-react";
 import { useState } from "react";
 import { logoPath } from "@/lib/images";
 import { useQuoteSelection } from "@/lib/quote-selection";
@@ -21,23 +21,31 @@ function CotizarButton({
   onClick?: () => void;
   className?: string;
 }) {
-  const { products } = useQuoteSelection();
+  const { products, openDrawer } = useQuoteSelection();
   const count = products.length;
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Open drawer on click
+    e.preventDefault();
+    if (onClick) onClick();
+    openDrawer();
+  };
+
   return (
-    <Link
-      href="/contacto"
-      onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg bg-orange px-4 py-2.5 text-base font-semibold uppercase tracking-wider text-white shadow-sm transition-all hover:bg-orange-hover hover:shadow-lg hover:shadow-orange/25 hover:-translate-y-px active:translate-y-px ${className}`}
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label={`Ver cotización (${count} equipos)`}
+      className={`relative inline-flex items-center justify-center gap-2 rounded-xl bg-orange px-4 py-2.5 text-sm font-semibold uppercase tracking-wider text-white shadow-md transition-all hover:bg-orange-hover hover:shadow-lg hover:shadow-orange/30 hover:-translate-y-0.5 active:translate-y-0 ${className}`}
     >
-      <Mail className="h-4 w-4" />
-      Cotizar
-      {count > 0 && (
-        <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-sm font-bold text-orange">
+      <ShoppingBag className="h-4 w-4" />
+      <span>Cotizar</span>
+      {count > 0 ? (
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-orange shadow-sm animate-pulse">
           {count}
         </span>
-      )}
-    </Link>
+      ) : null}
+    </button>
   );
 }
 
