@@ -35,15 +35,11 @@ export async function readProductsFromFirestore(): Promise<Product[] | null> {
 
     const snapshot = await db.collection(PRODUCTOS_COLLECTION).get();
 
-    if (snapshot.empty) {
-      return null;
-    }
-
     const products = snapshot.docs
       .map((doc) => mapDocToProduct(doc.id, doc.data()))
       .filter((product): product is Product => product !== null);
 
-    return products.length > 0 ? products : null;
+    return products;
   } catch (error) {
     console.error("Error al leer productos desde Firestore:", error);
     return null;

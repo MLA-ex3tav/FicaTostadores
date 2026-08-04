@@ -1,11 +1,6 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-interface RateLimitBucket {
-  count: number;
-  resetAt: number;
-}
-
 export interface RateLimitConfig {
   windowMs: number;
   max: number;
@@ -17,60 +12,9 @@ export interface RateLimitResult {
   remaining: number;
 }
 
-const memoryBuckets = new Map<string, RateLimitBucket>();
 const limiterCache = new Map<string, Ratelimit>();
 
-const CLEANUP_INTERVAL_MS = 60_000;
-let lastCleanup = Date.now();
-let warnedMissingUpstash = false;
-
-function cleanupExpiredBuckets(now: number) {
-  if (now - lastCleanup < CLEANUP_INTERVAL_MS) {
-    return;
-  }
-
-  lastCleanup = now;
-
-  for (const [key, bucket] of memoryBuckets) {
-    if (bucket.resetAt <= now) {
-      memoryBuckets.delete(key);
-    }
-  }
-}
-
-function checkMemoryRateLimit(
-  key: string,
-  config: RateLimitConfig,
-): RateLimitResult {
-  const now = Date.now();
-  cleanupExpiredBuckets(now);
-
-  const existing = memoryBuckets.get(key);
-
-  if (!existing || existing.resetAt <= now) {
-    memoryBuckets.set(key, {
-      count: 1,
-      resetAt: now + config.windowMs,
-    });
-
-    return { ok: true, remaining: config.max - 1 };
-  }
-
-  if (existing.count >= config.max) {
-    return {
-      ok: false,
-      retryAfterSeconds: Math.ceil((existing.resetAt - now) / 1000),
-      remaining: 0,
-    };
-  }
-
-  existing.count += 1;
-
-  return {
-    ok: true,
-    remaining: config.max - existing.count,
-  };
-}
+let warnedUnavailable = false;
 
 function isUpstashConfigured(): boolean {
   return Boolean(
@@ -81,13 +25,10 @@ function isUpstashConfigured(): boolean {
 
 function getUpstashLimiter(config: RateLimitConfig): Ratelimit | null {
   if (!isUpstashConfigured()) {
-    if (
-      process.env.NODE_ENV === "production" &&
-      !warnedMissingUpstash
-    ) {
-      warnedMissingUpstash = true;
-      console.warn(
-        "[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN no configurados; usando memoria local (no compartida entre instancias).",
+    if (!warnedUnavailable) {
+      warnedUnavailable = true;
+      console.error(
+        "[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN no configurados; rechazando solicitudes (fail-closed).",
       );
     }
 
@@ -114,6 +55,12 @@ function getUpstashLimiter(config: RateLimitConfig): Ratelimit | null {
   return limiter;
 }
 
+const UNAVAILABLE_RESULT: RateLimitResult = {
+  ok: false,
+  retryAfterSeconds: 1,
+  remaining: 0,
+};
+
 export async function checkRateLimit(
   key: string,
   config: RateLimitConfig,
@@ -121,7 +68,7 @@ export async function checkRateLimit(
   const limiter = getUpstashLimiter(config);
 
   if (!limiter) {
-    return checkMemoryRateLimit(key, config);
+    return UNAVAILABLE_RESULT;
   }
 
   try {
@@ -137,8 +84,8 @@ export async function checkRateLimit(
       remaining: result.remaining,
     };
   } catch (error) {
-    console.warn("[rate-limit] Upstash falló, usando memoria local:", error);
-    return checkMemoryRateLimit(key, config);
+    console.error("[rate-limit] Upstash falló; rechazando solicitud:", error);
+    return UNAVAILABLE_RESULT;
   }
 }
 

@@ -12,6 +12,7 @@ export async function loadProducts(): Promise<Product[]> {
     if (fromFirestore) {
       return fromFirestore;
     }
+    return [];
   }
 
   return normalizeProductRecords(defaultProducts);

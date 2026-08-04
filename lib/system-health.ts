@@ -739,8 +739,7 @@ async function checkUpstashRedis(): Promise<HealthCheck> {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
 
   if (!url || !token) {
-    const status =
-      process.env.NODE_ENV === "production" ? "warning" : "ok";
+    const status = "error";
 
     return {
       id: "upstash-redis",
@@ -748,9 +747,7 @@ async function checkUpstashRedis(): Promise<HealthCheck> {
       name: "Upstash Redis (rate limit)",
       status,
       message:
-        status === "warning"
-          ? "Upstash no configurado; rate limiting usa memoria local por instancia."
-          : "Upstash no configurado; en desarrollo se usa memoria local.",
+        "Upstash no configurado; el rate limit rechaza solicitudes (fail-closed).",
     };
   }
 

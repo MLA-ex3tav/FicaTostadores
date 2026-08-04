@@ -91,7 +91,22 @@ export async function middleware(request: NextRequest) {
         return response;
       }
     } catch (error) {
-      console.error("[middleware] rate-limit falló, continuando:", error);
+      console.error(
+        "[middleware] rate-limit falló, rechazando solicitud:",
+        error,
+      );
+
+      const response = NextResponse.json(
+        {
+          error:
+            "Demasiadas solicitudes. Intente de nuevo en unos segundos.",
+        },
+        { status: 429 },
+      );
+
+      response.headers.set("Retry-After", "1");
+      applySecurityHeaders(response, securityOptions);
+      return response;
     }
   }
 
