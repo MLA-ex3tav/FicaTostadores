@@ -16,6 +16,7 @@ import {
   type TransitionEvent,
 } from "react";
 import MediaImage from "./MediaImage";
+import PromoBadge from "./PromoBadge";
 import type { HeroProductBanner } from "@/lib/images";
 import {
   CAROUSEL_CONTAINER_CLASS,
@@ -137,6 +138,14 @@ function HeroCarouselSlide({
         className="absolute inset-0 z-[1] bg-gradient-to-t from-black/90 via-black/35 to-black/10"
         aria-hidden="true"
       />
+
+      {banner.isPromo ? (
+        <PromoBadge
+          label={banner.promoTag}
+          size="lg"
+          className="absolute right-4 top-4 z-[3] sm:right-8 sm:top-8"
+        />
+      ) : null}
 
       <div className="pointer-events-none absolute inset-0 z-[2] flex h-full flex-col justify-end">
         {/* Mobile: título */}

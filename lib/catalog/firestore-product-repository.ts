@@ -7,11 +7,46 @@ import {
 import { normalizeProductRecord } from "@/lib/products/normalize-product";
 import type { Product } from "@/lib/products";
 
+/** Campos de precio gestionados por app/móvil; la web no debe pisarlos. */
+const PRICE_FIELD_KEYS = [
+  "listPrice",
+  "price",
+  "precio",
+  "priceUpdatedAt",
+] as const;
+
+type PriceFields = Partial<
+  Record<(typeof PRICE_FIELD_KEYS)[number], unknown>
+>;
+
+function extractPriceFields(data: DocumentData | undefined): PriceFields {
+  if (!data) {
+    return {};
+  }
+
+  const fields: PriceFields = {};
+
+  for (const key of PRICE_FIELD_KEYS) {
+    if (data[key] !== undefined) {
+      fields[key] = data[key];
+    }
+  }
+
+  return fields;
+}
+
 function mapDocToProduct(
   id: string,
   data: DocumentData,
 ): Product | null {
-  const { updatedAt: _updatedAt, ...rest } = data;
+  const {
+    updatedAt: _updatedAt,
+    priceUpdatedAt: _priceUpdatedAt,
+    listPrice: _listPrice,
+    price: _price,
+    precio: _precio,
+    ...rest
+  } = data;
   if (typeof rest.name !== "string") {
     return null;
   }
@@ -60,6 +95,9 @@ export async function writeProductsToFirestore(
 
   const collection = db.collection(PRODUCTOS_COLLECTION);
   const existing = await collection.get();
+  const existingById = new Map(
+    existing.docs.map((doc) => [doc.id, doc.data()]),
+  );
   const nextIds = new Set(products.map((product) => product.id));
 
   const batch = db.batch();
@@ -73,6 +111,7 @@ export async function writeProductsToFirestore(
   for (const product of products) {
     batch.set(collection.doc(product.id), {
       ...product,
+      ...extractPriceFields(existingById.get(product.id)),
       updatedAt: FieldValue.serverTimestamp(),
     });
   }
@@ -82,6 +121,7 @@ export async function writeProductsToFirestore(
 
 export async function upsertProductInFirestore(
   product: Product,
+  options?: { preservePricesFromId?: string },
 ): Promise<void> {
   if (!isFirebaseAdminConfigured()) {
     throw new Error("Firebase Admin no está configurado.");
@@ -92,10 +132,19 @@ export async function upsertProductInFirestore(
     throw new Error("Firebase Admin no está configurado.");
   }
 
-  await db.collection(PRODUCTOS_COLLECTION).doc(product.id).set({
-      ...product,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+  const ref = db.collection(PRODUCTOS_COLLECTION).doc(product.id);
+  const priceSourceId = options?.preservePricesFromId ?? product.id;
+  const priceSourceRef =
+    priceSourceId === product.id
+      ? ref
+      : db.collection(PRODUCTOS_COLLECTION).doc(priceSourceId);
+  const existing = await priceSourceRef.get();
+
+  await ref.set({
+    ...product,
+    ...extractPriceFields(existing.data()),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
 }
 
 export async function deleteProductFromFirestore(
@@ -111,6 +160,32 @@ export async function deleteProductFromFirestore(
   }
 
   await db.collection(PRODUCTOS_COLLECTION).doc(productId).delete();
+}
+
+export async function deleteProductsFromFirestore(
+  productIds: string[],
+): Promise<void> {
+  if (productIds.length === 0) {
+    return;
+  }
+
+  if (!isFirebaseAdminConfigured()) {
+    throw new Error("Firebase Admin no está configurado.");
+  }
+
+  const db = getFirebaseAdminFirestore();
+  if (!db) {
+    throw new Error("Firebase Admin no está configurado.");
+  }
+
+  const collection = db.collection(PRODUCTOS_COLLECTION);
+  const batch = db.batch();
+
+  for (const id of productIds) {
+    batch.delete(collection.doc(id));
+  }
+
+  await batch.commit();
 }
 
 export async function hasProductsInFirestore(): Promise<boolean> {

@@ -32,8 +32,15 @@ export async function getHeroProductBanners(): Promise<HeroProductBanner[]> {
       categoryLabel: getCategoryLabel(product.category, defaultCatalogConfig),
       catalogLabel: getCatalogLabel(product.catalog, defaultCatalogConfig),
       carouselFocus: primaryImage?.carousel.focus ?? CAROUSEL_DEFAULT_FOCUS,
+      isPromo: product.isPromo,
+      promoTag: product.promoTag,
     });
   }
+
+  // Promos first so discounted machines show at the start of the banner.
+  banners.sort(
+    (a, b) => Number(Boolean(b.isPromo)) - Number(Boolean(a.isPromo)),
+  );
 
   return banners;
 }

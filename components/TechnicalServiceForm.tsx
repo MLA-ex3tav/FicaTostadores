@@ -81,6 +81,7 @@ export default function TechnicalServiceForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
+  const [whatsAppUrl, setWhatsAppUrl] = useState<string | null>(null);
 
   const productSelectOptions = useMemo(
     () => buildProductSelectOptions(products),
@@ -260,23 +261,22 @@ export default function TechnicalServiceForm({
       const submittedRequestId = data.id ?? null;
       const issueCategoryLabel = getTechnicalIssueCategoryLabel(issueCategory);
 
-      openWhatsAppContact(
-        buildTechnicalServiceWhatsAppUrl(
-          safeName,
-          phone,
-          {
-            equipmentModel: safeEquipmentModel,
-            issueCategoryLabel,
-            issueDescription: safeIssueDescription,
-            equipmentLocation: safeEquipmentLocation || undefined,
-          },
-          {
-            requestId: submittedRequestId ?? undefined,
-            email: safeEmail || undefined,
-          },
-        ),
+      const waUrl = buildTechnicalServiceWhatsAppUrl(
+        safeName,
+        phone,
+        {
+          equipmentModel: safeEquipmentModel,
+          issueCategoryLabel,
+          issueDescription: safeIssueDescription,
+          equipmentLocation: safeEquipmentLocation || undefined,
+        },
+        {
+          requestId: submittedRequestId ?? undefined,
+          email: safeEmail || undefined,
+        },
       );
 
+      setWhatsAppUrl(waUrl);
       setSubmitSuccess(true);
       setRequestId(submittedRequestId);
       resetForm();
@@ -294,13 +294,15 @@ export default function TechnicalServiceForm({
       <section className="mx-auto w-full rounded-lg border border-white/[0.06] bg-panel/40 px-4 py-8 sm:px-6">
         <QuoteSentAnimation
           requestId={requestId}
+          whatsAppUrl={whatsAppUrl}
           sendingStatus="Enviando solicitud técnica…"
           arrivedSubtitle="Nuestro equipo técnico la revisará pronto"
           title="Solicitud técnica enviada"
-          description="Recibimos su reporte. Si no se abrió automáticamente, puede continuar la conversación por WhatsApp con soporte técnico."
+          description="Recibimos su reporte. Puede continuar la conversación por WhatsApp con soporte técnico si lo desea."
           onSendAnother={() => {
             setSubmitSuccess(false);
             setRequestId(null);
+            setWhatsAppUrl(null);
           }}
         />
       </section>

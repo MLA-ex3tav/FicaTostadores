@@ -54,6 +54,7 @@ const RECOMMENDED_COMPLEMENTS = [
 export default function QuotePageContent() {
   const { products, removeProduct, addProduct, hasProduct } = useQuoteSelection();
   const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(null);
+  const [submittedWaUrl, setSubmittedWaUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const productCount = products.length;
@@ -192,7 +193,13 @@ export default function QuotePageContent() {
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               type="button"
-              onClick={handleWhatsAppQuote}
+              onClick={() => {
+                if (submittedWaUrl) {
+                  openWhatsAppContact(submittedWaUrl);
+                } else {
+                  handleWhatsAppQuote();
+                }
+              }}
               className="inline-flex h-14 w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-8 text-sm font-semibold uppercase tracking-wider text-emerald-400 transition-all hover:bg-emerald-500/20"
             >
               <MessageSquare className="h-5 w-5" />
@@ -209,7 +216,10 @@ export default function QuotePageContent() {
 
             <button
               type="button"
-              onClick={() => setSubmittedRequestId(null)}
+              onClick={() => {
+                setSubmittedRequestId(null);
+                setSubmittedWaUrl(null);
+              }}
               className="inline-flex h-14 w-full sm:w-auto items-center justify-center rounded-xl border border-white/[0.1] px-6 text-xs font-semibold uppercase tracking-wider text-steel-mid hover:text-steel-light hover:border-white/20 transition-colors"
             >
               Enviar otra solicitud
@@ -400,7 +410,10 @@ export default function QuotePageContent() {
               <ContactForm
                 formId="solicitud-cotizacion-form"
                 hideSubmitButton={true}
-                onSuccess={(id) => setSubmittedRequestId(id || "solicitud-registrada")}
+                onSuccess={(id, waUrl) => {
+                  setSubmittedRequestId(id || "solicitud-registrada");
+                  if (waUrl) setSubmittedWaUrl(waUrl);
+                }}
               />
             </Suspense>
           </section>

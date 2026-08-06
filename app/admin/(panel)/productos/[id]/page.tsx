@@ -34,7 +34,7 @@ export default async function AdminEditProductPage({
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 md:px-6">
+    <div className="mx-auto max-w-[90rem] px-4 py-10 md:px-8">
       <p className="text-xs uppercase tracking-[0.3em] text-steel-dark">
         Editar
       </p>

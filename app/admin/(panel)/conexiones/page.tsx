@@ -11,18 +11,21 @@ export default async function AdminConexionesPage() {
   const report = await getSystemHealthReport();
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 md:px-6">
-      <p className="text-xs uppercase tracking-[0.3em] text-steel-dark">
-        Infraestructura
-      </p>
-      <h1 className="mt-3 font-display text-3xl tracking-wide text-steel-light md:text-4xl">
-        ESTADO DEL <span className="text-orange">SISTEMA</span>
-      </h1>
+    <div className="w-full px-4 py-8 sm:px-6 lg:px-10">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-steel-dark">
+            Infraestructura y Servicios
+          </p>
+          <h1 className="mt-1 font-display text-3xl font-bold tracking-wide text-steel-light">
+            Estado del Sistema
+          </h1>
+        </div>
+      </div>
+
       <p className="mt-3 max-w-2xl text-sm text-steel-mid">
         Comprueba Firebase, Vercel, la app Electron de cotizaciones y las
-        integraciones. Las sondas HTTP a páginas públicas pueden marcar
-        advertencia si Vercel bloquea peticiones automáticas; eso no implica
-        login obligatorio en el sitio.
+        integraciones del sistema.
       </p>
 
       <div className="mt-8">

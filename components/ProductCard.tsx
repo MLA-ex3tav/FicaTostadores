@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, FileText } from "lucide-react";
+import { AlertCircle, ArrowUpRight, FileText } from "lucide-react";
 import {
   getCatalogLabel,
   getCategoryLabel,
@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import MediaImage from "./MediaImage";
 import ProductPlaceholder from "./ProductPlaceholder";
+import PromoBadge from "./PromoBadge";
 import QuoteSelectedLabel, { quoteSelectedPanelClass } from "./QuoteSelectedBadge";
 
 interface ProductCardProps {
@@ -46,6 +47,7 @@ export default function ProductCard({ product, catalogConfig }: ProductCardProps
           "relative flex h-full min-w-0 w-full flex-col overflow-hidden rounded-2xl border border-steel-dark/20 bg-panel p-6 shadow-xl shadow-black/30 transition-all duration-300 md:p-7",
           "group-hover:-translate-y-1.5 group-hover:border-orange/80 group-hover:shadow-2xl group-hover:shadow-black/60",
           isSelected && quoteSelectedPanelClass,
+          product.isOutOfStock && "opacity-90",
         )}
       >
         {isSelected ? (
@@ -57,7 +59,10 @@ export default function ProductCard({ product, catalogConfig }: ProductCardProps
             <MediaImage
               src={primaryImageSrc}
               alt={product.name}
-              className="h-56 w-full rounded-t-2xl object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              className={cn(
+                "h-56 w-full rounded-t-2xl object-cover transition-transform duration-500 group-hover:scale-[1.03]",
+                product.isOutOfStock && "grayscale-[30%]",
+              )}
               fallbackClassName="h-56 w-full rounded-t-2xl"
               objectPosition={focusToObjectPosition(
                 primaryImage?.product.focus ?? DEFAULT_IMAGE_FOCUS,
@@ -67,16 +72,32 @@ export default function ProductCard({ product, catalogConfig }: ProductCardProps
           ) : (
             <ProductPlaceholder flat className="h-56 w-full rounded-t-2xl" />
           )}
+
+          {product.isOutOfStock ? (
+            <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 rounded-full border border-red-500/50 bg-red-950/85 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-red-300 backdrop-blur-md shadow-md">
+              <AlertCircle className="h-3 w-3 text-red-400" />
+              Agotado
+            </div>
+          ) : product.isPromo ? (
+            <PromoBadge label={product.promoTag} className="absolute left-3 top-3 z-10" />
+          ) : null}
         </div>
 
         <div className="flex flex-1 flex-col">
           <div className="mb-4">
-            <p className="text-xs uppercase tracking-widest text-steel-dark font-medium">
-              {getCatalogLabel(product.catalog, catalogConfig)}
-              {showCategory && (
-                <> · {getCategoryLabel(product.category, catalogConfig)}</>
-              )}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs uppercase tracking-widest text-steel-dark font-medium truncate">
+                {getCatalogLabel(product.catalog, catalogConfig)}
+                {showCategory && (
+                  <> · {getCategoryLabel(product.category, catalogConfig)}</>
+                )}
+              </p>
+            </div>
+            {product.serie ? (
+              <p className="mt-1 text-[11px] uppercase tracking-widest text-steel-dark">
+                {product.serie}
+              </p>
+            ) : null}
             <p className="mt-1 text-xs font-semibold uppercase tabular-nums tracking-widest text-orange">
               {product.capacity}
             </p>

@@ -1,5 +1,6 @@
 import {
   deleteProductFromFirestore,
+  deleteProductsFromFirestore,
   upsertProductInFirestore,
 } from "@/lib/catalog/firestore-product-repository";
 import { loadProducts, saveProducts } from "@/lib/products-repository";
@@ -61,10 +62,13 @@ export async function updateProduct(
   }
 
   if (normalized.id !== id) {
+    // Conserva precios de app/móvil al renombrar el ID, luego borra el doc viejo.
+    await upsertProductInFirestore(normalized, { preservePricesFromId: id });
     await deleteProductFromFirestore(id);
+  } else {
+    await upsertProductInFirestore(normalized);
   }
 
-  await upsertProductInFirestore(normalized);
   return normalized;
 }
 
@@ -76,6 +80,21 @@ export async function deleteProduct(id: string): Promise<void> {
   }
 
   await deleteProductFromFirestore(id);
+}
+
+export async function deleteProducts(ids: string[]): Promise<void> {
+  if (ids.length === 0) {
+    return;
+  }
+
+  const products = await loadProducts();
+  const existingIds = new Set(products.map((item) => item.id));
+
+  if (ids.some((id) => !existingIds.has(id))) {
+    throw new Error("Algunos productos no existen.");
+  }
+
+  await deleteProductsFromFirestore(ids);
 }
 
 /** Reemplaza todo el catálogo (solo migraciones o mantenimiento). */

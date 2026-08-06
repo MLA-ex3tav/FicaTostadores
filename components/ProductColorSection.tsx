@@ -1,25 +1,30 @@
 "use client";
 
 import ProductColorPicker from "@/components/ProductColorPicker";
-import SteelPanel from "@/components/SteelPanel";
 
 interface ProductColorSectionProps {
   selectedColorId: string;
   onColorChange: (colorId: string) => void;
+  disableColors?: boolean;
+  disabledColors?: string[];
+  compact?: boolean;
 }
 
 export default function ProductColorSection({
   selectedColorId,
   onColorChange,
+  disableColors,
+  disabledColors,
+  compact = false,
 }: ProductColorSectionProps) {
   return (
-    <section className="mb-8">
-      <SteelPanel className="!py-4 !px-5 md:!px-6">
-        <ProductColorPicker
-          value={selectedColorId}
-          onChange={onColorChange}
-        />
-      </SteelPanel>
+    <section className={compact ? undefined : "mb-8 border border-white/[0.08] bg-panel/50 p-4"}>
+      <ProductColorPicker
+        value={selectedColorId}
+        onChange={onColorChange}
+        disableColors={disableColors}
+        disabledColors={disabledColors}
+      />
     </section>
   );
 }

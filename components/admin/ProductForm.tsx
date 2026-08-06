@@ -11,13 +11,18 @@ import {
   type ReactNode,
 } from "react";
 import {
+  AlertCircle,
   AlignLeft,
+  Check,
   ClipboardList,
   FileText,
   Image as ImageIcon,
   ListChecks,
+  Lock,
   Save,
   Send,
+  Sliders,
+  Sparkles,
   Wrench,
 } from "lucide-react";
 import ProductImagesField from "@/components/admin/ProductImagesField";
@@ -27,6 +32,7 @@ import {
   getCatalogLabel,
   type CatalogConfig,
 } from "@/lib/catalog-config";
+import { PRODUCT_COLORS } from "@/lib/product-colors";
 import { getCategoryLabel } from "@/lib/product-categories";
 import {
   formatCapacity,
@@ -64,6 +70,12 @@ function createEmptyProduct(): Product {
     technicalDetails: [{ label: "", value: "" }],
     addOns: [],
     images: [],
+    isOutOfStock: false,
+    disableColors: false,
+    disabledColors: [],
+    isPromo: false,
+    promoTag: "",
+    promoDescription: "",
   };
 }
 
@@ -83,6 +95,7 @@ function cleanAddOns(values: ProductAddOn[]): ProductAddOn[] {
 
 const SECTION_IDS = [
   "basico",
+  "opciones",
   "imagenes",
   "descripcion",
   "especificaciones",
@@ -94,6 +107,7 @@ type SectionId = (typeof SECTION_IDS)[number];
 
 const SECTIONS: { id: SectionId; label: string; icon: typeof FileText }[] = [
   { id: "basico", label: "Básico", icon: FileText },
+  { id: "opciones", label: "Estado y Promos", icon: Sliders },
   { id: "imagenes", label: "Imágenes", icon: ImageIcon },
   { id: "descripcion", label: "Descripción", icon: AlignLeft },
   { id: "especificaciones", label: "Especificaciones", icon: ListChecks },
@@ -169,6 +183,7 @@ export default function ProductForm({
   const [activeSection, setActiveSection] = useState<SectionId>("basico");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const [submitIntent, setSubmitIntent] = useState<"save" | "save-new">("save");
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const savedNoticeTimer = useRef<number | null>(null);
@@ -408,13 +423,23 @@ export default function ProductForm({
         setCapacityUnit(parsedCapacity.unit);
       }
 
+      setJustSaved(true);
+      showSavedNotice(
+        mode === "create"
+          ? "El producto fue creado exitosamente."
+          : `Los cambios en "${payload.name}" se guardaron correctamente.`,
+      );
+
       if (mode === "create" && submitIntent === "save-new") {
-        showSavedNotice("Producto guardado. Agrega el siguiente.");
+        setTimeout(() => setJustSaved(false), 3000);
         resetForm();
         router.refresh();
         window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
         return;
       }
+
+      // Briefly pause so the user visually sees the button change to green "¡CAMBIOS GUARDADOS!" & success notice
+      await new Promise((resolve) => setTimeout(resolve, 1400));
 
       if (onSaved) {
         onSaved();
@@ -437,13 +462,23 @@ export default function ProductForm({
     "inline-flex h-12 items-center gap-2 rounded-xl bg-orange px-5 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover disabled:opacity-60";
   const secondaryButtonClass =
     "inline-flex h-12 items-center gap-2 rounded-xl border border-steel-dark/25 bg-background/40 px-5 text-sm font-semibold uppercase tracking-wider text-steel-mid transition-colors hover:border-orange/50 hover:text-orange disabled:opacity-60";
+  const successButtonClass =
+    "inline-flex h-12 items-center gap-2 rounded-xl bg-emerald-600 px-5 text-sm font-semibold uppercase tracking-wider text-white transition-all hover:bg-emerald-500 shadow-lg shadow-emerald-600/30";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {savedNotice ? (
-        <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-          {savedNotice}
-        </p>
+        <div className="flex items-center gap-3 rounded-xl border border-emerald-500/40 bg-emerald-500/15 p-4 text-emerald-300 shadow-lg shadow-emerald-950/20 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <Check className="h-5 w-5 stroke-[3]" />
+          </div>
+          <div>
+            <p className="font-display text-sm font-semibold uppercase tracking-wider text-emerald-200">
+              ¡Cambios guardados con éxito!
+            </p>
+            <p className="text-xs text-emerald-300/80">{savedNotice}</p>
+          </div>
+        </div>
       ) : null}
 
       <nav
@@ -589,6 +624,240 @@ export default function ProductForm({
                     <span className="text-orange">{capacityPreview}</span>
                   </p>
                 )}
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            id="opciones"
+            icon={Sliders}
+            title="Disponibilidad, Colores y Promociones"
+            helper="Modo agotado, deshabilitar o bloquear colores y etiquetas de oferta"
+          >
+            <div className="space-y-6">
+              {/* 1. MODO AGOTADO */}
+              <div
+                className={`rounded-xl border p-4 transition-colors ${
+                  product.isOutOfStock
+                    ? "border-red-500/40 bg-red-950/20"
+                    : "border-white/[0.08] bg-background/40"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
+                        product.isOutOfStock
+                          ? "bg-red-500/20 text-red-400"
+                          : "bg-red-500/10 text-red-400/70"
+                      }`}
+                    >
+                      <AlertCircle className="h-5 w-5" aria-hidden />
+                    </span>
+                    <div>
+                      <p className="font-display text-sm font-semibold uppercase tracking-wide text-steel-light">
+                        Modo Agotado
+                      </p>
+                      <p className="mt-0.5 text-xs text-steel-dark">
+                        {product.isOutOfStock
+                          ? "El equipo figura con insignia de AGOTADO y no se puede cotizar."
+                          : "Marca el equipo como sin stock. Aparecerá con insignia de AGOTADO."}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={Boolean(product.isOutOfStock)}
+                    id="isOutOfStock"
+                    onClick={() => updateField("isOutOfStock", !product.isOutOfStock)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
+                      product.isOutOfStock ? "bg-red-500" : "bg-steel-dark/40"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                        product.isOutOfStock ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. BLOQUEO DE COLORES */}
+              <div
+                className={`rounded-xl border p-4 space-y-4 transition-colors ${
+                  product.disableColors
+                    ? "border-orange/40 bg-orange/5"
+                    : "border-white/[0.08] bg-background/40"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
+                        product.disableColors
+                          ? "bg-orange/20 text-orange"
+                          : "bg-orange/10 text-orange/70"
+                      }`}
+                    >
+                      <Lock className="h-5 w-5" aria-hidden />
+                    </span>
+                    <div>
+                      <p className="font-display text-sm font-semibold uppercase tracking-wide text-steel-light">
+                        Deshabilitar selección de colores
+                      </p>
+                      <p className="mt-0.5 text-xs text-steel-dark">
+                        {product.disableColors
+                          ? "Los clientes verán el equipo sin selector de color."
+                          : "Bloquea el selector de color en la ficha del producto."}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={Boolean(product.disableColors)}
+                    id="disableColors"
+                    onClick={() => updateField("disableColors", !product.disableColors)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
+                      product.disableColors ? "bg-orange" : "bg-steel-dark/40"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                        product.disableColors ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {!product.disableColors ? (
+                  <div className="border-t border-white/[0.06] pt-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-steel-mid mb-1">
+                      Bloquear colores específicos para este equipo
+                    </p>
+                    <p className="text-xs text-steel-dark mb-3">
+                      Haz clic en los colores que deseas <strong className="text-red-400">bloquear / deshabilitar</strong> para este modelo:
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      {PRODUCT_COLORS.map((color) => {
+                        const disabledList = product.disabledColors ?? [];
+                        const isBlocked = disabledList.includes(color.id);
+
+                        return (
+                          <button
+                            key={color.id}
+                            type="button"
+                            onClick={() => {
+                              const next = isBlocked
+                                ? disabledList.filter((id) => id !== color.id)
+                                : [...disabledList, color.id];
+                              updateField("disabledColors", next);
+                            }}
+                            className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-all ${
+                              isBlocked
+                                ? "border-red-500/50 bg-red-950/30 text-red-300"
+                                : "border-white/[0.08] bg-panel/60 text-steel-light hover:border-white/20"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/40"
+                                style={{ backgroundColor: color.hex }}
+                              />
+                              <span className="truncate">{color.name}</span>
+                            </div>
+                            {isBlocked ? (
+                              <span className="shrink-0 text-[10px] font-bold text-red-400 uppercase tracking-widest">
+                                Bloqueado
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* 3. PROMOCIONES */}
+              <div
+                className={`rounded-xl border p-4 space-y-4 transition-colors ${
+                  product.isPromo
+                    ? "border-amber-400/40 bg-amber-400/5"
+                    : "border-white/[0.08] bg-background/40"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
+                        product.isPromo
+                          ? "bg-amber-400/20 text-amber-400"
+                          : "bg-amber-400/10 text-amber-400/70"
+                      }`}
+                    >
+                      <Sparkles className="h-5 w-5" aria-hidden />
+                    </span>
+                    <div>
+                      <p className="font-display text-sm font-semibold uppercase tracking-wide text-steel-light">
+                        Producto en Promoción / Oferta
+                      </p>
+                      <p className="mt-0.5 text-xs text-steel-dark">
+                        {product.isPromo
+                          ? "El equipo se destaca con distintivos de promo en el catálogo y ficha."
+                          : "Destaca el equipo con distintivos especiales de promo."}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={Boolean(product.isPromo)}
+                    id="isPromo"
+                    onClick={() => updateField("isPromo", !product.isPromo)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
+                      product.isPromo ? "bg-amber-500" : "bg-steel-dark/40"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                        product.isPromo ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {product.isPromo ? (
+                  <div className="grid gap-4 sm:grid-cols-2 border-t border-white/[0.06] pt-4">
+                    <div>
+                      <label htmlFor="promoTag" className={labelClass}>
+                        Etiqueta de Promo (Texto corto)
+                      </label>
+                      <input
+                        id="promoTag"
+                        value={product.promoTag ?? ""}
+                        onChange={(e) => updateField("promoTag", e.target.value)}
+                        placeholder="Ej. OFERTA, 15% OFF, NUEVO, MÁS VENDIDO"
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="promoDescription" className={labelClass}>
+                        Detalle explicativo (Opcional)
+                      </label>
+                      <input
+                        id="promoDescription"
+                        value={product.promoDescription ?? ""}
+                        onChange={(e) => updateField("promoDescription", e.target.value)}
+                        placeholder="Ej. Válido hasta fin de mes con despacho gratis"
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           </SectionCard>
@@ -966,15 +1235,24 @@ export default function ProductForm({
             <button
               type="submit"
               onClick={() => setSubmitIntent("save")}
-              disabled={saving}
-              className={primaryButtonClass}
+              disabled={saving || justSaved}
+              className={justSaved ? successButtonClass : primaryButtonClass}
             >
-              <Send className="h-4 w-4" aria-hidden />
-              {saving && submitIntent === "save"
-                ? "Guardando…"
-                : mode === "create"
-                  ? "Crear producto"
-                  : "Guardar cambios"}
+              {justSaved ? (
+                <>
+                  <Check className="h-4 w-4 stroke-[3] animate-in zoom-in" aria-hidden />
+                  ¡CAMBIOS GUARDADOS!
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" aria-hidden />
+                  {saving && submitIntent === "save"
+                    ? "Guardando…"
+                    : mode === "create"
+                      ? "Crear producto"
+                      : "Guardar cambios"}
+                </>
+              )}
             </button>
           </div>
         </div>

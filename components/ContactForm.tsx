@@ -71,7 +71,7 @@ function buildProfilePayload(
 interface ContactFormProps {
   formId?: string;
   hideSubmitButton?: boolean;
-  onSuccess?: (requestId: string | null) => void;
+  onSuccess?: (requestId: string | null, whatsAppUrl?: string) => void;
 }
 
 export default function ContactForm({
@@ -102,6 +102,7 @@ export default function ContactForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
+  const [whatsAppUrl, setWhatsAppUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!productId || !SLUG_PATTERN.test(productId)) {
@@ -292,23 +293,22 @@ export default function ContactForm({
 
       const submittedRequestId = data.id ?? null;
 
-      openWhatsAppContact(
-        buildQuoteWhatsAppUrl(
-          safeName,
-          phone,
-          safeMessage,
-          submittedProducts,
-          {
-            requestId: submittedRequestId ?? undefined,
-            email: safeEmail || undefined,
-          },
-        ),
+      const waUrl = buildQuoteWhatsAppUrl(
+        safeName,
+        phone,
+        safeMessage,
+        submittedProducts,
+        {
+          requestId: submittedRequestId ?? undefined,
+          email: safeEmail || undefined,
+        },
       );
 
+      setWhatsAppUrl(waUrl);
       setSubmitSuccess(true);
       setRequestId(submittedRequestId);
       if (onSuccess) {
-        onSuccess(submittedRequestId);
+        onSuccess(submittedRequestId, waUrl);
       }
       resetForm();
       clearProducts();
@@ -343,9 +343,11 @@ export default function ContactForm({
       <section className="mx-auto w-full rounded-lg border border-white/[0.06] bg-panel/40 px-4 py-8 sm:px-6">
         <QuoteSentAnimation
           requestId={requestId}
+          whatsAppUrl={whatsAppUrl}
           onSendAnother={() => {
             setSubmitSuccess(false);
             setRequestId(null);
+            setWhatsAppUrl(null);
           }}
         />
       </section>

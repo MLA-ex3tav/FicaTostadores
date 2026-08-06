@@ -18,4 +18,6 @@ export interface HeroProductBanner {
   categoryLabel: string;
   catalogLabel: string;
   carouselFocus: ProductImageFocus;
+  isPromo?: boolean;
+  promoTag?: string;
 }

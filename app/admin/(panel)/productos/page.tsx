@@ -1,4 +1,7 @@
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import AdminProductsTable from "@/components/admin/AdminProductsTable";
+import ProductExcelImport from "@/components/admin/ProductExcelImport";
 import { getCatalogConfig } from "@/lib/catalog-config-server";
 import { canPersistProducts } from "@/lib/products-repository";
 import { getProducts } from "@/lib/products-server";
@@ -17,17 +20,24 @@ export default async function AdminProductsPage() {
   const canPersist = canPersistProducts();
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 md:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="w-full px-4 py-8 sm:px-6 lg:px-10">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-steel-dark">
-            Productos
+            Catálogo Industrial
           </p>
-          <h2 className="mt-2 font-display text-3xl tracking-wide text-steel-light">
-            {products.length}{" "}
-            {products.length === 1 ? "producto" : "productos"}
-          </h2>
+          <h1 className="mt-1 font-display text-3xl font-bold tracking-wide text-steel-light">
+            Gestión de Productos ({products.length})
+          </h1>
         </div>
+
+        <Link
+          href="/admin/productos/nuevo"
+          className="inline-flex h-12 items-center gap-2 rounded-xl bg-orange px-5 text-sm font-semibold uppercase tracking-wider text-white transition-colors hover:bg-orange-hover shadow-lg shadow-orange/20"
+        >
+          <Plus className="h-4 w-4" />
+          Nuevo Producto
+        </Link>
       </div>
 
       {!canPersist && (
@@ -44,6 +54,8 @@ export default async function AdminProductsPage() {
           catalogConfig={catalogConfig}
         />
       </div>
+
+      <ProductExcelImport catalogConfig={catalogConfig} />
     </div>
   );
 }

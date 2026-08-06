@@ -21,6 +21,13 @@ export interface Product {
   technicalDetails: { label: string; value: string }[];
   addOns: ProductAddOn[];
   images?: ProductImage[];
+  serie?: string;
+  isOutOfStock?: boolean;
+  disableColors?: boolean;
+  disabledColors?: string[];
+  isPromo?: boolean;
+  promoTag?: string;
+  promoDescription?: string;
 }
 
 const commercialDescription =

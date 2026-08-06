@@ -3,23 +3,46 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Factory, ShoppingBag, Sparkles } from "lucide-react";
-import { defaultProducts } from "@/lib/products";
+import { defaultProducts, type Product } from "@/lib/products";
 import { getProductImageSrc } from "@/lib/product-images";
 import { buildQuoteProductItem } from "@/lib/quote-product";
 import { useQuoteSelection } from "@/lib/quote-selection";
 import Reveal from "@/components/motion/Reveal";
 import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import SectionHeader from "@/components/SectionHeader";
+import PromoBadge from "@/components/PromoBadge";
 
-// Highlighting top 4 flagship roasters for the homepage grid
+// Highlighting top flagship roasters for the homepage grid
 const FEATURED_IDS = ["tlc-10kg", "tlc-5kg", "tlc-3kg", "tlc-700g"];
 
-export default function HomeFeaturedProducts() {
+function buildFeaturedGrid(products: Product[]): Product[] {
+  // Prefer products in promo (from admin / Firestore), then fill with fixed flagship IDs.
+  const promos = products.filter((p) => p.isPromo);
+  const fixed = FEATURED_IDS.map((id) =>
+    (products.length > 0 ? products : defaultProducts).find((p) => p.id === id),
+  ).filter(Boolean) as Product[];
+
+  const seen = new Set<string>();
+  const result: Product[] = [];
+  for (const product of [...promos, ...fixed]) {
+    if (result.length >= 4) break;
+    if (seen.has(product.id)) continue;
+    seen.add(product.id);
+    result.push(product);
+  }
+  return result;
+}
+
+interface HomeFeaturedProductsProps {
+  products?: Product[];
+}
+
+export default function HomeFeaturedProducts({
+  products = defaultProducts,
+}: HomeFeaturedProductsProps) {
   const { addProduct, hasProduct } = useQuoteSelection();
 
-  const featuredProducts = FEATURED_IDS.map((id) =>
-    defaultProducts.find((p) => p.id === id),
-  ).filter(Boolean);
+  const featuredProducts = buildFeaturedGrid(products);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
@@ -76,6 +99,12 @@ export default function HomeFeaturedProducts() {
                   <div className="absolute top-2.5 right-2.5 rounded-full border border-orange/40 bg-background/90 px-2.5 py-1 text-[11px] font-bold text-orange shadow-md backdrop-blur-md">
                     {product.capacity}
                   </div>
+
+                  {product.isPromo ? (
+                    <div className="absolute left-2.5 top-2.5 z-[1]">
+                      <PromoBadge label={product.promoTag} />
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Content */}

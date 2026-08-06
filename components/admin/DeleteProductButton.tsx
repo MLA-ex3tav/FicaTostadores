@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Check, Trash2 } from "lucide";
+import { MorphIcon } from "morphicons/react";
 import { useFirebaseAuth } from "@/lib/firebase-auth";
 
 interface DeleteProductButtonProps {
@@ -16,6 +18,7 @@ export default function DeleteProductButton({
   const router = useRouter();
   const { adminFetch } = useFirebaseAuth();
   const [loading, setLoading] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   async function handleDelete() {
     const confirmed = window.confirm(
@@ -50,9 +53,21 @@ export default function DeleteProductButton({
       type="button"
       onClick={() => void handleDelete()}
       disabled={loading}
-      className="text-xs text-steel-dark transition-colors hover:text-orange disabled:opacity-50"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
+      title={`Eliminar ${productName}`}
+      aria-label={`Eliminar ${productName}`}
+      className="grid h-8 w-8 place-items-center rounded-lg border border-steel-dark/25 bg-background/40 text-steel-mid transition-colors hover:border-orange/40 hover:text-orange disabled:opacity-50"
     >
-      {loading ? "Eliminando…" : "Eliminar"}
+      <MorphIcon
+        icon={hovered ? Check : Trash2}
+        size={16}
+        strokeWidth={1.75}
+        spring="snappy"
+        className={loading ? "animate-pulse" : undefined}
+      />
     </button>
   );
 }

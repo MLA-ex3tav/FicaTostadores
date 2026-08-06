@@ -1,10 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { buildContentSecurityPolicy } from "@/lib/csp";
-import {
-  assertRateLimits,
-  getRateLimitKey,
-  rateLimitResponse,
-} from "@/lib/rate-limit";
+import { assertRateLimits, getRateLimitKey } from "@/lib/rate-limit";
 
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");

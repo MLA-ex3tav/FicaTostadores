@@ -36,8 +36,8 @@ export default function AdminHeader() {
   const { user, role, isSuperAdmin, signOut } = useFirebaseAuth();
 
   return (
-    <header className="border-b border-white/[0.06] bg-[var(--input-bg)]">
-      <div className="mx-auto max-w-6xl px-4 py-4 md:px-6">
+    <header className="border-b border-white/[0.08] bg-[var(--input-bg)]">
+      <div className="w-full px-4 py-4 sm:px-6 lg:px-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Image
@@ -116,14 +116,6 @@ export default function AdminHeader() {
               Usuarios
             </Link>
           ) : null}
-
-          <Link
-            href="/admin/productos/nuevo"
-            className="ml-auto inline-flex items-center gap-2 rounded-lg bg-orange px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-hover"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            Nuevo producto
-          </Link>
         </nav>
       </div>
     </header>

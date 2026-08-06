@@ -133,6 +133,12 @@ export function parseProductInput(body: unknown): Product {
       throw new RequestValidationError("Características inválidas.");
     })();
 
+  const disabledColors = Array.isArray(record.disabledColors)
+    ? record.disabledColors
+        .map((color) => sanitizeSlug(color, 50))
+        .filter((color): color is string => Boolean(color))
+    : [];
+
   return {
     id,
     catalog,
@@ -146,6 +152,12 @@ export function parseProductInput(body: unknown): Product {
     technicalDetails: sanitizeTechnicalDetails(record.technicalDetails),
     addOns: sanitizeAddOns(record.addOns),
     images: sanitizeProductImagesInput(record.images),
+    isOutOfStock: Boolean(record.isOutOfStock),
+    disableColors: Boolean(record.disableColors),
+    disabledColors,
+    isPromo: Boolean(record.isPromo),
+    promoTag: sanitizeText(record.promoTag, 100) ?? undefined,
+    promoDescription: sanitizeText(record.promoDescription, 300) ?? undefined,
   };
 }
 

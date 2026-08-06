@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import { Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   PRODUCT_COLORS,
@@ -10,32 +8,51 @@ import {
 interface ProductColorPickerProps {
   value: string;
   onChange: (colorId: string) => void;
+  disableColors?: boolean;
+  disabledColors?: string[];
   className?: string;
 }
 
 export default function ProductColorPicker({
   value,
   onChange,
+  disableColors = false,
+  disabledColors = [],
   className,
 }: ProductColorPickerProps) {
-  const [hoveredColorId, setHoveredColorId] = useState<string | null>(null);
+  if (disableColors) {
+    return (
+      <div className={cn("rounded-lg border border-white/[0.06] bg-background/20 p-3 text-center", className)}>
+        <p className="text-xs text-steel-dark">
+          Este modelo se entrega en su acabado industrial estándar (no requiere selección de color).
+        </p>
+      </div>
+    );
+  }
 
-  const activeColor = getProductColorById(hoveredColorId ?? value);
+  const selected = getProductColorById(value);
 
   return (
-    <div className={cn("flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between", className)}>
-      <div className="flex items-center gap-2.5 text-sm">
-        <span className="text-xs uppercase tracking-[0.18em] font-semibold text-steel-dark">
-          Color del equipo:
-        </span>
-        <span className="font-medium text-steel-light transition-colors">
-          {activeColor?.name ?? "Seleccionar color"}
-        </span>
+    <div className={cn("space-y-3", className)}>
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-xs font-medium uppercase tracking-wider text-steel-dark">
+          Color
+        </p>
+        <p className="truncate text-sm text-steel-light">
+          {selected && !disabledColors.includes(selected.id)
+            ? selected.name
+            : "Seleccione un color"}
+        </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+      <div
+        className="grid grid-cols-2 gap-1.5"
+        role="radiogroup"
+        aria-label="Color del equipo"
+      >
         {PRODUCT_COLORS.map((color) => {
-          const isSelected = value === color.id;
+          const isBlocked = disabledColors.includes(color.id);
+          const isSelected = value === color.id && !isBlocked;
           const isLight =
             color.id === "blanco" ||
             color.id === "amarillo" ||
@@ -45,26 +62,41 @@ export default function ProductColorPicker({
             <button
               key={color.id}
               type="button"
-              onClick={() => onChange(color.id)}
-              onMouseEnter={() => setHoveredColorId(color.id)}
-              onMouseLeave={() => setHoveredColorId(null)}
-              aria-pressed={isSelected}
-              aria-label={`Color ${color.name}`}
-              title={color.name}
+              role="radio"
+              aria-checked={isSelected}
+              aria-disabled={isBlocked}
+              disabled={isBlocked}
+              aria-label={isBlocked ? `${color.name} (No disponible)` : color.name}
+              title={isBlocked ? `${color.name} (No disponible para este producto)` : color.name}
+              onClick={() => {
+                if (!isBlocked) {
+                  onChange(color.id);
+                }
+              }}
               className={cn(
-                "group relative h-7 w-7 rounded-full transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-orange",
-                isSelected
-                  ? "scale-110 ring-2 ring-orange ring-offset-2 ring-offset-panel"
-                  : "opacity-75 hover:opacity-100 hover:scale-110",
+                "flex min-h-10 items-center gap-2.5 rounded-md border px-2 py-1.5 text-left transition-colors",
+                isBlocked
+                  ? "border-white/[0.04] bg-background/10 text-steel-dark opacity-35 cursor-not-allowed"
+                  : isSelected
+                    ? "border-orange/70 bg-orange/10 text-steel-light"
+                    : "border-white/[0.08] bg-background/30 text-steel-mid hover:border-white/15 hover:text-steel-light",
               )}
             >
               <span
                 className={cn(
-                  "block h-full w-full rounded-full border border-black/30 shadow-inner",
-                  isLight && "border-steel-dark/40",
+                  "h-4 w-4 shrink-0 rounded-full border relative grid place-items-center",
+                  isLight ? "border-steel-dark/50" : "border-black/40",
                 )}
                 style={{ backgroundColor: color.hex }}
-              />
+                aria-hidden
+              >
+                {isBlocked && (
+                  <Lock className="h-2.5 w-2.5 text-red-400 drop-shadow" />
+                )}
+              </span>
+              <span className={cn("truncate text-xs leading-tight", isBlocked && "line-through opacity-70")}>
+                {color.name}
+              </span>
             </button>
           );
         })}

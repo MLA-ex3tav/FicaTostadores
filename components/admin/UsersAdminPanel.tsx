@@ -144,13 +144,13 @@ export default function UsersAdminPanel() {
         </p>
       ) : null}
 
-      <div className="mt-8 overflow-x-auto rounded-xl border border-white/[0.06] bg-[var(--input-bg)]">
-        <table className="w-full min-w-[640px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-white/[0.06] text-xs uppercase tracking-widest text-steel-dark">
-              <th className="px-4 py-3 font-normal">Usuario</th>
-              <th className="px-4 py-3 font-normal">Email</th>
-              <th className="px-4 py-3 font-normal">Rol</th>
+      <div className="mt-8 w-full overflow-x-auto border-t border-b border-white/[0.08]">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-white/[0.08] bg-surface/80 text-xs font-semibold uppercase tracking-wider text-steel-mid">
+            <tr>
+              <th className="px-4 py-3.5 font-semibold">Usuario</th>
+              <th className="px-4 py-3.5 font-semibold">Email</th>
+              <th className="px-4 py-3.5 font-semibold text-right">Rol</th>
             </tr>
           </thead>
           <tbody>
@@ -177,20 +177,22 @@ export default function UsersAdminPanel() {
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-steel-mid">{entry.email}</td>
-                    <td className="px-4 py-3">
-                      <CustomSelect
-                        value={entry.role}
-                        disabled={isSelf || isSaving}
-                        onChange={(role) =>
-                          void handleRoleChange(entry.uid, role as UserRole)
-                        }
-                        aria-label={`Rol de ${entry.displayName ?? entry.email}`}
-                        className="min-w-[10rem]"
-                        options={USER_ROLES.map((role) => ({
-                          value: role,
-                          label: getRoleLabel(role),
-                        }))}
-                      />
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end">
+                        <CustomSelect
+                          value={entry.role}
+                          disabled={isSelf || isSaving}
+                          onChange={(role) =>
+                            void handleRoleChange(entry.uid, role as UserRole)
+                          }
+                          aria-label={`Rol de ${entry.displayName ?? entry.email}`}
+                          className="min-w-[10rem]"
+                          options={USER_ROLES.map((role) => ({
+                            value: role,
+                            label: getRoleLabel(role),
+                          }))}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

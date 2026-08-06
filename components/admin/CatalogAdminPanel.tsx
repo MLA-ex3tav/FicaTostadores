@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { LayoutGrid, Plus } from "lucide-react";
+import { Check, LayoutGrid, Pencil, Plus, Trash2, X } from "lucide-react";
 import {
   defaultCatalogConfig,
   type CatalogConfig,
@@ -199,14 +199,14 @@ export default function CatalogAdminPanel() {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-white/[0.06] bg-[var(--input-bg)]">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-white/[0.06] text-xs uppercase tracking-widest text-steel-dark">
+        <div className="w-full overflow-x-auto border-t border-b border-white/[0.08]">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-white/[0.08] bg-surface/80 text-xs font-semibold uppercase tracking-wider text-steel-mid">
               <tr>
-                <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Identificador</th>
-                <th className="px-4 py-3 font-medium">Categorías</th>
-                <th className="px-4 py-3 font-medium">Acciones</th>
+                <th className="px-4 py-3.5 font-semibold">Nombre</th>
+                <th className="px-4 py-3.5 font-semibold">Identificador</th>
+                <th className="px-4 py-3.5 font-semibold">Categorías</th>
+                <th className="px-4 py-3.5 font-semibold text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -247,16 +247,17 @@ export default function CatalogAdminPanel() {
                           : `${categoryCount} categoría${categoryCount === 1 ? "" : "s"}`}
                       </span>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex flex-wrap gap-3">
+                    <td className="px-4 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2.5">
                         {editingId === catalog.id ? (
                           <>
                             <button
                               type="button"
                               onClick={() => void handleSaveEdit(catalog.id)}
                               disabled={saving}
-                              className="text-xs font-medium text-orange hover:text-orange-hover"
+                              className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
                             >
+                              <Check className="h-3.5 w-3.5" />
                               Guardar
                             </button>
                             <button
@@ -265,8 +266,9 @@ export default function CatalogAdminPanel() {
                                 setEditingId(null);
                                 setEditLabel("");
                               }}
-                              className="text-xs text-steel-mid hover:text-orange"
+                              className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-surface px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-steel-mid transition-colors hover:border-white/20 hover:text-steel-light"
                             >
+                              <X className="h-3.5 w-3.5" />
                               Cancelar
                             </button>
                           </>
@@ -278,16 +280,18 @@ export default function CatalogAdminPanel() {
                                 setEditingId(catalog.id);
                                 setEditLabel(catalog.label);
                               }}
-                              className="text-xs font-medium text-orange hover:text-orange-hover"
+                              className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-surface px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-orange transition-colors hover:border-orange/50 hover:bg-orange/10"
                             >
+                              <Pencil className="h-3.5 w-3.5" />
                               Editar
                             </button>
                             <button
                               type="button"
                               onClick={() => void handleDelete(catalog.id)}
                               disabled={saving}
-                              className="text-xs text-steel-mid hover:text-orange"
+                              className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-surface px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-red-400 transition-colors hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-50"
                             >
+                              <Trash2 className="h-3.5 w-3.5" />
                               Eliminar
                             </button>
                           </>

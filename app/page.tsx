@@ -7,11 +7,15 @@ import RoastablesSection from "@/components/RoastablesSection";
 import ServicesSection from "@/components/ServicesSection";
 import StatsSection from "@/components/StatsSection";
 import { getHeroProductBanners } from "@/lib/hero-images-server";
+import { getProducts } from "@/lib/products-server";
 
 export const revalidate = 300;
 
 export default async function Home() {
-  const banners = await getHeroProductBanners();
+  const [banners, products] = await Promise.all([
+    getHeroProductBanners(),
+    getProducts(),
+  ]);
 
   return (
     <main className="min-h-screen">
@@ -22,7 +26,7 @@ export default async function Home() {
       <StatsSection />
 
       {/* Featured Machinery Showcase with Quick Quote */}
-      <HomeFeaturedProducts />
+      <HomeFeaturedProducts products={products} />
 
       {/* 3-Step Manufacturing & Delivery Process */}
       <HomeProcessSection />

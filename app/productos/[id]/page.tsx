@@ -44,24 +44,22 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1550px] px-4 py-12 md:px-8 md:py-16 lg:px-12">
+    <div className="mx-auto w-full max-w-[1400px] px-4 pb-20 pt-8 md:px-8 md:pb-24 md:pt-12 lg:px-10">
       <Reveal>
         <Link
           href="/productos"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-steel-mid transition-colors hover:text-orange"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-panel/40 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-steel-mid transition-colors hover:border-orange/35 hover:text-orange"
         >
-          <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-          Volver al catálogo
+          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.75} />
+          Catálogo
         </Link>
       </Reveal>
 
       <ProductDetailPageShell product={product}>
-        <Reveal>
-          <ProductDetailSections
-            product={product}
-            catalogConfig={catalogConfig}
-          />
-        </Reveal>
+        <ProductDetailSections
+          product={product}
+          catalogConfig={catalogConfig}
+        />
       </ProductDetailPageShell>
     </div>
   );

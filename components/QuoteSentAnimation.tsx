@@ -1,11 +1,13 @@
 "use client";
 
-import { Check, FileText, Users } from "lucide-react";
+import { Check, FileText, MessageSquare, Users } from "lucide-react";
 import { useEffect, useState } from "react";
+import { openWhatsAppContact } from "@/lib/quoting";
 import "@/components/quote-sent-animation.css";
 
 interface QuoteSentAnimationProps {
   requestId?: string | null;
+  whatsAppUrl?: string | null;
   onSendAnother?: () => void;
   sendingStatus?: string;
   arrivedSubtitle?: string;
@@ -15,11 +17,12 @@ interface QuoteSentAnimationProps {
 
 export default function QuoteSentAnimation({
   requestId,
+  whatsAppUrl,
   onSendAnother,
   sendingStatus = "Enviando solicitud…",
   arrivedSubtitle = "Nuestro equipo la revisará pronto",
   title = "Solicitud enviada",
-  description = "Recibimos su cotización. Si no se abrió automáticamente, puede continuar la conversación por WhatsApp con nuestro equipo de ventas.",
+  description = "Recibimos su cotización. Puede continuar la conversación por WhatsApp con nuestro equipo de ventas.",
 }: QuoteSentAnimationProps) {
   const [arrived, setArrived] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -106,14 +109,30 @@ export default function QuoteSentAnimation({
               <span className="font-mono text-steel-mid">{requestId}</span>
             </p>
           ) : null}
+
+          {whatsAppUrl ? (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => openWhatsAppContact(whatsAppUrl)}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-6 text-sm font-semibold uppercase tracking-wider text-emerald-400 transition-all hover:bg-emerald-500/20"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Continuar por WhatsApp
+              </button>
+            </div>
+          ) : null}
+
           {onSendAnother ? (
-            <button
-              type="button"
-              onClick={onSendAnother}
-              className="mt-2 rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange/40 hover:text-orange"
-            >
-              Enviar otra solicitud
-            </button>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={onSendAnother}
+                className="rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold uppercase tracking-wider text-steel-light transition-colors hover:border-orange/40 hover:text-orange"
+              >
+                Enviar otra solicitud
+              </button>
+            </div>
           ) : null}
         </div>
       ) : null}
