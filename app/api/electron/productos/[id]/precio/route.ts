@@ -7,6 +7,7 @@ import { electronJson, electronOptionsResponse } from "@/lib/electron-cors";
 import { getFirebaseAdminFirestore } from "@/lib/firebase-admin";
 import { PRODUCTOS_COLLECTION } from "@/lib/catalog/constants";
 import { FieldValue } from "firebase-admin/firestore";
+import { revalidateProductPages } from "@/lib/revalidate-products";
 
 /**
  * PATCH /api/electron/productos/[id]/precio
@@ -102,6 +103,8 @@ export async function PATCH(
       updatedAt: FieldValue.serverTimestamp(),
       priceUpdatedAt: FieldValue.serverTimestamp(),
     });
+
+    revalidateProductPages(id);
 
     return electronJson({ ok: true, id, price: rounded });
   } catch (error) {
