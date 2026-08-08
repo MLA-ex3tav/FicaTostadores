@@ -8,6 +8,11 @@ import { electronJson, electronOptionsResponse } from "@/lib/electron-cors";
 import { getFirebaseAdminFirestore } from "@/lib/firebase-admin";
 import { SOLICITUDES_COTIZACION_COLLECTION } from "@/lib/cotizaciones/constants";
 import { SOLICITUDES_SOPORTE_TECNICO_COLLECTION } from "@/lib/soporte-tecnico/constants";
+import {
+  cleanText,
+  computePricing,
+  parseProductInputLines,
+} from "@/lib/electron-solicitud-input";
 
 /**
  * GET /api/electron/solicitudes?tipo=cotizaciones|soporte
@@ -31,66 +36,6 @@ const COLLECTIONS_BY_TIPO: Record<string, string> = {
 };
 
 const MAX_SOLICITUDES = 100;
-
-interface CrearSolicitudBody {
-  clientName?: unknown;
-  clientPhone?: unknown;
-  clientRut?: unknown;
-  clientEmail?: unknown;
-  clientComuna?: unknown;
-  clientAddress?: unknown;
-  message?: unknown;
-  shipping?: unknown;
-  products?: unknown;
-}
-
-interface LineaProducto {
-  productId: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-function cleanText(value: unknown, maxLength: number): string {
-  if (typeof value !== "string") return "";
-  return value.trim().slice(0, maxLength);
-}
-
-function toNumber(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim()) {
-    const parsed = Number(value.replace(/[^0-9.-]/g, ""));
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function parseProductLines(value: unknown): LineaProducto[] {
-  if (!Array.isArray(value)) return [];
-
-  const lines: LineaProducto[] = [];
-
-  for (const entry of value) {
-    if (!entry || typeof entry !== "object") continue;
-    const record = entry as Record<string, unknown>;
-    const name = cleanText(record.name, 200);
-    const productId = cleanText(record.productId ?? record.id, 120);
-
-    if (!name && !productId) continue;
-
-    const quantity = Math.max(1, Math.round(toNumber(record.quantity ?? record.cantidad) ?? 1));
-    const unitPrice = Math.max(0, toNumber(record.unitPrice ?? record.price ?? record.precio) ?? 0);
-
-    lines.push({
-      productId,
-      name,
-      quantity,
-      unitPrice,
-    });
-  }
-
-  return lines.slice(0, 20);
-}
 
 function serializeFirestoreValue(value: unknown): unknown {
   if (value === null || value === undefined) {
@@ -168,10 +113,23 @@ export async function GET(request: Request) {
       .limit(MAX_SOLICITUDES)
       .get();
 
-    const solicitudes = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...(serializeFirestoreValue(doc.data()) as Record<string, unknown>),
-    }));
+    const seen = new Map<string, Record<string, unknown>>();
+
+    snapshot.docs.forEach((doc) => {
+      const data = (serializeFirestoreValue(doc.data()) as Record<string, unknown>) ?? {};
+      const canonicalId = doc.id;
+      const codeKey = String(data.id ?? canonicalId).trim();
+      const dedupeKey = codeKey || canonicalId;
+
+      const existing = seen.get(dedupeKey);
+      const item = { ...data, id: canonicalId };
+
+      if (!existing || canonicalId === codeKey) {
+        seen.set(dedupeKey, item);
+      }
+    });
+
+    const solicitudes = Array.from(seen.values());
 
     return electronJson({ ok: true, tipo, count: solicitudes.length, solicitudes });
   } catch (error) {
@@ -199,13 +157,13 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: CrearSolicitudBody = {};
+  let body: Record<string, unknown> = {};
 
   try {
     const text = await request.text();
 
     if (text.trim()) {
-      body = JSON.parse(text) as CrearSolicitudBody;
+      body = JSON.parse(text) as Record<string, unknown>;
     }
   } catch {
     return electronJson({ error: "Cuerpo JSON inválido." }, { status: 400 });
@@ -213,7 +171,7 @@ export async function POST(request: Request) {
 
   const clientName = cleanText(body.clientName, 120);
   const clientPhone = cleanText(body.clientPhone, 32);
-  const products = parseProductLines(body.products);
+  const products = parseProductInputLines(body.products);
 
   if (!clientName) {
     return electronJson(
@@ -241,10 +199,36 @@ export async function POST(request: Request) {
     );
   }
 
-  const subtotal = products.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0);
+  const pricing = computePricing(products);
+  const subtotal = pricing.subtotal;
 
   try {
-    const docRef = db.collection(SOLICITUDES_COTIZACION_COLLECTION).doc();
+    const customId = cleanText(body.id, 100);
+    const collection = db.collection(SOLICITUDES_COTIZACION_COLLECTION);
+
+    let docRef;
+    let isUpdate = false;
+
+    if (customId) {
+      const byDocId = await collection.doc(customId).get();
+
+      if (byDocId.exists) {
+        docRef = byDocId.ref;
+        isUpdate = true;
+      } else {
+        const byIdField = await collection.where("id", "==", customId).limit(1).get();
+
+        if (!byIdField.empty) {
+          docRef = byIdField.docs[0].ref;
+          isUpdate = true;
+        } else {
+          docRef = collection.doc(customId);
+        }
+      }
+    } else {
+      docRef = collection.doc();
+    }
+
     const now = FieldValue.serverTimestamp();
 
     const productsData = products.map((line) => ({
@@ -256,38 +240,57 @@ export async function POST(request: Request) {
       catalog: "movil",
     }));
 
-    await docRef.set({
-      source: "movil",
-      clientName,
-      clientPhone: clientPhone || null,
-      clientRut: cleanText(body.clientRut, 24) || null,
-      clientEmail: cleanText(body.clientEmail, 200) || null,
-      clientComuna: cleanText(body.clientComuna, 100) || null,
-      clientAddress: cleanText(body.clientAddress, 240) || null,
-      message: cleanText(body.message, 1000) || null,
-      shipping: body.shipping && typeof body.shipping === "object" ? body.shipping : null,
-      products: productsData,
-      pricing: {
+    const requestedEstado = cleanText(body.estado, 40);
+    const estado = requestedEstado || "pendiente";
+    const enOT = typeof body.enOT === "boolean"
+      ? body.enOT
+      : estado === "aprobada_ot";
+
+    await docRef.set(
+      {
+        id: docRef.id,
+        ...(isUpdate ? {} : { source: "movil" }),
+        clientName,
+        clientPhone: clientPhone || null,
+        clientRut: cleanText(body.clientRut, 24) || null,
+        clientEmail: cleanText(body.clientEmail, 200) || null,
+        clientComuna: cleanText(body.clientComuna, 100) || null,
+        clientAddress: cleanText(body.clientAddress, 240) || null,
+        message: cleanText(body.message, 1000) || null,
+        shipping: body.shipping && typeof body.shipping === "object" ? body.shipping : null,
+        products: productsData,
+        pricing,
         subtotal,
-        precioFinal: subtotal,
-        iva: Math.round(subtotal * 0.19),
-        total: Math.round(subtotal * 1.19),
+        estado,
+        cotizacionEstado: estado,
+        cotizacionEstadoLabel: estado === "aprobada_ot" ? "Aprobada (OT)" : "Pendiente",
+        enOT,
+        actualizadoEn: now,
+        ...(isUpdate
+          ? {}
+          : {
+              createdAt: now,
+              produccion: false,
+              produccionEtapa: "por_iniciar",
+              produccionEtapaLabel: "Por iniciar",
+              aprobadaAt: enOT ? now : null,
+            }),
       },
-      subtotal,
-      estado: "aprobada_ot",
-      cotizacionEstado: "aprobada_ot",
-      cotizacionEstadoLabel: "Aprobada (OT)",
-      enOT: true,
-      produccion: false,
-      produccionEtapa: "por_iniciar",
-      produccionEtapaLabel: "Por iniciar",
-      aprobadaAt: now,
-      createdAt: now,
-      actualizadoEn: now,
-    });
+      { merge: true },
+    );
+
+    if (customId && isUpdate) {
+      const oldQuery = await collection.where("id", "==", customId).get();
+
+      for (const oldDoc of oldQuery.docs) {
+        if (oldDoc.id !== docRef.id) {
+          await oldDoc.ref.delete().catch(() => {});
+        }
+      }
+    }
 
     return electronJson(
-      { ok: true, id: docRef.id, estado: "aprobada_ot" },
+      { ok: true, id: docRef.id, estado },
       { status: 201 },
     );
   } catch (error) {
