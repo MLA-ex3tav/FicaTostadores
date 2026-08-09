@@ -3,9 +3,13 @@
 import { FirebaseError } from "firebase/app";
 import {
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
   getRedirectResult,
   onAuthStateChanged,
+  sendEmailVerification as firebaseSendEmailVerification,
+  sendPasswordResetEmail as firebaseSendPasswordResetEmail,
   signInWithCredential,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
   signOut as firebaseSignOut,
@@ -48,11 +52,16 @@ interface FirebaseAuthContextValue {
   isStaff: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  emailVerified: boolean;
   loading: boolean;
   pendingAuthError: string | null;
   clearPendingAuthError: () => void;
   signInWithGoogle: () => Promise<void>;
   signInWithGoogleCredential: (idToken: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  sendPasswordResetEmail: (email: string) => Promise<void>;
+  sendEmailVerification: () => Promise<void>;
   signOut: () => Promise<void>;
   adminFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 }
@@ -178,6 +187,66 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const getConfiguredAuth = useCallback(() => {
+    const auth = getFirebaseAuth();
+
+    if (!auth) {
+      throw new Error(
+        "Firebase no está configurado. Agregue las variables NEXT_PUBLIC_FIREBASE_* en .env.local",
+      );
+    }
+
+    return auth;
+  }, []);
+
+  const signInWithEmail = useCallback(
+    async (email: string, password: string) => {
+      const auth = getConfiguredAuth();
+      const normalizedEmail = email.trim().toLowerCase();
+      await signInWithEmailAndPassword(auth, normalizedEmail, password);
+    },
+    [getConfiguredAuth],
+  );
+
+  const signUpWithEmail = useCallback(
+    async (email: string, password: string) => {
+      const auth = getConfiguredAuth();
+      const normalizedEmail = email.trim().toLowerCase();
+      const credential = await createUserWithEmailAndPassword(
+        auth,
+        normalizedEmail,
+        password,
+      );
+
+      // Verificación opcional: no bloquea el registro si el envío falla.
+      try {
+        await firebaseSendEmailVerification(credential.user);
+      } catch {
+        // Ignorar; el usuario puede reenviar desde el panel si es staff.
+      }
+    },
+    [getConfiguredAuth],
+  );
+
+  const sendPasswordResetEmail = useCallback(
+    async (email: string) => {
+      const auth = getConfiguredAuth();
+      const normalizedEmail = email.trim().toLowerCase();
+      await firebaseSendPasswordResetEmail(auth, normalizedEmail);
+    },
+    [getConfiguredAuth],
+  );
+
+  const sendEmailVerification = useCallback(async () => {
+    const auth = getConfiguredAuth();
+
+    if (!auth.currentUser) {
+      throw new Error("Debe iniciar sesión para continuar.");
+    }
+
+    await firebaseSendEmailVerification(auth.currentUser);
+  }, [getConfiguredAuth]);
+
   const adminFetch = useCallback(
     async (input: RequestInfo | URL, init?: RequestInit) => {
       const auth = getFirebaseAuth();
@@ -210,11 +279,16 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       isStaff,
       isAdmin,
       isSuperAdmin: isAdmin,
+      emailVerified: user?.emailVerified ?? false,
       loading,
       pendingAuthError,
       clearPendingAuthError,
       signInWithGoogle,
       signInWithGoogleCredential,
+      signInWithEmail,
+      signUpWithEmail,
+      sendPasswordResetEmail,
+      sendEmailVerification,
       signOut,
       adminFetch,
     }),
@@ -229,6 +303,10 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       clearPendingAuthError,
       signInWithGoogle,
       signInWithGoogleCredential,
+      signInWithEmail,
+      signUpWithEmail,
+      sendPasswordResetEmail,
+      sendEmailVerification,
       signOut,
       adminFetch,
     ],

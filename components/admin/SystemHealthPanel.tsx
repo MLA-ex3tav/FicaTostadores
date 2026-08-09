@@ -67,13 +67,13 @@ function ElectronPresenceHighlight({ check }: { check: HealthCheck }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-steel-dark">
-            Cotizaciones
+            Escritorio
           </p>
           <h2
             id="electron-presence-title"
             className="mt-2 font-display text-xl tracking-wide text-steel-light"
           >
-            App de cotizaciones (Electron)
+            App administrativa (Tauri)
           </h2>
         </div>
         <span
@@ -98,7 +98,7 @@ function ElectronPresenceHighlight({ check }: { check: HealthCheck }) {
       ) : null}
 
       <p className="mt-4 text-xs text-steel-dark">
-        La app Electron debe enviar POST a{" "}
+        La App administrativa (Tauri) debe enviar POST a{" "}
         <span className="text-steel-mid">/api/electron/heartbeat</span> cada
         30–45 s con el secreto compartido.
       </p>

@@ -40,9 +40,9 @@ function sanitizeProductLine(value: unknown): CotizacionProductLine | null {
 
   const record = value as Record<string, unknown>;
   const name = sanitizeText(record.name, 200, { required: true });
-  const capacity = sanitizeText(record.capacity, 100, { required: true });
+  const capacity = sanitizeText(record.capacity, 100) || "";
 
-  if (!name || !capacity) {
+  if (!name) {
     return null;
   }
 

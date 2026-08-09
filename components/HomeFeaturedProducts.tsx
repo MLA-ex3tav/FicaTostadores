@@ -2,7 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Factory, ShoppingBag, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Coffee,
+  Factory,
+  Flame,
+  ShoppingBag,
+  Sparkles,
+  Star,
+  Wrench,
+} from "lucide-react";
 import { defaultProducts, type Product } from "@/lib/products";
 import { getProductImageSrc } from "@/lib/product-images";
 import { buildQuoteProductItem } from "@/lib/quote-product";
@@ -12,25 +24,68 @@ import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import SectionHeader from "@/components/SectionHeader";
 import PromoBadge from "@/components/PromoBadge";
 
-// Highlighting top flagship roasters for the homepage grid
-const FEATURED_IDS = ["tlc-10kg", "tlc-5kg", "tlc-3kg", "tlc-700g"];
+const CATEGORY_TABS = [
+  { id: "all", label: "Destacados", icon: Sparkles },
+  { id: "cafe", label: "Tostadores Café", icon: Coffee },
+  { id: "comercial", label: "Línea Comercial", icon: Flame },
+  { id: "industrial", label: "Línea Industrial", icon: Factory },
+  { id: "procesamiento", label: "Molinos y Partidores", icon: Wrench },
+] as const;
 
-function buildFeaturedGrid(products: Product[]): Product[] {
-  // Prefer products in promo (from admin / Firestore), then fill with fixed flagship IDs.
-  const promos = products.filter((p) => p.isPromo);
-  const fixed = FEATURED_IDS.map((id) =>
-    (products.length > 0 ? products : defaultProducts).find((p) => p.id === id),
-  ).filter(Boolean) as Product[];
+type CategoryTab = (typeof CATEGORY_TABS)[number]["id"];
 
-  const seen = new Set<string>();
-  const result: Product[] = [];
-  for (const product of [...promos, ...fixed]) {
-    if (result.length >= 4) break;
-    if (seen.has(product.id)) continue;
-    seen.add(product.id);
-    result.push(product);
+const FEATURED_FALLBACK_IDS = ["tlc-10kg", "tlc-5kg", "tlc-3kg", "tlc-700g"];
+
+function getProductCategoryGroup(p: Product): string {
+  if (p.catalog === "cafe" || p.category === "cafe") return "cafe";
+  if (p.category === "comercial") return "comercial";
+  if (p.category === "industrial") return "industrial";
+  if (p.category === "procesamiento") return "procesamiento";
+  return "all";
+}
+
+function selectFeaturedProducts(
+  products: Product[],
+  tab: CategoryTab,
+): Product[] {
+  const allProds = products.length > 0 ? products : defaultProducts;
+
+  // Filter by category tab if specified
+  let pool =
+    tab === "all"
+      ? allProds
+      : allProds.filter((p) => getProductCategoryGroup(p) === tab);
+
+  if (pool.length === 0) {
+    pool = allProds;
   }
-  return result;
+
+  // Prioritize: 1) isFeatured, 2) isPromo, 3) Others
+  const featured = pool.filter((p) => p.isFeatured);
+  const promos = pool.filter((p) => p.isPromo && !p.isFeatured);
+  const others = pool.filter((p) => !p.isFeatured && !p.isPromo);
+
+  let ordered = [...featured, ...promos, ...others];
+
+  // If tab === "all" and we have fallback IDs, append fallback defaults if needed
+  if (tab === "all" && ordered.length < 4) {
+    const fixed = FEATURED_FALLBACK_IDS.map((id) =>
+      allProds.find((p) => p.id === id),
+    ).filter(Boolean) as Product[];
+    ordered = [...ordered, ...fixed];
+  }
+
+  // Deduplicate
+  const seen = new Set<string>();
+  const unique: Product[] = [];
+  for (const p of ordered) {
+    if (!seen.has(p.id)) {
+      seen.add(p.id);
+      unique.push(p);
+    }
+  }
+
+  return unique.slice(0, 4);
 }
 
 interface HomeFeaturedProductsProps {
@@ -41,8 +96,12 @@ export default function HomeFeaturedProducts({
   products = defaultProducts,
 }: HomeFeaturedProductsProps) {
   const { addProduct, hasProduct } = useQuoteSelection();
+  const [activeTab, setActiveTab] = useState<CategoryTab>("all");
 
-  const featuredProducts = buildFeaturedGrid(products);
+  const featuredProducts = useMemo(
+    () => selectFeaturedProducts(products, activeTab),
+    [products, activeTab],
+  );
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-24">
@@ -58,7 +117,54 @@ export default function HomeFeaturedProducts({
         />
       </Reveal>
 
-      <Stagger className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Premium Glassmorphic Category Tabs Bar */}
+      <div className="mt-10 flex justify-center">
+        <div className="relative flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-surface/70 p-1.5 shadow-2xl backdrop-blur-xl">
+          {/* Subtle Ambient Radial Glow */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-1 rounded-3xl bg-gradient-to-r from-orange/10 via-orange/5 to-transparent blur-lg opacity-50"
+          />
+
+          {CATEGORY_TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors z-10 ${
+                  isActive
+                    ? "text-white"
+                    : "text-steel-mid hover:text-steel-light hover:bg-white/[0.04]"
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activeCategoryTab"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange via-orange to-orange-hover shadow-lg shadow-orange/30"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+
+                <Icon
+                  className={`relative z-10 h-3.5 w-3.5 ${
+                    isActive ? "text-white" : "text-steel-dark group-hover:text-steel-light"
+                  }`}
+                />
+                <span className="relative z-10">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <Stagger
+        key={activeTab}
+        className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+      >
         {featuredProducts.map((product) => {
           if (!product) return null;
 
@@ -100,17 +206,26 @@ export default function HomeFeaturedProducts({
                     {product.capacity}
                   </div>
 
-                  {product.isPromo ? (
-                    <div className="absolute left-2.5 top-2.5 z-[1]">
+                  <div className="absolute left-2.5 top-2.5 z-[1] flex flex-col gap-1.5 items-start">
+                    {product.isPromo ? (
                       <PromoBadge label={product.promoTag} />
-                    </div>
-                  ) : null}
+                    ) : null}
+
+                    {product.isFeatured ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-background/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400 shadow-md backdrop-blur-md">
+                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                        Destacado
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
 
                 {/* Content */}
                 <div className="mt-5 space-y-2">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange">
-                    Línea Café Profesional
+                    {product.catalog === "cafe"
+                      ? "Línea Café Profesional"
+                      : "Maquinaria Industrial Fica"}
                   </p>
 
                   <h3 className="font-display text-2xl font-bold uppercase tracking-wide text-steel-light group-hover:text-orange transition-colors">

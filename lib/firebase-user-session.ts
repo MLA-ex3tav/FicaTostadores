@@ -11,6 +11,7 @@ export interface FirebaseUserSession {
   email: string;
   displayName: string | null;
   photoURL: string | null;
+  emailVerified: boolean;
 }
 
 function getBearerToken(request: Request): string | null {
@@ -36,6 +37,7 @@ interface IdentityToolkitUser {
   email?: string;
   displayName?: string;
   photoUrl?: string;
+  emailVerified?: boolean;
 }
 
 interface IdentityToolkitResponse {
@@ -78,6 +80,7 @@ export async function verifyFirebaseUser(
       email: account.email,
       displayName: account.displayName ?? null,
       photoURL: account.photoUrl ?? null,
+      emailVerified: Boolean(account.emailVerified),
     };
   } catch {
     return null;

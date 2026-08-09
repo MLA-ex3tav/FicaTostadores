@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -30,7 +30,6 @@ interface HeroCarouselProps {
 
 const AUTO_ADVANCE_MS = 6000;
 const SWIPE_THRESHOLD_PX = 48;
-const TAP_THRESHOLD_PX = 10;
 
 const DEFAULT_BANNERS: HeroProductBanner[] = [
   {
@@ -60,19 +59,6 @@ const DEFAULT_BANNERS: HeroProductBanner[] = [
   },
 ];
 
-function splitHeadline(text: string): [string, string] {
-  const words = text.trim().split(/\s+/);
-  if (words.length <= 1) {
-    return [text.toUpperCase(), ""];
-  }
-
-  const midpoint = Math.ceil(words.length / 2);
-  return [
-    words.slice(0, midpoint).join(" ").toUpperCase(),
-    words.slice(midpoint).join(" ").toUpperCase(),
-  ];
-}
-
 function getRealSlideIndex(trackIndex: number, slideCount: number): number {
   if (slideCount <= 1) {
     return 0;
@@ -99,19 +85,20 @@ function buildLoopSlides(slides: HeroProductBanner[]): HeroProductBanner[] {
   return [last, ...slides, first];
 }
 
-function HeroCarouselSlide({
+function HeroBannerSlide({
   banner,
   priority,
 }: {
   banner: HeroProductBanner;
   priority: boolean;
 }) {
-  const [headlineTop, headlineBottom] = splitHeadline(banner.name);
-  const href = banner.productId ? `/productos/${banner.productId}` : "/productos";
+  const href = banner.productId
+    ? `/productos/${banner.productId}`
+    : "/productos";
   const hasImage = banner.src.length > 0;
 
   return (
-    <div className="relative h-full w-full shrink-0 cursor-pointer overflow-hidden">
+    <div className="relative h-full w-full shrink-0 overflow-hidden">
       {hasImage ? (
         <MediaImage
           src={banner.src}
@@ -130,12 +117,13 @@ function HeroCarouselSlide({
         />
       )}
 
+      {/* Overlay sutil: prioriza el lado del contenido */}
       <div
-        className="absolute inset-y-0 left-0 z-[1] w-[58%] bg-gradient-to-r from-black/90 via-black/55 to-transparent"
+        className="absolute inset-0 z-[1] bg-gradient-to-t from-background via-background/40 to-background/10"
         aria-hidden="true"
       />
       <div
-        className="absolute inset-0 z-[1] bg-gradient-to-t from-black/90 via-black/35 to-black/10"
+        className="absolute inset-y-0 right-0 z-[1] w-1/2 bg-gradient-to-l from-background/50 to-transparent md:w-1/3"
         aria-hidden="true"
       />
 
@@ -147,74 +135,67 @@ function HeroCarouselSlide({
         />
       ) : null}
 
-      <div className="pointer-events-none absolute inset-0 z-[2] flex h-full flex-col justify-end">
-        {/* Mobile: título */}
-        <div className="max-w-[90%] px-5 pb-14 pt-8 sm:px-8 md:hidden">
-          <p className="font-display text-xl leading-tight tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1),0_4px_16px_rgba(0,0,0,0.9)] sm:text-2xl">
-            {banner.name.toUpperCase()}
-          </p>
-          <Link
-            href={href}
-            className="pointer-events-auto mt-3 inline-block text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-orange drop-shadow-[0_1px_4px_rgba(0,0,0,1)] hover:text-orange/90"
-            onClick={(event) => event.stopPropagation()}
-          >
-            Ver producto →
-          </Link>
-        </div>
-
-        {/* Desktop: bloque título */}
-        <div className="hidden h-full w-full flex-col md:flex">
-          <div className="flex flex-1 flex-col justify-end px-8 pb-4 pt-8 lg:px-16">
-            <div className="max-w-[58%]">
-              <p className="text-[0.6rem] uppercase tracking-[0.22em] text-white drop-shadow-[0_1px_4px_rgba(0,0,0,1)]">
+      {/* Contenido */}
+      <div className="pointer-events-none absolute inset-0 z-[2] flex h-full flex-col justify-center">
+        <div className="mx-auto w-full max-w-[1550px] px-4 md:px-8 lg:px-12">
+          <div className="max-w-xl">
+            {/* Mobile */}
+            <div className="md:hidden">
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-orange">
                 {banner.catalogLabel}
                 {banner.categoryLabel ? ` · ${banner.categoryLabel}` : null}
               </p>
-              <p className="mt-0.5 font-display text-[clamp(1.1rem,2.3vw,1.75rem)] leading-[0.92] tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1),0_4px_16px_rgba(0,0,0,0.95)]">
-                {headlineTop}
-                {headlineBottom ? (
-                  <>
-                    <br />
-                    {headlineBottom}
-                  </>
-                ) : null}
-              </p>
-              <p className="mt-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-orange drop-shadow-[0_1px_4px_rgba(0,0,0,1)]">
-                {banner.capacity}
-              </p>
-              <p className="mt-1.5 text-[0.65rem] leading-snug text-white line-clamp-2 drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)]">
-                {banner.description}
-              </p>
+              <h2 className="mt-2 font-display text-3xl leading-tight tracking-wide text-white">
+                {banner.name.toUpperCase()}
+              </h2>
+              {banner.description ? (
+                <p className="mt-3 text-sm leading-relaxed text-white/90 line-clamp-3">
+                  {banner.description}
+                </p>
+              ) : null}
               <Link
                 href={href}
-                className="pointer-events-auto mt-3 inline-block text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-orange drop-shadow-[0_1px_4px_rgba(0,0,0,1)] hover:text-orange/90"
+                className="pointer-events-auto mt-4 inline-flex items-center gap-2 rounded-lg bg-orange px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-hover"
                 onClick={(event) => event.stopPropagation()}
               >
-                Click para ver más info →
+                Ver producto
+                <ArrowRight className="h-4 w-4" />
               </Link>
+            </div>
+
+            {/* Desktop: panel glass lateral */}
+            <div className="hidden md:block">
+              <div className="rounded-2xl border border-white/10 bg-black/45 p-8 backdrop-blur-md lg:p-10">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-orange">
+                  <span className="h-px w-6 bg-orange" aria-hidden="true" />
+                  {banner.catalogLabel}
+                  {banner.categoryLabel ? ` · ${banner.categoryLabel}` : null}
+                </p>
+                <h2 className="mt-4 font-display text-4xl leading-[0.95] tracking-wide text-white lg:text-5xl">
+                  {banner.name.toUpperCase()}
+                </h2>
+                {banner.capacity ? (
+                  <p className="mt-3 text-sm font-semibold uppercase tracking-[0.16em] text-white/80">
+                    {banner.capacity}
+                  </p>
+                ) : null}
+                {banner.description ? (
+                  <p className="mt-3 max-w-md text-base leading-relaxed text-white/85">
+                    {banner.description}
+                  </p>
+                ) : null}
+                <Link
+                  href={href}
+                  className="pointer-events-auto mt-6 inline-flex items-center gap-2 rounded-lg bg-orange px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-hover"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  Ver producto
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-
-        {banner.technicalDetails.length > 0 ? (
-          <div className="hidden border-t border-white/30 bg-black/60 px-5 py-4 backdrop-blur-sm sm:px-8 md:block md:px-8 md:py-5 lg:px-16">
-            <dl className="grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-3 sm:gap-x-6 md:flex md:w-full md:items-stretch md:divide-x md:divide-white/25 md:gap-0">
-              {banner.technicalDetails.map((detail) => (
-                <div
-                  key={detail.label}
-                  className="flex min-w-0 flex-col justify-center gap-1 md:flex-1 md:gap-1.5 md:px-4 lg:px-5 first:md:pl-0 last:md:pr-0"
-                >
-                  <dt className="text-xs font-semibold uppercase leading-snug tracking-[0.1em] text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] sm:text-sm md:text-sm lg:text-base">
-                    {detail.label}
-                  </dt>
-                  <dd className="font-display text-sm leading-snug tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1),0_2px_10px_rgba(0,0,0,0.9)] sm:text-base md:text-base lg:text-lg">
-                    {detail.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        ) : null}
       </div>
     </div>
   );
@@ -284,8 +265,7 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
         return;
       }
 
-      const normalized =
-        ((index % slideCount) + slideCount) % slideCount;
+      const normalized = ((index % slideCount) + slideCount) % slideCount;
       isBusyRef.current = true;
       setTransitionEnabled(true);
       setTrackIndex(normalized + 1);
@@ -421,12 +401,6 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
       } else {
         goPrev();
       }
-
-      return;
-    }
-
-    if (absDeltaX <= TAP_THRESHOLD_PX && absDeltaY <= TAP_THRESHOLD_PX) {
-      router.push(getSlideHref(slides[realActiveIndex]));
     }
   };
 
@@ -489,36 +463,10 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
                   className="h-full shrink-0"
                   style={{ width: `${slideWidthPercent}%` }}
                 >
-                  <HeroCarouselSlide
-                    banner={banner}
-                    priority={index === 1}
-                  />
+                  <HeroBannerSlide banner={banner} priority={index === 1} />
                 </div>
               ))}
             </div>
-
-            {slideCount > 1 ? (
-              <div className="pointer-events-auto absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/55 px-3 py-2 backdrop-blur-sm sm:bottom-5 md:bottom-[7.25rem]">
-                {slides.map((banner, index) => {
-                  const isActive = index === realActiveIndex;
-                  return (
-                    <button
-                      key={`${banner.productId || "default"}-dot-${index}`}
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        goToRealIndex(index);
-                      }}
-                      className={`h-2 rounded-full transition-all ${
-                        isActive ? "w-5 bg-white" : "w-2 bg-white/40 hover:bg-white/70"
-                      }`}
-                      aria-label={`Ir al slide ${index + 1}`}
-                      aria-current={isActive ? "true" : undefined}
-                    />
-                  );
-                })}
-              </div>
-            ) : null}
           </div>
 
           {slideCount > 1 ? (
@@ -530,7 +478,7 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
                   event.stopPropagation();
                   goPrev();
                 }}
-                className="absolute left-3 top-1/2 z-40 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-black/80 md:flex sm:left-5"
+                className="absolute left-4 top-1/2 z-40 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-sm transition-colors hover:border-orange/60 hover:text-orange md:flex"
                 aria-label="Slide anterior"
               >
                 <ChevronLeft className="h-6 w-6" strokeWidth={2.25} />
@@ -542,11 +490,34 @@ export default function HeroCarousel({ banners }: HeroCarouselProps) {
                   event.stopPropagation();
                   goNext();
                 }}
-                className="absolute right-3 top-1/2 z-40 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-black/80 md:flex sm:right-5"
+                className="absolute right-4 top-1/2 z-40 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-sm transition-colors hover:border-orange/60 hover:text-orange md:flex"
                 aria-label="Slide siguiente"
               >
                 <ChevronRight className="h-6 w-6" strokeWidth={2.25} />
               </button>
+
+              <div className="pointer-events-auto absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/45 px-3 py-2 backdrop-blur-sm">
+                {slides.map((banner, index) => {
+                  const isActive = index === realActiveIndex;
+                  return (
+                    <button
+                      key={`${banner.productId || "default"}-dot-${index}`}
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        goToRealIndex(index);
+                      }}
+                      className={`h-2 rounded-full transition-all ${
+                        isActive
+                          ? "w-6 bg-orange"
+                          : "w-2 bg-white/40 hover:bg-white/70"
+                      }`}
+                      aria-label={`Ir al slide ${index + 1}`}
+                      aria-current={isActive ? "true" : undefined}
+                    />
+                  );
+                })}
+              </div>
             </>
           ) : null}
         </div>

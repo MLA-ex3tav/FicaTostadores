@@ -89,6 +89,7 @@ export default function PhoneCountrySelect({
   const listId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -154,6 +155,18 @@ export default function PhoneCountrySelect({
 
     searchRef.current?.focus();
 
+    // Posiciona la lista en el país seleccionado al abrir (ej. Chile), para que
+    // la vista inicial no muestre solo el inicio alfabético del mundo.
+    const scrollToSelected = () => {
+      if (!listRef.current || !value) return;
+      const selectedItem = listRef.current.querySelector(
+        `button[data-country="${value}"]`,
+      );
+      selectedItem?.scrollIntoView({ block: "center" });
+    };
+
+    const frame = requestAnimationFrame(scrollToSelected);
+
     function handlePointerDown(event: MouseEvent) {
       if (
         containerRef.current &&
@@ -179,10 +192,11 @@ export default function PhoneCountrySelect({
     document.addEventListener("keydown", handleEscape);
 
     return () => {
+      cancelAnimationFrame(frame);
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [open, onBlur]);
+  }, [open, onBlur, value]);
 
   function handleTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key === "Enter" || event.key === " ") {
@@ -300,6 +314,7 @@ export default function PhoneCountrySelect({
 
           <ul
             id={listId}
+            ref={listRef}
             role="listbox"
             aria-label="Países"
             className="max-h-64 overflow-y-auto py-1"
@@ -319,6 +334,7 @@ export default function PhoneCountrySelect({
                     <button
                       type="button"
                       role="option"
+                      data-country={country}
                       aria-selected={isSelected}
                       onMouseEnter={() => setHighlightIndex(index)}
                       onClick={() => selectCountry(country)}

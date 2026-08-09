@@ -187,6 +187,21 @@ body {
   color: var(--steel-dark);
 }
 
+.industrial-input.has-left-icon {
+  padding-left: 2.75rem;
+}
+
+.industrial-input.has-right-icon {
+  padding-right: 2.75rem;
+}
+
+/* El texto desbordado se recorta limpiamente para inputs con iconos */
+.industrial-input.with-icons {
+  padding-left: 2.75rem;
+  padding-right: 2.75rem;
+  text-overflow: ellipsis;
+}
+
 .hero-carousel:focus-visible {
   outline: 2px solid var(--orange);
   outline-offset: 2px;

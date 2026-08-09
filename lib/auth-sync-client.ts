@@ -134,10 +134,13 @@ export async function syncAuthSessionClient(
   await upsertClienteClient(user);
   const role = await getClienteRole(user.uid);
 
+  const isStaff = isStaffRole(role) && user.emailVerified;
+  const isAdmin = isSuperAdminRole(role) && user.emailVerified;
+
   return {
     role,
-    isStaff: isStaffRole(role),
-    isAdmin: isSuperAdminRole(role),
+    isStaff,
+    isAdmin,
   };
 }
 

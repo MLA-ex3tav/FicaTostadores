@@ -10,6 +10,7 @@ import { QuoteSelectionProvider } from "@/lib/quote-selection";
 import PageLoadingBar from "@/components/PageLoadingBar";
 import TermsConsentBanner from "@/components/TermsConsentBanner";
 import WhatsAppFloatButton from "@/components/WhatsAppFloatButton";
+import Script from "next/script";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +56,12 @@ export default function RootLayout({
       className={cn("dark h-full", inter.variable, oswald.variable)}
     >
       <body className="flex min-h-full flex-col antialiased">
+        <Script
+          defer
+          src="https://cloud.umami.is/script.js"
+          data-website-id="528c6666-8872-4f91-9bdb-04e8cd7bfc24"
+          strategy="afterInteractive"
+        />
         <AppProviders>
           <QuoteSelectionProvider>
             <PageLoadingBar />

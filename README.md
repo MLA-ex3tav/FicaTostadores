@@ -43,13 +43,15 @@ npm run dev
 
 ## Autenticación
 
-El sitio usa **Firebase Auth (Google)** únicamente. No hay NextAuth ni `auth.ts`.
+El sitio usa **Firebase Auth (Google + Correo/Contraseña)**. No hay NextAuth ni `auth.ts`.
+Las cuentas de correo y contraseña se crean desde `/iniciar-sesion` (pestaña "Correo").
+Las cuentas con rol `editor` o `admin` deben **verificar su correo** antes de acceder al panel; las cuentas de clientes no requieren verificación.
 
 ## Firebase
 
 ### 1. Authentication
 
-- Activar **Google** en Firebase Console → Authentication → Sign-in method.
+- Activar **Google** y **Correo/Contraseña** en Firebase Console → Authentication → Sign-in method.
 - En **Configuración → Dominios autorizados**, agregar:
   - `localhost`
   - Su IP local si entra por red (ej. `192.168.3.107`)
@@ -61,7 +63,7 @@ Firebase Console → Firestore → **Reglas** → pegar [`firestore.rules`](fire
 
 ### 3. Colección `clientes`
 
-Al iniciar sesión con Google se crea o actualiza un documento en `clientes/{uid}`.
+Al iniciar sesión (Google o correo/contraseña) se crea o actualiza un documento en `clientes/{uid}`.
 
 | Campo | Origen |
 |-------|--------|
@@ -81,6 +83,14 @@ Solo las variables `NEXT_PUBLIC_FIREBASE_*` en `.env.local` (config web de Fireb
 
 No se requiere service account ni claves privadas para el login. Para **solicitudes de cotización** (formulario → Firestore) sí configure `FIREBASE_SERVICE_ACCOUNT_JSON` en el servidor.
 
+### 5. Seguridad del login con correo
+
+- **Anti-enumeración:** los mensajes de error no revelan si un correo está registrado.
+- **Anti fuerza bruta:** Firebase Auth limita intentos fallidos por cuenta/IP (`auth/too-many-requests`).
+- **Verificación de correo obligatoria para staff:** `editor`/`admin` deben confirmar su correo; si no, no obtienen sesión de panel (server-side en `lib/admin-session.ts`).
+- Recomendado: activar **Email enumeration protection** en Authentication → Settings → User actions, y **App Check** (reCAPTCHA) en App Check.
+- Opcionalmente, en **Template → Password reset**, personalizar el asunto y remitente del correo de recuperación.
+
 ## Autenticación y roles (Firebase)
 
 El acceso se controla con **Google + Firestore** (`clientes/{uid}`), no con la protección de despliegue de Vercel.
@@ -96,7 +106,7 @@ Al primer login se crea el documento en `clientes` con `role: "cliente"`. Un adm
 | Ruta | Acceso hoy |
 |------|------------|
 | `/`, `/productos`, `/contacto` | Sin login (cualquier visitante) |
-| `/iniciar-sesion` | Login Google → rol en Firestore |
+| `/iniciar-sesion` | Login Google o Correo → rol en Firestore |
 | `/admin/*` | Solo `editor` o `admin` |
 | `/api/admin/*` | Solo staff (token Firebase) |
 

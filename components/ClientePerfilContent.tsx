@@ -333,9 +333,11 @@ export default function ClientePerfilContent() {
                 <h2 className="truncate font-display text-2xl font-bold tracking-wide text-white md:text-3xl">
                   {displayName}
                 </h2>
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
-                  <ShieldCheck className="h-3.5 w-3.5" /> Verificado
-                </span>
+                {isStaff ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
+                    <ShieldCheck className="h-3.5 w-3.5" /> Verificado
+                  </span>
+                ) : null}
                 {isStaff ? (
                   <span className="inline-flex items-center rounded-md border border-orange/40 bg-orange/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-orange">
                     Staff

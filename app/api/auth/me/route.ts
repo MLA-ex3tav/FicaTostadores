@@ -39,6 +39,7 @@ export async function GET(request: Request) {
       email: user.email,
       displayName: user.displayName,
       photoURL: user.photoURL,
+      emailVerified: user.emailVerified,
     },
     role,
     isStaff,

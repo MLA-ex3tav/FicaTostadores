@@ -9,6 +9,7 @@ import flags from "react-phone-number-input/flags";
 import es from "react-phone-number-input/locale/es";
 import CustomSelect from "@/components/CustomSelect";
 import PhoneCountrySelect from "@/components/PhoneCountrySelect";
+import { AMERICA_COUNTRIES } from "@/lib/phone-countries";
 import QuoteSentAnimation from "@/components/QuoteSentAnimation";
 import { getCatalogLabel } from "@/lib/catalog-config";
 import { getClienteShippingProfile } from "@/lib/auth-sync-client";
@@ -64,7 +65,7 @@ export default function TechnicalServiceForm({
 }: TechnicalServiceFormProps) {
   const searchParams = useSearchParams();
   const productId = searchParams.get("producto");
-  const { user, loading: authLoading } = useFirebaseAuth();
+  const { user, loading: authLoading, adminFetch } = useFirebaseAuth();
   const profileLoadedRef = useRef(false);
 
   const [name, setName] = useState("");
@@ -75,13 +76,16 @@ export default function TechnicalServiceForm({
   const [issueCategory, setIssueCategory] =
     useState<TechnicalIssueCategoryId>("falla_operativa");
   const [issueDescription, setIssueDescription] = useState("");
-  const [equipmentLocation, setEquipmentLocation] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [whatsAppUrl, setWhatsAppUrl] = useState<string | null>(null);
+  const [quotedProducts, setQuotedProducts] = useState<
+    { productId: string; name: string; count: number }[]
+  >([]);
+  const [quotedLoaded, setQuotedLoaded] = useState(false);
 
   const productSelectOptions = useMemo(
     () => buildProductSelectOptions(products),
@@ -128,20 +132,99 @@ export default function TechnicalServiceForm({
 
       if (profile?.email) {
         setEmail(profile.email);
+      } else if (user.email) {
+        setEmail(user.email);
       }
     });
   }, [authLoading, user]);
+
+  // Si el usuario tiene cuenta, sugerimos los equipos que ya cotizó.
+  useEffect(() => {
+    if (authLoading || !user || quotedLoaded) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await adminFetch("/api/cotizaciones/mis-solicitudes");
+        const data = (await response.json()) as {
+          solicitudes?: {
+            products?: {
+              productId: string | null;
+              name: string;
+            }[];
+          }[];
+          error?: string;
+        };
+
+        if (!response.ok || !data.solicitudes) {
+          return;
+        }
+
+        const counts = new Map<string, { name: string; count: number }>();
+
+        for (const solicitud of data.solicitudes) {
+          for (const product of solicitud.products ?? []) {
+            if (!product?.productId) continue;
+            const entry = counts.get(product.productId);
+            if (entry) {
+              entry.count += 1;
+            } else {
+              counts.set(product.productId, {
+                name: product.name,
+                count: 1,
+              });
+            }
+          }
+        }
+
+        if (cancelled) return;
+
+        const listed = Array.from(counts.entries()).map(
+          ([productId, { name, count }]) => ({
+            productId,
+            name,
+            count,
+          }),
+        );
+
+        setQuotedProducts(listed);
+
+        // Preselecciona el primer equipo cotizado que exista en el catálogo,
+        // a menos que ya venga uno por query param.
+        if (listed.length > 0 && !productId) {
+          const first = listed.find((item) => productsById.has(item.productId));
+          if (first) {
+            setSelectedEquipmentId(first.productId);
+          }
+        }
+      } catch {
+        // Sin conexión o sin permisos: simplemente no hay sugerencia.
+      } finally {
+        if (!cancelled) {
+          setQuotedLoaded(true);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user, adminFetch, productId, productsById, quotedLoaded]);
 
   const googleEmail = user?.email?.trim() ?? "";
   const usesGoogleEmail = Boolean(googleEmail);
   const isPhoneValid = phone ? isValidPhoneNumber(phone) : false;
 
   function resolveSubmitEmail(): string {
-    if (usesGoogleEmail) {
-      return sanitizeText(googleEmail, 200) ?? "";
+    const typedEmail = sanitizeText(email, 200) ?? "";
+    if (typedEmail) {
+      return typedEmail;
     }
 
-    return sanitizeText(email, 200) ?? "";
+    return sanitizeText(googleEmail, 200) ?? "";
   }
 
   function resetForm() {
@@ -149,7 +232,6 @@ export default function TechnicalServiceForm({
     setCustomEquipmentModel("");
     setIssueCategory("falla_operativa");
     setIssueDescription("");
-    setEquipmentLocation("");
     setPhoneError("");
     setSubmitError("");
   }
@@ -196,7 +278,6 @@ export default function TechnicalServiceForm({
     const resolvedEquipment = resolveEquipmentModel();
     const safeIssueDescription =
       sanitizeText(issueDescription, 2000, { required: true }) ?? "";
-    const safeEquipmentLocation = sanitizeText(equipmentLocation, 300) ?? "";
     const safeEmail = resolveSubmitEmail();
 
     if (!safeName) {
@@ -239,7 +320,6 @@ export default function TechnicalServiceForm({
           productId: linkedProductId ?? undefined,
           issueCategory,
           issueDescription: safeIssueDescription,
-          equipmentLocation: safeEquipmentLocation || undefined,
           clientUserId: user?.uid,
         }),
       });
@@ -268,7 +348,6 @@ export default function TechnicalServiceForm({
           equipmentModel: safeEquipmentModel,
           issueCategoryLabel,
           issueDescription: safeIssueDescription,
-          equipmentLocation: safeEquipmentLocation || undefined,
         },
         {
           requestId: submittedRequestId ?? undefined,
@@ -311,11 +390,6 @@ export default function TechnicalServiceForm({
 
   return (
     <section className="min-w-0 w-full rounded-lg border border-white/[0.06] bg-panel/40 px-4 py-6 sm:px-5 sm:py-7">
-      <p className="mb-6 text-sm leading-relaxed text-steel-mid">
-        Cuéntenos qué equipo tiene y qué falla o servicio necesita. El equipo
-        técnico recibirá su solicitud al instante.
-      </p>
-
       <form
         onSubmit={handleSubmit}
         className="min-w-0 w-full space-y-7 md:space-y-6"
@@ -325,6 +399,51 @@ export default function TechnicalServiceForm({
           <legend className="mb-1 font-display text-lg tracking-wide text-steel-light md:text-base">
             Equipo y problema
           </legend>
+
+          {quotedProducts.length > 0 ? (
+            <div className="rounded-xl border border-orange/30 bg-orange/10 p-4">
+              <p className="text-sm font-semibold text-orange">
+                Detectamos tu equipo
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-steel-mid">
+                Vimos que cotizaste{" "}
+                {quotedProducts.length === 1
+                  ? `${quotedProducts[0].name}`
+                  : "alguno de estos equipos"}
+                . ¿Es el que está fallando? Lo seleccionamos por ti.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {quotedProducts.map((quoted) => {
+                  const exists = productsById.has(quoted.productId);
+                  const isActive = selectedEquipmentId === quoted.productId;
+                  return (
+                    <button
+                      key={quoted.productId}
+                      type="button"
+                      onClick={() => {
+                        if (exists) {
+                          setSelectedEquipmentId(quoted.productId);
+                        }
+                      }}
+                      disabled={!exists}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        isActive
+                          ? "border-orange bg-orange text-white"
+                          : "border-steel-dark/30 bg-background/60 text-steel-light hover:border-orange/50"
+                      } ${exists ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                    >
+                      {quoted.name}
+                      {quoted.count > 1 ? (
+                        <span className="rounded-full bg-white/10 px-1.5 text-[10px]">
+                          ×{quoted.count}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
 
           <div>
             <label htmlFor="equipmentModel" className={fieldLabelClass}>
@@ -389,94 +508,79 @@ export default function TechnicalServiceForm({
               className="industrial-input min-h-[8rem] resize-y max-md:text-base"
             />
           </div>
-
-          <div>
-            <label htmlFor="equipmentLocation" className={fieldLabelClass}>
-              Ubicación del equipo{" "}
-              <span className="text-steel-dark">(opcional)</span>
-            </label>
-            <input
-              id="equipmentLocation"
-              type="text"
-              maxLength={300}
-              value={equipmentLocation}
-              onChange={(event) => setEquipmentLocation(event.target.value)}
-              placeholder="Ciudad, comuna o dirección de la planta"
-              className="industrial-input max-md:min-h-12 max-md:text-base"
-            />
-          </div>
         </fieldset>
 
         <fieldset className="min-w-0 w-full space-y-7 border-t border-white/[0.06] pt-7 md:space-y-6 md:pt-6">
-          <legend className="sr-only">Datos de contacto</legend>
+          <legend className="mb-1 font-display text-lg tracking-wide text-steel-light md:text-base">
+            Datos de contacto
+          </legend>
 
-          <div>
-            <label htmlFor="technical-name" className={fieldLabelClass}>
-              Nombre
-            </label>
-            <input
-              id="technical-name"
-              type="text"
-              required
-              maxLength={120}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Su nombre completo"
-              className="industrial-input max-md:min-h-12 max-md:text-base"
-            />
-          </div>
+          <div className="grid min-w-0 w-full grid-cols-1 gap-x-5 gap-y-6 md:grid-cols-2">
+            <div className="min-w-0">
+              <label htmlFor="technical-name" className={fieldLabelClass}>
+                Nombre
+              </label>
+              <input
+                id="technical-name"
+                type="text"
+                required
+                maxLength={120}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Su nombre completo"
+                className="industrial-input max-md:min-h-12 max-md:text-base"
+              />
+            </div>
 
-          <div>
-            {usesGoogleEmail ? (
-              <p className="rounded-lg border border-steel-dark/30 bg-background/60 px-4 py-3 text-sm leading-relaxed text-steel-mid">
-                Correo de contacto:{" "}
-                <strong className="text-steel-light">{googleEmail}</strong>
-              </p>
-            ) : (
-              <>
-                <label htmlFor="technical-email" className={fieldLabelClass}>
-                  Correo <span className="text-steel-dark">(opcional)</span>
-                </label>
-                <input
-                  id="technical-email"
-                  type="email"
-                  maxLength={200}
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="correo@ejemplo.com"
-                  className="industrial-input max-md:min-h-12 max-md:text-base"
-                />
-              </>
-            )}
-          </div>
+            <div className="min-w-0">
+              <label htmlFor="technical-email" className={fieldLabelClass}>
+                Correo <span className="text-steel-dark">(opcional)</span>
+              </label>
+              <input
+                id="technical-email"
+                type="email"
+                maxLength={200}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="correo@ejemplo.com"
+                className="industrial-input max-md:min-h-12 max-md:text-base"
+              />
+              {usesGoogleEmail ? (
+                <p className="mt-1.5 text-xs text-steel-dark">
+                  Autocompletado desde tu cuenta. Puedes editarlo si lo necesitas.
+                </p>
+              ) : null}
+            </div>
 
-          <div className="min-w-0">
-            <label htmlFor="technical-phone" className={fieldLabelClass}>
-              WhatsApp / teléfono
-            </label>
-            <div className="min-w-0 w-full">
+            <div className="min-w-0 md:col-span-2">
+              <label htmlFor="technical-phone" className={fieldLabelClass}>
+                WhatsApp / teléfono
+              </label>
+              <div className="min-w-0 w-full">
               <PhoneInput
                 id="technical-phone"
                 defaultCountry="CL"
+                countries={AMERICA_COUNTRIES}
                 labels={es}
                 flags={flags}
                 countrySelectComponent={PhoneCountrySelect}
-                placeholder="912345678"
-                value={phone}
-                onChange={setPhone}
-                className="phone-input-wrapper"
-              />
+                  placeholder="912345678"
+                  value={phone}
+                  onChange={setPhone}
+                  className="phone-input-wrapper"
+                />
+              </div>
+              {phoneError ? (
+                <p className="mt-2 text-sm text-orange md:mt-1 md:text-xs">
+                  {phoneError}
+                </p>
+              ) : null}
+              {phone && !isPhoneValid && !phoneError ? (
+                <p className="mt-2 text-sm text-steel-dark md:mt-1 md:text-xs">
+                  Verifique que el número sea correcto.
+                </p>
+              ) : null}
             </div>
-            {phoneError ? (
-              <p className="mt-2 text-sm text-orange md:mt-1 md:text-xs">
-                {phoneError}
-              </p>
-            ) : null}
-            {phone && !isPhoneValid && !phoneError ? (
-              <p className="mt-2 text-sm text-steel-dark md:mt-1 md:text-xs">
-                Verifique que el número sea correcto.
-              </p>
-            ) : null}
           </div>
         </fieldset>
 

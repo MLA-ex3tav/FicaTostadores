@@ -9,6 +9,7 @@ import "@/components/contact-phone.css";
 import flags from "react-phone-number-input/flags";
 import es from "react-phone-number-input/locale/es";
 import PhoneCountrySelect from "@/components/PhoneCountrySelect";
+import { AMERICA_COUNTRIES } from "@/lib/phone-countries";
 import QuoteSentAnimation from "@/components/QuoteSentAnimation";
 import {
   getClienteShippingProfile,
@@ -138,6 +139,12 @@ export default function ContactForm({
         setPhone(profile.phone);
       }
 
+      if (profile?.email) {
+        setEmail(profile.email);
+      } else if (user.email) {
+        setEmail(user.email);
+      }
+
       if (profile?.addressLine1) {
         setAddressLine1(profile.addressLine1);
       }
@@ -176,11 +183,12 @@ export default function ContactForm({
   const usesGoogleEmail = Boolean(googleEmail);
 
   function resolveSubmitEmail(): string {
-    if (usesGoogleEmail) {
-      return sanitizeText(googleEmail, 200) ?? "";
+    const typedEmail = sanitizeText(email, 200) ?? "";
+    if (typedEmail) {
+      return typedEmail;
     }
 
-    return sanitizeText(email, 200) ?? "";
+    return sanitizeText(googleEmail, 200) ?? "";
   }
 
   function resetForm() {
@@ -401,6 +409,7 @@ export default function ContactForm({
                 <PhoneInput
                   id="phone"
                   defaultCountry="CL"
+                  countries={AMERICA_COUNTRIES}
                   labels={es}
                   flags={flags}
                   countrySelectComponent={PhoneCountrySelect}
@@ -417,27 +426,24 @@ export default function ContactForm({
           </div>
 
           <div>
+            <label htmlFor="email" className={fieldLabelClass}>
+              Correo Electrónico{" "}
+              <span className="text-steel-dark">(opcional)</span>
+            </label>
+            <input
+              id="email"
+              type="email"
+              maxLength={200}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="correo@ejemplo.com"
+              className="industrial-input max-md:min-h-12 max-md:text-base"
+            />
             {usesGoogleEmail ? (
-              <p className="rounded-xl border border-steel-dark/30 bg-background/60 px-4 py-3 text-sm leading-relaxed text-steel-mid">
-                Correo de contacto vinculante:{" "}
-                <strong className="text-steel-light">{googleEmail}</strong>
+              <p className="mt-1.5 text-xs text-steel-dark">
+                Autocompletado desde tu cuenta. Puedes editarlo si lo necesitas.
               </p>
-            ) : (
-              <div>
-                <label htmlFor="email" className={fieldLabelClass}>
-                  Correo Electrónico <span className="text-steel-dark">(opcional)</span>
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  maxLength={200}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="correo@ejemplo.com"
-                  className="industrial-input max-md:min-h-12 max-md:text-base"
-                />
-              </div>
-            )}
+            ) : null}
           </div>
         </fieldset>
 

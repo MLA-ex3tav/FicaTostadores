@@ -14,9 +14,13 @@ import {
   AlertCircle,
   AlignLeft,
   Check,
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   FileText,
   Image as ImageIcon,
+  Layers,
+  List,
   ListChecks,
   Lock,
   Save,
@@ -76,6 +80,7 @@ function createEmptyProduct(): Product {
     isPromo: false,
     promoTag: "",
     promoDescription: "",
+    isFeatured: false,
   };
 }
 
@@ -156,6 +161,47 @@ function SectionCard({
   );
 }
 
+function SectionFooterNav({
+  currentId,
+  onSelectSection,
+}: {
+  currentId: SectionId;
+  onSelectSection: (id: SectionId) => void;
+}) {
+  const currentIndex = SECTIONS.findIndex((s) => s.id === currentId);
+  const prevSection = currentIndex > 0 ? SECTIONS[currentIndex - 1] : null;
+  const nextSection =
+    currentIndex < SECTIONS.length - 1 ? SECTIONS[currentIndex + 1] : null;
+
+  return (
+    <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-5">
+      {prevSection ? (
+        <button
+          type="button"
+          onClick={() => onSelectSection(prevSection.id)}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-panel/40 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-steel-mid transition-all hover:border-orange/40 hover:text-orange"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Anterior: {prevSection.label}
+        </button>
+      ) : (
+        <div />
+      )}
+
+      {nextSection ? (
+        <button
+          type="button"
+          onClick={() => onSelectSection(nextSection.id)}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-orange/40 bg-orange/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-orange transition-all hover:bg-orange hover:text-white shadow-md shadow-orange/10"
+        >
+          Siguiente: {nextSection.label}
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export default function ProductForm({
   initialProduct,
   mode,
@@ -181,6 +227,15 @@ export default function ProductForm({
   );
   const [idTouched, setIdTouched] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionId>("basico");
+  const [viewMode, setViewMode] = useState<"tabs" | "scroll">("tabs");
+
+  function handleTabSelect(id: SectionId) {
+    setActiveSection(id);
+    const nav = document.getElementById("form-section-nav");
+    if (nav) {
+      nav.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    }
+  }
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
@@ -482,660 +537,774 @@ export default function ProductForm({
       ) : null}
 
       <nav
+        id="form-section-nav"
         aria-label="Secciones del formulario"
-        className="sticky top-0 z-10 -mx-4 border-b border-white/[0.06] bg-background/90 px-4 py-3 backdrop-blur md:-mx-6 md:px-6"
+        className="sticky top-0 z-10 -mx-4 border-b border-white/[0.06] bg-background/95 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6"
       >
-        <div className="flex gap-1.5 overflow-x-auto">
-          {SECTIONS.map((section) => {
-            const Icon = section.icon;
-            const isActive = activeSection === section.id;
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex gap-1.5 overflow-x-auto py-0.5">
+            {SECTIONS.map((section) => {
+              const Icon = section.icon;
+              const isActive = activeSection === section.id;
 
-            return (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => scrollToSection(section.id)}
-                aria-current={isActive ? "true" : undefined}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium uppercase tracking-wider transition-colors ${
-                  isActive
-                    ? "bg-orange/15 text-orange ring-1 ring-inset ring-orange/30"
-                    : "text-steel-mid hover:bg-panel/60 hover:text-orange"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" aria-hidden />
-                {section.label}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => {
+                    if (viewMode === "scroll") {
+                      scrollToSection(section.id);
+                    } else {
+                      handleTabSelect(section.id);
+                    }
+                  }}
+                  aria-current={isActive ? "true" : undefined}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-all ${
+                    isActive
+                      ? "bg-orange text-white shadow-md shadow-orange/20"
+                      : "text-steel-mid border border-white/[0.06] bg-panel/40 hover:bg-panel hover:text-orange hover:border-orange/30"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" aria-hidden />
+                  {section.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setViewMode(viewMode === "tabs" ? "scroll" : "tabs")}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-white/[0.1] bg-surface/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-steel-mid transition-all hover:border-orange hover:text-orange"
+            title={viewMode === "tabs" ? "Cambiar a vista continua" : "Cambiar a vista por pestañas"}
+          >
+            {viewMode === "tabs" ? (
+              <>
+                <List className="h-3.5 w-3.5" />
+                Ver Todo
+              </>
+            ) : (
+              <>
+                <Layers className="h-3.5 w-3.5 text-orange" />
+                Por Pestañas
+              </>
+            )}
+          </button>
         </div>
       </nav>
 
       <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="min-w-0 space-y-8">
-          <SectionCard id="basico" icon={FileText} title="Básico" helper="Nombre, identificación y agrupación del equipo">
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <label htmlFor="name" className={labelClass}>
-                  Nombre
-                </label>
-                <input
-                  id="name"
-                  required
-                  value={product.name}
-                  onChange={(event) => handleNameChange(event.target.value)}
-                  placeholder="Ej. Tostador de cacao TLC-3"
-                  className={inputClass}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="id" className={labelClass}>
-                  Identificador (URL)
-                </label>
-                <input
-                  id="id"
-                  value={product.id}
-                  onChange={(event) => {
-                    setIdTouched(true);
-                    updateField("id", event.target.value);
-                  }}
-                  placeholder={suggestedId || "tlc-3kg"}
-                  className={inputClass}
-                />
-                <p className="mt-1.5 text-xs text-steel-dark">
-                  Si lo dejas vacío se genera desde el nombre. URL final:{" "}
-                  <span className="text-orange">/productos/{suggestedId}</span>
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="catalog" className={labelClass}>
-                  Catálogo
-                </label>
-                <CustomSelect
-                  id="catalog"
-                  value={product.catalog}
-                  onChange={handleCatalogChange}
-                  disabled={!configLoaded}
-                  options={catalogOptions}
-                  aria-label="Catálogo"
-                  className="mt-1.5"
-                />
-                <p className="mt-1.5 text-xs text-steel-dark">
-                  <Link
-                    href="/admin/catalogos"
-                    className="text-orange hover:text-orange-hover"
-                  >
-                    Gestionar catálogos
-                  </Link>
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="category" className={labelClass}>
-                  Categoría
-                </label>
-                <CustomSelect
-                  id="category"
-                  value={product.category}
-                  onChange={(value) => updateField("category", value)}
-                  disabled={!configLoaded || categories.length === 0}
-                  options={categoryOptions}
-                  aria-label="Categoría"
-                  className="mt-1.5"
-                />
-                <p className="mt-1.5 text-xs text-steel-dark">
-                  {categories.length === 0 ? (
-                    "Este catálogo no tiene categorías todavía. "
-                  ) : null}
-                  <Link
-                    href="/admin/categorias"
-                    className="text-orange hover:text-orange-hover"
-                  >
-                    Gestionar categorías
-                  </Link>
-                </p>
-              </div>
-
-              <div className="md:col-span-2">
-                <label htmlFor="capacity" className={labelClass}>
-                  Capacidad
-                </label>
-                <div className="mt-1.5 flex flex-wrap gap-2">
+          {(viewMode === "scroll" || activeSection === "basico") && (
+            <SectionCard id="basico" icon={FileText} title="Básico" helper="Nombre, identificación y agrupación del equipo">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <label htmlFor="name" className={labelClass}>
+                    Nombre
+                  </label>
                   <input
-                    id="capacity"
+                    id="name"
                     required
-                    value={capacityValue}
-                    onChange={(event) => setCapacityValue(event.target.value)}
-                    placeholder="50 kg"
-                    className="industrial-input min-w-[10rem] flex-1 text-sm"
-                  />
-                  <CustomSelect
-                    value={capacityUnit}
-                    onChange={(value) => setCapacityUnit(value as CapacityUnit)}
-                    options={capacityUnitOptions}
-                    aria-label="Unidad de capacidad"
-                    className="w-auto shrink-0"
+                    value={product.name}
+                    onChange={(event) => handleNameChange(event.target.value)}
+                    placeholder="Ej. Tostador de cacao TLC-3"
+                    className={inputClass}
                   />
                 </div>
-                {capacityPreview && capacityUnit !== "custom" && (
-                  <p className="mt-2 text-xs text-steel-mid">
-                    Se guardará como:{" "}
-                    <span className="text-orange">{capacityPreview}</span>
+
+                <div>
+                  <label htmlFor="id" className={labelClass}>
+                    Identificador (URL)
+                  </label>
+                  <input
+                    id="id"
+                    value={product.id}
+                    onChange={(event) => {
+                      setIdTouched(true);
+                      updateField("id", event.target.value);
+                    }}
+                    placeholder={suggestedId || "tlc-3kg"}
+                    className={inputClass}
+                  />
+                  <p className="mt-1.5 text-xs text-steel-dark">
+                    Si lo dejas vacío se genera desde el nombre. URL final:{" "}
+                    <span className="text-orange">/productos/{suggestedId}</span>
                   </p>
-                )}
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            id="opciones"
-            icon={Sliders}
-            title="Disponibilidad, Colores y Promociones"
-            helper="Modo agotado, deshabilitar o bloquear colores y etiquetas de oferta"
-          >
-            <div className="space-y-6">
-              {/* 1. MODO AGOTADO */}
-              <div
-                className={`rounded-xl border p-4 transition-colors ${
-                  product.isOutOfStock
-                    ? "border-red-500/40 bg-red-950/20"
-                    : "border-white/[0.08] bg-background/40"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
-                        product.isOutOfStock
-                          ? "bg-red-500/20 text-red-400"
-                          : "bg-red-500/10 text-red-400/70"
-                      }`}
-                    >
-                      <AlertCircle className="h-5 w-5" aria-hidden />
-                    </span>
-                    <div>
-                      <p className="font-display text-sm font-semibold uppercase tracking-wide text-steel-light">
-                        Modo Agotado
-                      </p>
-                      <p className="mt-0.5 text-xs text-steel-dark">
-                        {product.isOutOfStock
-                          ? "El equipo figura con insignia de AGOTADO y no se puede cotizar."
-                          : "Marca el equipo como sin stock. Aparecerá con insignia de AGOTADO."}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={Boolean(product.isOutOfStock)}
-                    id="isOutOfStock"
-                    onClick={() => updateField("isOutOfStock", !product.isOutOfStock)}
-                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
-                      product.isOutOfStock ? "bg-red-500" : "bg-steel-dark/40"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                        product.isOutOfStock ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-
-              {/* 2. BLOQUEO DE COLORES */}
-              <div
-                className={`rounded-xl border p-4 space-y-4 transition-colors ${
-                  product.disableColors
-                    ? "border-orange/40 bg-orange/5"
-                    : "border-white/[0.08] bg-background/40"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
-                        product.disableColors
-                          ? "bg-orange/20 text-orange"
-                          : "bg-orange/10 text-orange/70"
-                      }`}
-                    >
-                      <Lock className="h-5 w-5" aria-hidden />
-                    </span>
-                    <div>
-                      <p className="font-display text-sm font-semibold uppercase tracking-wide text-steel-light">
-                        Deshabilitar selección de colores
-                      </p>
-                      <p className="mt-0.5 text-xs text-steel-dark">
-                        {product.disableColors
-                          ? "Los clientes verán el equipo sin selector de color."
-                          : "Bloquea el selector de color en la ficha del producto."}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={Boolean(product.disableColors)}
-                    id="disableColors"
-                    onClick={() => updateField("disableColors", !product.disableColors)}
-                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
-                      product.disableColors ? "bg-orange" : "bg-steel-dark/40"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                        product.disableColors ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
                 </div>
 
-                {!product.disableColors ? (
-                  <div className="border-t border-white/[0.06] pt-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-steel-mid mb-1">
-                      Bloquear colores específicos para este equipo
-                    </p>
-                    <p className="text-xs text-steel-dark mb-3">
-                      Haz clic en los colores que deseas <strong className="text-red-400">bloquear / deshabilitar</strong> para este modelo:
-                    </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {PRODUCT_COLORS.map((color) => {
-                        const disabledList = product.disabledColors ?? [];
-                        const isBlocked = disabledList.includes(color.id);
-
-                        return (
-                          <button
-                            key={color.id}
-                            type="button"
-                            onClick={() => {
-                              const next = isBlocked
-                                ? disabledList.filter((id) => id !== color.id)
-                                : [...disabledList, color.id];
-                              updateField("disabledColors", next);
-                            }}
-                            className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-all ${
-                              isBlocked
-                                ? "border-red-500/50 bg-red-950/30 text-red-300"
-                                : "border-white/[0.08] bg-panel/60 text-steel-light hover:border-white/20"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span
-                                className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/40"
-                                style={{ backgroundColor: color.hex }}
-                              />
-                              <span className="truncate">{color.name}</span>
-                            </div>
-                            {isBlocked ? (
-                              <span className="shrink-0 text-[10px] font-bold text-red-400 uppercase tracking-widest">
-                                Bloqueado
-                              </span>
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              {/* 3. PROMOCIONES */}
-              <div
-                className={`rounded-xl border p-4 space-y-4 transition-colors ${
-                  product.isPromo
-                    ? "border-amber-400/40 bg-amber-400/5"
-                    : "border-white/[0.08] bg-background/40"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
-                        product.isPromo
-                          ? "bg-amber-400/20 text-amber-400"
-                          : "bg-amber-400/10 text-amber-400/70"
-                      }`}
-                    >
-                      <Sparkles className="h-5 w-5" aria-hidden />
-                    </span>
-                    <div>
-                      <p className="font-display text-sm font-semibold uppercase tracking-wide text-steel-light">
-                        Producto en Promoción / Oferta
-                      </p>
-                      <p className="mt-0.5 text-xs text-steel-dark">
-                        {product.isPromo
-                          ? "El equipo se destaca con distintivos de promo en el catálogo y ficha."
-                          : "Destaca el equipo con distintivos especiales de promo."}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={Boolean(product.isPromo)}
-                    id="isPromo"
-                    onClick={() => updateField("isPromo", !product.isPromo)}
-                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
-                      product.isPromo ? "bg-amber-500" : "bg-steel-dark/40"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                        product.isPromo ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {product.isPromo ? (
-                  <div className="grid gap-4 sm:grid-cols-2 border-t border-white/[0.06] pt-4">
-                    <div>
-                      <label htmlFor="promoTag" className={labelClass}>
-                        Etiqueta de Promo (Texto corto)
-                      </label>
-                      <input
-                        id="promoTag"
-                        value={product.promoTag ?? ""}
-                        onChange={(e) => updateField("promoTag", e.target.value)}
-                        placeholder="Ej. OFERTA, 15% OFF, NUEVO, MÁS VENDIDO"
-                        className={inputClass}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="promoDescription" className={labelClass}>
-                        Detalle explicativo (Opcional)
-                      </label>
-                      <input
-                        id="promoDescription"
-                        value={product.promoDescription ?? ""}
-                        onChange={(e) => updateField("promoDescription", e.target.value)}
-                        placeholder="Ej. Válido hasta fin de mes con despacho gratis"
-                        className={inputClass}
-                      />
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard id="imagenes" icon={ImageIcon} title="Imágenes">
-            <ProductImagesField
-              images={product.images ?? []}
-              onChange={(images) => updateField("images", images)}
-            />
-          </SectionCard>
-
-          <SectionCard
-            id="descripcion"
-            icon={AlignLeft}
-            title="Descripción"
-            helper="Texto corto (tarjetas) y descripción completa (ficha)"
-          >
-            <div className="space-y-6">
-              <div>
-                <label htmlFor="description" className={labelClass}>
-                  Descripción corta
-                </label>
-                <textarea
-                  id="description"
-                  required
-                  rows={3}
-                  value={product.description}
-                  onChange={(event) =>
-                    updateField("description", event.target.value)
-                  }
-                  placeholder="Una o dos líneas para las tarjetas del catálogo."
-                  className={inputClass}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="longDescription" className={labelClass}>
-                  Descripción larga
-                </label>
-                <textarea
-                  id="longDescription"
-                  required
-                  rows={5}
-                  value={product.longDescription}
-                  onChange={(event) =>
-                    updateField("longDescription", event.target.value)
-                  }
-                  placeholder="Descripción completa de la ficha del producto."
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard id="especificaciones" icon={ListChecks} title="Especificaciones" helper="Características destacadas del equipo">
-            <div className="space-y-8">
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-widest text-steel-mid">
-                    Especificaciones
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => updateField("specs", [...product.specs, ""])}
-                    className="text-xs font-medium text-orange hover:text-orange-hover"
-                  >
-                    + Agregar
-                  </button>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {product.specs.map((spec, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        value={spec}
-                        onChange={(event) => {
-                          const next = [...product.specs];
-                          next[index] = event.target.value;
-                          updateField("specs", next);
-                        }}
-                        placeholder="Ej. 1.800 W de potencia"
-                        className={inputClass}
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateField(
-                            "specs",
-                            product.specs.filter(
-                              (_, itemIndex) => itemIndex !== index,
-                            ),
-                          )
-                        }
-                        className="shrink-0 self-center rounded-lg border border-steel-dark/25 bg-background/40 px-3 py-1.5 text-xs text-steel-dark transition-colors hover:border-orange/50 hover:text-orange"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-widest text-steel-mid">
-                    Características
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateField("features", [...product.features, ""])
-                    }
-                    className="text-xs font-medium text-orange hover:text-orange-hover"
-                  >
-                    + Agregar
-                  </button>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {product.features.map((feature, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        value={feature}
-                        onChange={(event) => {
-                          const next = [...product.features];
-                          next[index] = event.target.value;
-                          updateField("features", next);
-                        }}
-                        placeholder="Ej. Fácil de limpiar"
-                        className={inputClass}
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateField(
-                            "features",
-                            product.features.filter(
-                              (_, itemIndex) => itemIndex !== index,
-                            ),
-                          )
-                        }
-                        className="shrink-0 self-center rounded-lg border border-steel-dark/25 bg-background/40 px-3 py-1.5 text-xs text-steel-dark transition-colors hover:border-orange/50 hover:text-orange"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard id="ficha" icon={ClipboardList} title="Ficha técnica" helper="Datos técnicos en pares etiqueta/valor">
-            <div className="space-y-2">
-              {product.technicalDetails.map((detail, index) => (
-                <div
-                  key={index}
-                  className="grid gap-2 md:grid-cols-[1fr_1fr_auto]"
-                >
-                  <input
-                    value={detail.label}
-                    placeholder="Etiqueta"
-                    onChange={(event) => {
-                      const next = [...product.technicalDetails];
-                      next[index] = { ...next[index], label: event.target.value };
-                      updateField("technicalDetails", next);
-                    }}
-                    className={inputClass}
+                <div>
+                  <label htmlFor="catalog" className={labelClass}>
+                    Catálogo
+                  </label>
+                  <CustomSelect
+                    id="catalog"
+                    value={product.catalog}
+                    onChange={handleCatalogChange}
+                    disabled={!configLoaded}
+                    options={catalogOptions}
+                    aria-label="Catálogo"
+                    className="mt-1.5"
                   />
-                  <input
-                    value={detail.value}
-                    placeholder="Valor"
-                    onChange={(event) => {
-                      const next = [...product.technicalDetails];
-                      next[index] = { ...next[index], value: event.target.value };
-                      updateField("technicalDetails", next);
-                    }}
-                    className={inputClass}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateField(
-                        "technicalDetails",
-                        product.technicalDetails.filter(
-                          (_, itemIndex) => itemIndex !== index,
-                        ),
-                      )
-                    }
-                    className="self-center rounded-lg border border-steel-dark/25 bg-background/40 px-3 py-1.5 text-xs text-steel-dark transition-colors hover:border-orange/50 hover:text-orange"
-                  >
-                    Quitar
-                  </button>
+                  <p className="mt-1.5 text-xs text-steel-dark">
+                    <Link
+                      href="/admin/catalogos"
+                      className="text-orange hover:text-orange-hover"
+                    >
+                      Gestionar catálogos
+                    </Link>
+                  </p>
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={() =>
-                  updateField("technicalDetails", [
-                    ...product.technicalDetails,
-                    { label: "", value: "" },
-                  ])
-                }
-                className="text-xs font-medium text-orange hover:text-orange-hover"
-              >
-                + Agregar campo
-              </button>
-            </div>
-          </SectionCard>
 
-          <SectionCard id="agregados" icon={Wrench} title="Agregados" helper="Opciones o accesorios que acompañan al equipo">
-            <div className="space-y-4">
-              {product.addOns.map((addOn, index) => (
-                <div
-                  key={index}
-                  className="rounded-xl border border-white/[0.06] bg-[var(--input-bg)] p-4"
-                >
-                  <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <label htmlFor="category" className={labelClass}>
+                    Categoría
+                  </label>
+                  <CustomSelect
+                    id="category"
+                    value={product.category}
+                    onChange={(value) => updateField("category", value)}
+                    disabled={!configLoaded || categories.length === 0}
+                    options={categoryOptions}
+                    aria-label="Categoría"
+                    className="mt-1.5"
+                  />
+                  <p className="mt-1.5 text-xs text-steel-dark">
+                    {categories.length === 0 ? (
+                      "Este catálogo no tiene categorías todavía. "
+                    ) : null}
+                    <Link
+                      href="/admin/categorias"
+                      className="text-orange hover:text-orange-hover"
+                    >
+                      Gestionar categorías
+                    </Link>
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label htmlFor="capacity" className={labelClass}>
+                    Capacidad
+                  </label>
+                  <div className="mt-1.5 flex flex-wrap gap-2">
                     <input
-                      value={addOn.name}
-                      placeholder="Nombre"
-                      onChange={(event) => {
-                        const next = [...product.addOns];
-                        next[index] = { ...next[index], name: event.target.value };
-                        updateField("addOns", next);
-                      }}
-                      className={inputClass}
+                      id="capacity"
+                      required
+                      value={capacityValue}
+                      onChange={(event) => setCapacityValue(event.target.value)}
+                      placeholder="50 kg"
+                      className="industrial-input min-w-[10rem] flex-1 text-sm"
                     />
-                    <input
-                      value={addOn.id}
-                      placeholder="ID (opcional)"
-                      onChange={(event) => {
-                        const next = [...product.addOns];
-                        next[index] = { ...next[index], id: event.target.value };
-                        updateField("addOns", next);
-                      }}
-                      className={inputClass}
+                    <CustomSelect
+                      value={capacityUnit}
+                      onChange={(value) => setCapacityUnit(value as CapacityUnit)}
+                      options={capacityUnitOptions}
+                      aria-label="Unidad de capacidad"
+                      className="w-auto shrink-0"
                     />
                   </div>
+                  {capacityPreview && capacityUnit !== "custom" && (
+                    <p className="mt-2 text-xs text-steel-mid">
+                      Se guardará como:{" "}
+                      <span className="text-orange">{capacityPreview}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {viewMode === "tabs" && (
+                <SectionFooterNav currentId="basico" onSelectSection={handleTabSelect} />
+              )}
+            </SectionCard>
+          )}
+
+          {(viewMode === "scroll" || activeSection === "opciones") && (
+            <SectionCard
+              id="opciones"
+              icon={Sliders}
+              title="Disponibilidad, Colores y Promociones"
+              helper="Modo agotado, deshabilitar o bloquear colores y etiquetas de oferta"
+            >
+              <div className="space-y-6">
+                {/* 1. MODO AGOTADO */}
+                <div
+                  className={`rounded-xl border p-4 transition-colors ${
+                    product.isOutOfStock
+                      ? "border-red-500/40 bg-red-950/20"
+                      : "border-white/[0.08] bg-background/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
+                          product.isOutOfStock
+                            ? "bg-red-500/20 text-red-400"
+                            : "bg-red-500/10 text-red-400/70"
+                        }`}
+                      >
+                        <AlertCircle className="h-5 w-5" aria-hidden />
+                      </span>
+                      <div>
+                        <p className="font-display text-sm font-semibold uppercase tracking-wide text-steel-light">
+                          Modo Agotado
+                        </p>
+                        <p className="mt-0.5 text-xs text-steel-dark">
+                          {product.isOutOfStock
+                            ? "El equipo figura con insignia de AGOTADO y no se puede cotizar."
+                            : "Marca el equipo como sin stock. Aparecerá con insignia de AGOTADO."}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={Boolean(product.isOutOfStock)}
+                      id="isOutOfStock"
+                      onClick={() => updateField("isOutOfStock", !product.isOutOfStock)}
+                      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
+                        product.isOutOfStock ? "bg-red-500" : "bg-steel-dark/40"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                          product.isOutOfStock ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. BLOQUEO DE COLORES */}
+                <div
+                  className={`rounded-xl border p-4 space-y-4 transition-colors ${
+                    product.disableColors
+                      ? "border-orange/40 bg-orange/5"
+                      : "border-white/[0.08] bg-background/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
+                          product.disableColors
+                            ? "bg-orange/20 text-orange"
+                            : "bg-orange/10 text-orange/70"
+                        }`}
+                      >
+                        <Lock className="h-5 w-5" aria-hidden />
+                      </span>
+                      <div>
+                        <p className="font-display text-sm font-semibold uppercase tracking-wide text-steel-light">
+                          Deshabilitar selección de colores
+                        </p>
+                        <p className="mt-0.5 text-xs text-steel-dark">
+                          {product.disableColors
+                            ? "Los clientes verán el equipo sin selector de color."
+                            : "Bloquea el selector de color en la ficha del producto."}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={Boolean(product.disableColors)}
+                      id="disableColors"
+                      onClick={() => updateField("disableColors", !product.disableColors)}
+                      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
+                        product.disableColors ? "bg-orange" : "bg-steel-dark/40"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                          product.disableColors ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {!product.disableColors ? (
+                    <div className="border-t border-white/[0.06] pt-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-steel-mid mb-1">
+                        Bloquear colores específicos para este equipo
+                      </p>
+                      <p className="text-xs text-steel-dark mb-3">
+                        Haz clic en los colores que deseas <strong className="text-red-400">bloquear / deshabilitar</strong> para este modelo:
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {PRODUCT_COLORS.map((color) => {
+                          const disabledList = product.disabledColors ?? [];
+                          const isBlocked = disabledList.includes(color.id);
+
+                          return (
+                            <button
+                              key={color.id}
+                              type="button"
+                              onClick={() => {
+                                const next = isBlocked
+                                  ? disabledList.filter((id) => id !== color.id)
+                                  : [...disabledList, color.id];
+                                updateField("disabledColors", next);
+                              }}
+                              className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-all ${
+                                isBlocked
+                                  ? "border-red-500/50 bg-red-950/30 text-red-300"
+                                  : "border-white/[0.08] bg-panel/60 text-steel-light hover:border-white/20"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span
+                                  className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/40"
+                                  style={{ backgroundColor: color.hex }}
+                                />
+                                <span className="truncate">{color.name}</span>
+                              </div>
+                              {isBlocked ? (
+                                <span className="shrink-0 text-[10px] font-bold text-red-400 uppercase tracking-widest">
+                                  Bloqueado
+                                </span>
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* 3. PROMOCIONES */}
+                <div
+                  className={`rounded-xl border p-4 space-y-4 transition-colors ${
+                    product.isPromo
+                      ? "border-amber-400/40 bg-amber-400/5"
+                      : "border-white/[0.08] bg-background/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
+                          product.isPromo
+                            ? "bg-amber-400/20 text-amber-400"
+                            : "bg-amber-400/10 text-amber-400/70"
+                        }`}
+                      >
+                        <Sparkles className="h-5 w-5" aria-hidden />
+                      </span>
+                      <div>
+                        <p className="font-display text-sm font-semibold uppercase tracking-wide text-steel-light">
+                          Producto en Promoción / Oferta
+                        </p>
+                        <p className="mt-0.5 text-xs text-steel-dark">
+                          {product.isPromo
+                            ? "El equipo se destaca con distintivos de promo en el catálogo y ficha."
+                            : "Destaca el equipo con distintivos especiales de promo."}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={Boolean(product.isPromo)}
+                      id="isPromo"
+                      onClick={() => updateField("isPromo", !product.isPromo)}
+                      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
+                        product.isPromo ? "bg-amber-500" : "bg-steel-dark/40"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                          product.isPromo ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {product.isPromo ? (
+                    <div className="grid gap-4 sm:grid-cols-2 border-t border-white/[0.06] pt-4">
+                      <div>
+                        <label htmlFor="promoTag" className={labelClass}>
+                          Etiqueta de Promo (Texto corto)
+                        </label>
+                        <input
+                          id="promoTag"
+                          value={product.promoTag ?? ""}
+                          onChange={(e) => updateField("promoTag", e.target.value)}
+                          placeholder="Ej. OFERTA, 15% OFF, NUEVO, MÁS VENDIDO"
+                          className={inputClass}
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="promoDescription" className={labelClass}>
+                          Detalle explicativo (Opcional)
+                        </label>
+                        <input
+                          id="promoDescription"
+                          value={product.promoDescription ?? ""}
+                          onChange={(e) => updateField("promoDescription", e.target.value)}
+                          placeholder="Ej. Válido hasta fin de mes con despacho gratis"
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* 4. EQUIPO DESTACADO EN INICIO */}
+                <div
+                  className={`rounded-xl border p-4 transition-colors ${
+                    product.isFeatured
+                      ? "border-orange/40 bg-orange/10"
+                      : "border-white/[0.08] bg-background/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${
+                          product.isFeatured
+                            ? "bg-orange/20 text-orange"
+                            : "bg-orange/10 text-orange/70"
+                        }`}
+                      >
+                        <Sparkles className="h-5 w-5" aria-hidden />
+                      </span>
+                      <div>
+                        <p className="font-display text-sm font-semibold uppercase tracking-wide text-steel-light">
+                          Destacar en Inicio
+                        </p>
+                        <p className="mt-0.5 text-xs text-steel-dark">
+                          {product.isFeatured
+                            ? "El equipo aparecerá de forma prioritaria en la sección de Equipos Destacados del Inicio."
+                            : "Marca este equipo para mostrarlo prioritariamente en la página de inicio."}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={Boolean(product.isFeatured)}
+                      id="isFeatured"
+                      onClick={() => updateField("isFeatured", !product.isFeatured)}
+                      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
+                        product.isFeatured ? "bg-orange" : "bg-steel-dark/40"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                          product.isFeatured ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {viewMode === "tabs" && (
+                <SectionFooterNav currentId="opciones" onSelectSection={handleTabSelect} />
+              )}
+            </SectionCard>
+          )}
+
+          {(viewMode === "scroll" || activeSection === "imagenes") && (
+            <SectionCard id="imagenes" icon={ImageIcon} title="Imágenes">
+              <ProductImagesField
+                images={product.images ?? []}
+                onChange={(images) => updateField("images", images)}
+              />
+              {viewMode === "tabs" && (
+                <SectionFooterNav currentId="imagenes" onSelectSection={handleTabSelect} />
+              )}
+            </SectionCard>
+          )}
+
+          {(viewMode === "scroll" || activeSection === "descripcion") && (
+            <SectionCard
+              id="descripcion"
+              icon={AlignLeft}
+              title="Descripción"
+              helper="Texto corto (tarjetas) y descripción completa (ficha)"
+            >
+              <div className="space-y-6">
+                <div>
+                  <label htmlFor="description" className={labelClass}>
+                    Descripción corta
+                  </label>
                   <textarea
-                    value={addOn.description}
-                    placeholder="Descripción"
-                    rows={2}
-                    onChange={(event) => {
-                      const next = [...product.addOns];
-                      next[index] = {
-                        ...next[index],
-                        description: event.target.value,
-                      };
-                      updateField("addOns", next);
-                    }}
-                    className={`${inputClass} mt-3`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateField(
-                        "addOns",
-                        product.addOns.filter(
-                          (_, itemIndex) => itemIndex !== index,
-                        ),
-                      )
+                    id="description"
+                    required
+                    rows={3}
+                    value={product.description}
+                    onChange={(event) =>
+                      updateField("description", event.target.value)
                     }
-                    className="mt-2 self-start rounded-lg border border-steel-dark/25 bg-background/40 px-3 py-1.5 text-xs text-steel-dark transition-colors hover:border-orange/50 hover:text-orange"
-                  >
-                    Quitar agregado
-                  </button>
+                    placeholder="Una o dos líneas para las tarjetas del catálogo."
+                    className={inputClass}
+                  />
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={() =>
-                  updateField("addOns", [...product.addOns, emptyAddOn()])
-                }
-                className="text-xs font-medium text-orange hover:text-orange-hover"
-              >
-                + Agregar accesorio
-              </button>
-            </div>
-          </SectionCard>
+
+                <div>
+                  <label htmlFor="longDescription" className={labelClass}>
+                    Descripción larga
+                  </label>
+                  <textarea
+                    id="longDescription"
+                    required
+                    rows={5}
+                    value={product.longDescription}
+                    onChange={(event) =>
+                      updateField("longDescription", event.target.value)
+                    }
+                    placeholder="Descripción completa de la ficha del producto."
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              {viewMode === "tabs" && (
+                <SectionFooterNav currentId="descripcion" onSelectSection={handleTabSelect} />
+              )}
+            </SectionCard>
+          )}
+
+          {(viewMode === "scroll" || activeSection === "especificaciones") && (
+            <SectionCard id="especificaciones" icon={ListChecks} title="Especificaciones" helper="Características destacadas del equipo">
+              <div className="space-y-8">
+                <div>
+                  <div className="flex items-center justify-between gap-4">
+                    <h3 className="text-xs font-semibold uppercase tracking-widest text-steel-mid">
+                      Especificaciones
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => updateField("specs", [...product.specs, ""])}
+                      className="text-xs font-medium text-orange hover:text-orange-hover"
+                    >
+                      + Agregar
+                    </button>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {product.specs.map((spec, index) => (
+                      <div key={index} className="flex gap-2">
+                        <input
+                          value={spec}
+                          onChange={(event) => {
+                            const next = [...product.specs];
+                            next[index] = event.target.value;
+                            updateField("specs", next);
+                          }}
+                          placeholder="Ej. 1.800 W de potencia"
+                          className={inputClass}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateField(
+                              "specs",
+                              product.specs.filter(
+                                (_, itemIndex) => itemIndex !== index,
+                              ),
+                            )
+                          }
+                          className="shrink-0 self-center rounded-lg border border-steel-dark/25 bg-background/40 px-3 py-1.5 text-xs text-steel-dark transition-colors hover:border-orange/50 hover:text-orange"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between gap-4">
+                    <h3 className="text-xs font-semibold uppercase tracking-widest text-steel-mid">
+                      Características
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateField("features", [...product.features, ""])
+                      }
+                      className="text-xs font-medium text-orange hover:text-orange-hover"
+                    >
+                      + Agregar
+                    </button>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {product.features.map((feature, index) => (
+                      <div key={index} className="flex gap-2">
+                        <input
+                          value={feature}
+                          onChange={(event) => {
+                            const next = [...product.features];
+                            next[index] = event.target.value;
+                            updateField("features", next);
+                          }}
+                          placeholder="Ej. Fácil de limpiar"
+                          className={inputClass}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateField(
+                              "features",
+                              product.features.filter(
+                                (_, itemIndex) => itemIndex !== index,
+                              ),
+                            )
+                          }
+                          className="shrink-0 self-center rounded-lg border border-steel-dark/25 bg-background/40 px-3 py-1.5 text-xs text-steel-dark transition-colors hover:border-orange/50 hover:text-orange"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {viewMode === "tabs" && (
+                <SectionFooterNav currentId="especificaciones" onSelectSection={handleTabSelect} />
+              )}
+            </SectionCard>
+          )}
+
+          {(viewMode === "scroll" || activeSection === "ficha") && (
+            <SectionCard id="ficha" icon={ClipboardList} title="Ficha técnica" helper="Datos técnicos en pares etiqueta/valor">
+              <div className="space-y-2">
+                {product.technicalDetails.map((detail, index) => (
+                  <div
+                    key={index}
+                    className="grid gap-2 md:grid-cols-[1fr_1fr_auto]"
+                  >
+                    <input
+                      value={detail.label}
+                      placeholder="Etiqueta"
+                      onChange={(event) => {
+                        const next = [...product.technicalDetails];
+                        next[index] = { ...next[index], label: event.target.value };
+                        updateField("technicalDetails", next);
+                      }}
+                      className={inputClass}
+                    />
+                    <input
+                      value={detail.value}
+                      placeholder="Valor"
+                      onChange={(event) => {
+                        const next = [...product.technicalDetails];
+                        next[index] = { ...next[index], value: event.target.value };
+                        updateField("technicalDetails", next);
+                      }}
+                      className={inputClass}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateField(
+                          "technicalDetails",
+                          product.technicalDetails.filter(
+                            (_, itemIndex) => itemIndex !== index,
+                          ),
+                        )
+                      }
+                      className="self-center rounded-lg border border-steel-dark/25 bg-background/40 px-3 py-1.5 text-xs text-steel-dark transition-colors hover:border-orange/50 hover:text-orange"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateField("technicalDetails", [
+                      ...product.technicalDetails,
+                      { label: "", value: "" },
+                    ])
+                  }
+                  className="text-xs font-medium text-orange hover:text-orange-hover"
+                >
+                  + Agregar campo
+                </button>
+              </div>
+              {viewMode === "tabs" && (
+                <SectionFooterNav currentId="ficha" onSelectSection={handleTabSelect} />
+              )}
+            </SectionCard>
+          )}
+
+          {(viewMode === "scroll" || activeSection === "agregados") && (
+            <SectionCard id="agregados" icon={Wrench} title="Agregados" helper="Opciones o accesorios que acompañan al equipo">
+              <div className="space-y-4">
+                {product.addOns.map((addOn, index) => (
+                  <div
+                    key={index}
+                    className="rounded-xl border border-white/[0.06] bg-[var(--input-bg)] p-4"
+                  >
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <input
+                        value={addOn.name}
+                        placeholder="Nombre"
+                        onChange={(event) => {
+                          const next = [...product.addOns];
+                          next[index] = { ...next[index], name: event.target.value };
+                          updateField("addOns", next);
+                        }}
+                        className={inputClass}
+                      />
+                      <input
+                        value={addOn.id}
+                        placeholder="ID (opcional)"
+                        onChange={(event) => {
+                          const next = [...product.addOns];
+                          next[index] = { ...next[index], id: event.target.value };
+                          updateField("addOns", next);
+                        }}
+                        className={inputClass}
+                      />
+                    </div>
+                    <textarea
+                      value={addOn.description}
+                      placeholder="Descripción"
+                      rows={2}
+                      onChange={(event) => {
+                        const next = [...product.addOns];
+                        next[index] = {
+                          ...next[index],
+                          description: event.target.value,
+                        };
+                        updateField("addOns", next);
+                      }}
+                      className={`${inputClass} mt-3`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateField(
+                          "addOns",
+                          product.addOns.filter(
+                            (_, itemIndex) => itemIndex !== index,
+                          ),
+                        )
+                      }
+                      className="mt-2 self-start rounded-lg border border-steel-dark/25 bg-background/40 px-3 py-1.5 text-xs text-steel-dark transition-colors hover:border-orange/50 hover:text-orange"
+                    >
+                      Quitar agregado
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateField("addOns", [...product.addOns, emptyAddOn()])
+                  }
+                  className="text-xs font-medium text-orange hover:text-orange-hover"
+                >
+                  + Agregar accesorio
+                </button>
+              </div>
+              {viewMode === "tabs" && (
+                <SectionFooterNav currentId="agregados" onSelectSection={handleTabSelect} />
+              )}
+            </SectionCard>
+          )}
         </div>
 
         <aside className="hidden xl:sticky xl:top-20 xl:block">

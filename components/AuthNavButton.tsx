@@ -51,7 +51,7 @@ export default function AuthNavButton({
       <Link
         href={loginHref}
         onClick={onAction}
-        className={`text-base uppercase tracking-wider transition-colors text-steel-mid hover:text-orange ${className}`}
+        className={`inline-flex items-center rounded-lg border border-steel-dark/30 px-3.5 py-2 text-sm font-semibold uppercase tracking-wider transition-colors text-steel-mid hover:border-orange/60 hover:text-orange ${className}`}
       >
         Ingresar
       </Link>
@@ -63,7 +63,7 @@ export default function AuthNavButton({
       <Link
         href={loginHref}
         onClick={onAction}
-        className={`text-base uppercase tracking-wider transition-colors text-steel-mid hover:text-orange ${className}`}
+        className={`inline-flex items-center rounded-lg border border-steel-dark/30 px-3.5 py-2 text-sm font-semibold uppercase tracking-wider transition-colors text-steel-mid hover:border-orange/60 hover:text-orange ${className}`}
       >
         Ingresar
       </Link>

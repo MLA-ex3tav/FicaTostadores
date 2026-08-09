@@ -131,6 +131,39 @@ export async function PATCH(
     updates[field] = Boolean(body[field]);
   }
 
+  // Imágenes (desde el editor de la app de escritorio).
+  if (body["images"] !== undefined) {
+    if (!Array.isArray(body["images"])) {
+      return electronJson(
+        { error: "El campo images debe ser una lista de imágenes." },
+        { status: 400 },
+      );
+    }
+
+    updates["images"] = body["images"]
+      .map((item) => {
+        if (!item || typeof item !== "object") return null;
+        const record = item as Record<string, unknown>;
+        const carousel = (record.carousel as Record<string, unknown> | null)?.src;
+        const product = (record.product as Record<string, unknown> | null)?.src;
+        const carouselSrc =
+          typeof carousel === "string" && carousel.trim()
+            ? carousel.trim()
+            : null;
+        const productSrc =
+          typeof product === "string" && product.trim() ? product.trim() : null;
+
+        if (!carouselSrc && !productSrc) return null;
+
+        return {
+          carousel: { src: carouselSrc ?? productSrc! },
+          product: { src: productSrc ?? carouselSrc! },
+        };
+      })
+      .filter(Boolean)
+      .slice(0, 20);
+  }
+
   if (Object.keys(updates).length === 0) {
     return electronJson(
       {

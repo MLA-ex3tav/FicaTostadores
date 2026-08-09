@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
+  BarChart3,
   Cable,
   ExternalLink,
   LayoutGrid,
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/admin/catalogos", label: "Catálogos", icon: LayoutGrid },
   { href: "/admin/categorias", label: "Categorías", icon: Tag },
   { href: "/admin/conexiones", label: "Conexiones", icon: Cable },
+  { href: "/admin/analiticas", label: "Analíticas", icon: BarChart3 },
 ];
 
 function navLinkClass(isActive: boolean) {

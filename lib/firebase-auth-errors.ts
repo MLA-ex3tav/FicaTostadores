@@ -8,7 +8,50 @@ export function isAuthFlowCancelled(error: unknown): boolean {
   );
 }
 
-export function getFirebaseAuthErrorMessage(error: unknown): string {
+/**
+ * Mensajes genéricos para los flujos de correo y contraseña. No revelan si un
+ * correo está registrado para evitar enumeración de cuentas.
+ */
+function getEmailPasswordErrorMessage(error: unknown): string {
+  if (error instanceof FirebaseError) {
+    switch (error.code) {
+      case "auth/invalid-credential":
+      case "auth/user-not-found":
+      case "auth/wrong-password":
+        return "El correo o la contraseña no son correctos.";
+      case "auth/too-many-requests":
+        return "Demasiados intentos fallidos. Espere unos minutos e intente de nuevo.";
+      case "auth/invalid-password":
+      case "auth/weak-password":
+        return "La contraseña debe tener al menos 6 caracteres.";
+      case "auth/email-already-in-use":
+        return "Ya existe una cuenta con este correo. Intente iniciar sesión o recupere su contraseña.";
+      case "auth/invalid-email":
+        return "Ingrese un correo electrónico válido.";
+      case "auth/missing-password":
+        return "Ingrese su contraseña.";
+      case "auth/operation-not-allowed":
+        return "El inicio de sesión con correo y contraseña no está habilitado. Actívelo en Firebase Console → Authentication → Sign-in method.";
+      case "auth/network-request-failed":
+        return "No se pudo conectar. Revise su conexión e intente de nuevo.";
+      case "auth/insufficient-permission":
+        return "No dispone de permisos para realizar esta acción. Verifique el rol del usuario.";
+      default:
+        return error.message;
+    }
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "No se pudo completar la operación.";
+}
+
+/**
+ * Mensajes específicos para el flujo de Google.
+ */
+export function getGoogleAuthErrorMessage(error: unknown): string {
   if (error instanceof FirebaseError) {
     if (isAuthFlowCancelled(error)) {
       return "";
@@ -35,4 +78,30 @@ export function getFirebaseAuthErrorMessage(error: unknown): string {
   }
 
   return "No se pudo iniciar sesión con Google.";
+}
+
+/**
+ * Mensaje de error según el origen del flujo.
+ */
+export function getFirebaseAuthErrorMessage(
+  error: unknown,
+  source?: "google" | "email",
+): string {
+  if (source === "email") {
+    return getEmailPasswordErrorMessage(error);
+  }
+
+  if (source === "google") {
+    return getGoogleAuthErrorMessage(error);
+  }
+
+  if (error instanceof FirebaseError) {
+    return getGoogleAuthErrorMessage(error);
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "No se pudo iniciar sesión.";
 }

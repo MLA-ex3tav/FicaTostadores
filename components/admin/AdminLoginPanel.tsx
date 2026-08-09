@@ -7,7 +7,7 @@ export default function AdminLoginPanel() {
     <GoogleLoginCard
       badge="Acceso restringido"
       title="Iniciar sesión"
-      subtitle="Ingrese con su cuenta de Google para continuar."
+      subtitle="Ingrese con su correo y contraseña o continúe con Google. Solo personal autorizado."
       adminRedirect
     />
   );

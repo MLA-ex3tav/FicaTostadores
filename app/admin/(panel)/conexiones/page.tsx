@@ -24,7 +24,7 @@ export default async function AdminConexionesPage() {
       </div>
 
       <p className="mt-3 max-w-2xl text-sm text-steel-mid">
-        Comprueba Firebase, Vercel, la app Electron de cotizaciones y las
+        Comprueba Firebase, Vercel, la App administrativa (Tauri) y las
         integraciones del sistema.
       </p>
 

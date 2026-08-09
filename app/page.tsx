@@ -1,6 +1,5 @@
 import HeroSection from "@/components/HeroSection";
 import HomeCtaBanner from "@/components/HomeCtaBanner";
-import HomeFeaturedProducts from "@/components/HomeFeaturedProducts";
 import HomeFeaturesSection from "@/components/HomeFeaturesSection";
 import HomeProcessSection from "@/components/HomeProcessSection";
 import RoastablesSection from "@/components/RoastablesSection";
@@ -24,9 +23,6 @@ export default async function Home() {
 
       {/* Trust & Impact Metrics */}
       <StatsSection />
-
-      {/* Featured Machinery Showcase with Quick Quote */}
-      <HomeFeaturedProducts products={products} />
 
       {/* 3-Step Manufacturing & Delivery Process */}
       <HomeProcessSection />

@@ -23,7 +23,7 @@ export default function AdminProductsTable({
   const { adminFetch } = useFirebaseAuth();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "in-stock" | "out-of-stock" | "promo"
+    "all" | "in-stock" | "out-of-stock" | "promo" | "featured"
   >("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(),
@@ -39,6 +39,8 @@ export default function AdminProductsTable({
       result = result.filter((p) => Boolean(p.isOutOfStock));
     } else if (statusFilter === "promo") {
       result = result.filter((p) => Boolean(p.isPromo));
+    } else if (statusFilter === "featured") {
+      result = result.filter((p) => Boolean(p.isFeatured));
     }
 
     const normalized = query.trim().toLowerCase();
@@ -214,6 +216,17 @@ export default function AdminProductsTable({
             }`}
           >
             Promos ({products.filter((p) => p.isPromo).length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter("featured")}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors ${
+              statusFilter === "featured"
+                ? "bg-orange text-white"
+                : "text-steel-mid hover:text-orange"
+            }`}
+          >
+            Destacados ({products.filter((p) => p.isFeatured).length})
           </button>
         </div>
 

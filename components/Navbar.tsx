@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, ShoppingBag, X } from "lucide-react";
+import { Menu, ShoppingCart, X } from "lucide-react";
 import { useState } from "react";
 import { logoPath } from "@/lib/images";
 import { useQuoteSelection } from "@/lib/quote-selection";
@@ -12,6 +12,7 @@ import AuthNavButton from "@/components/AuthNavButton";
 const navLinks = [
   { href: "/", label: "Inicio" },
   { href: "/productos", label: "Productos" },
+  { href: "/servicio-tecnico", label: "Soporte Técnico" },
 ];
 
 function CotizarButton({
@@ -36,12 +37,11 @@ function CotizarButton({
       type="button"
       onClick={handleClick}
       aria-label={`Ver cotización (${count} equipos)`}
-      className={`relative inline-flex items-center justify-center gap-2 rounded-xl bg-orange px-4 py-2.5 text-sm font-semibold uppercase tracking-wider text-white shadow-md transition-all hover:bg-orange-hover hover:shadow-lg hover:shadow-orange/30 hover:-translate-y-0.5 active:translate-y-0 ${className}`}
+      className={`relative inline-flex items-center justify-center rounded-lg border border-steel-dark/30 p-2 text-steel-mid transition-colors hover:border-orange/60 hover:text-orange active:scale-[0.97] ${className}`}
     >
-      <ShoppingBag className="h-4 w-4" />
-      <span>Cotizar</span>
+      <ShoppingCart className="h-5 w-5" />
       {count > 0 ? (
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-orange shadow-sm animate-pulse">
+        <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange px-1 text-xs font-bold text-white shadow-sm">
           {count}
         </span>
       ) : null}
@@ -54,11 +54,11 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-steel-dark/30 bg-background/95 backdrop-blur-sm">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 md:px-6">
+    <header className="sticky top-0 z-50 border-b border-steel-dark/20 bg-background/85 backdrop-blur-md">
+      <nav className="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center px-4 md:px-6">
         <Link
           href="/"
-          className="flex items-center"
+          className="flex items-center justify-self-start"
           onClick={() => setMenuOpen(false)}
         >
           <Image
@@ -66,12 +66,12 @@ export default function Navbar() {
             alt="Fica Tostadores"
             width={200}
             height={56}
-            className="h-10 w-auto md:h-12"
+            className="h-8 w-auto md:h-9"
             priority
           />
         </Link>
 
-        <ul className="hidden items-center gap-8 md:flex">
+        <ul className="hidden items-center justify-center gap-8 md:flex">
           {navLinks.map((link) => {
             const isActive =
               link.href === "/"
@@ -81,36 +81,27 @@ export default function Navbar() {
               <li key={link.href} className="flex items-center">
                 <Link
                   href={link.href}
-                  className={`group relative text-base uppercase tracking-wider transition-colors ${
+                  className={`relative text-base font-semibold uppercase tracking-wider transition-colors ${
                     isActive
                       ? "text-orange"
                       : "text-steel-mid hover:text-steel-light"
                   }`}
                 >
                   {link.label}
-                  <span
-                    className={`absolute -bottom-1.5 left-0 h-0.5 w-full origin-left bg-orange transition-transform duration-300 ${
-                      isActive
-                        ? "scale-x-100"
-                        : "scale-x-0 group-hover:scale-x-100"
-                    }`}
-                    aria-hidden="true"
-                  />
                 </Link>
               </li>
             );
           })}
-          <li className="flex items-center">
-            <AuthNavButton />
-          </li>
-          <li className="flex items-center">
-            <CotizarButton />
-          </li>
         </ul>
+
+        <div className="flex items-center justify-self-end gap-3">
+          <AuthNavButton />
+          <CotizarButton />
+        </div>
 
         <button
           type="button"
-          className="text-steel-light md:hidden"
+          className="absolute right-4 text-steel-light md:hidden"
           aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((open) => !open)}
@@ -124,8 +115,8 @@ export default function Navbar() {
       </nav>
 
       {menuOpen && (
-        <div className="border-t border-steel-dark/30 bg-panel md:hidden">
-          <ul className="flex flex-col px-4 py-4">
+        <div className="border-t border-steel-dark/20 bg-panel/95 backdrop-blur-md md:hidden">
+          <ul className="flex flex-col px-4 py-2">
             {navLinks.map((link) => {
               const isActive =
                 link.href === "/"
@@ -135,10 +126,10 @@ export default function Navbar() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className={`flex items-center gap-2 border-l-2 py-3 pl-3 text-base uppercase tracking-wider transition-colors ${
+                    className={`flex items-center gap-2 py-3 text-base font-semibold uppercase tracking-wider transition-colors ${
                       isActive
-                        ? "border-orange text-orange"
-                        : "border-transparent text-steel-mid hover:text-steel-light"
+                        ? "text-orange"
+                        : "text-steel-mid hover:text-steel-light"
                     }`}
                     onClick={() => setMenuOpen(false)}
                   >
@@ -147,14 +138,12 @@ export default function Navbar() {
                 </li>
               );
             })}
-            <li className="py-3">
-              <AuthNavButton className="block" onAction={() => setMenuOpen(false)} />
+            <li className="flex items-center justify-between gap-4 py-3">
+              <span className="text-sm font-medium text-steel-mid">Mi cotización</span>
+              <CotizarButton onClick={() => setMenuOpen(false)} />
             </li>
-            <li className="pt-2">
-              <CotizarButton
-                className="w-full py-3"
-                onClick={() => setMenuOpen(false)}
-              />
+            <li className="pb-3">
+              <AuthNavButton className="block w-full justify-center" onAction={() => setMenuOpen(false)} />
             </li>
           </ul>
         </div>

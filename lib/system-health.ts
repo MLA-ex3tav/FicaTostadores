@@ -48,6 +48,7 @@ const PUBLIC_PAGES = [
   { path: "/productos", label: "Catálogo" },
   { path: "/contacto", label: "Contacto" },
   { path: "/iniciar-sesion", label: "Iniciar sesión" },
+  { path: "/registro", label: "Registro" },
   { path: "/privacidad", label: "Privacidad" },
   { path: "/terminos", label: "Términos" },
 ] as const;
@@ -638,7 +639,7 @@ async function checkElectronCotizacionesApp(): Promise<HealthCheck> {
     return {
       id: "electron-cotizaciones-app",
       category: "integraciones",
-      name: "App de cotizaciones (Electron)",
+      name: "App administrativa (Tauri)",
       status: "error",
       message: "No se pudo consultar la presencia de la app.",
       details: [detail],
@@ -658,7 +659,7 @@ async function checkElectronCotizacionesApp(): Promise<HealthCheck> {
     return {
       id: "electron-cotizaciones-app",
       category: "integraciones",
-      name: "App de cotizaciones (Electron)",
+      name: "App administrativa (Tauri)",
       status: "warning",
       message:
         "Secreto de app no configurado; el endpoint de heartbeat no está protegido en desarrollo.",
@@ -692,7 +693,7 @@ async function checkElectronCotizacionesApp(): Promise<HealthCheck> {
     return {
       id: "electron-cotizaciones-app",
       category: "integraciones",
-      name: "App de cotizaciones (Electron)",
+      name: "App administrativa (Tauri)",
       status: "ok",
       message: "Conectada y enviando heartbeat.",
       details,
@@ -717,7 +718,7 @@ async function checkElectronCotizacionesApp(): Promise<HealthCheck> {
     return {
       id: "electron-cotizaciones-app",
       category: "integraciones",
-      name: "App de cotizaciones (Electron)",
+      name: "App administrativa (Tauri)",
       status: "error",
       message: "Desconectada (sin heartbeat reciente).",
       details,
@@ -727,7 +728,7 @@ async function checkElectronCotizacionesApp(): Promise<HealthCheck> {
   return {
     id: "electron-cotizaciones-app",
     category: "integraciones",
-    name: "App de cotizaciones (Electron)",
+    name: "App administrativa (Tauri)",
     status: "error",
     message: "Desconectada (nunca se registró un heartbeat).",
     details,

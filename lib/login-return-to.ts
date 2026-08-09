@@ -9,6 +9,7 @@ export function sanitizeReturnTo(value: string | null | undefined): string {
     !path.startsWith("/") ||
     path.startsWith("//") ||
     path.startsWith("/iniciar-sesion") ||
+    path.startsWith("/registro") ||
     path.startsWith("/admin/login")
   ) {
     return "/";
@@ -19,4 +20,8 @@ export function sanitizeReturnTo(value: string | null | undefined): string {
 
 export function buildLoginHref(returnTo: string): string {
   return `/iniciar-sesion?returnTo=${encodeURIComponent(sanitizeReturnTo(returnTo))}`;
+}
+
+export function buildRegisterHref(returnTo: string): string {
+  return `/registro?returnTo=${encodeURIComponent(sanitizeReturnTo(returnTo))}`;
 }

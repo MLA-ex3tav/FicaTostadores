@@ -14,6 +14,7 @@ export interface StaffSession {
   email: string;
   displayName: string | null;
   photoURL: string | null;
+  emailVerified: boolean;
   role: UserRole;
 }
 
@@ -28,6 +29,11 @@ async function getStaffSession(request: Request): Promise<StaffSession | null> {
   const role = await getUserRoleFromRest(user.uid, token);
 
   if (!role || !isStaffRole(role)) {
+    return null;
+  }
+
+  // El acceso al panel (editor/admin) exige un correo verificado.
+  if (!user.emailVerified) {
     return null;
   }
 

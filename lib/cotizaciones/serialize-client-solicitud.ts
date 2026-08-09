@@ -45,9 +45,9 @@ function readProductLine(value: unknown): CotizacionProductLine | null {
 
   const record = value as Record<string, unknown>;
   const name = readString(record.name);
-  const capacity = readString(record.capacity);
+  const capacity = readString(record.capacity) ?? "";
 
-  if (!name || !capacity) {
+  if (!name) {
     return null;
   }
 

@@ -28,6 +28,7 @@ export interface Product {
   isPromo?: boolean;
   promoTag?: string;
   promoDescription?: string;
+  isFeatured?: boolean;
 }
 
 const commercialDescription =
@@ -136,6 +137,7 @@ export const defaultProducts: Product[] = [
       { label: "Electricidad", value: "220 V o 380 V, 10 A" },
     ],
     addOns: [],
+    isFeatured: true,
   },
   {
     id: "tlc-10kg",
@@ -171,6 +173,7 @@ export const defaultProducts: Product[] = [
         description: "Interfaz táctil a color para control y monitoreo del tueste.",
       },
     ],
+    isFeatured: true,
   },
 
   // --- COMERCIAL GAS ---
@@ -246,6 +249,7 @@ export const defaultProducts: Product[] = [
       { label: "Peso", value: "160 kg" },
     ],
     addOns: [],
+    isFeatured: true,
   },
   {
     id: "comercial-30kg-gas",

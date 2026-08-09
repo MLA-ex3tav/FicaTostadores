@@ -158,6 +158,7 @@ export function parseProductInput(body: unknown): Product {
     isPromo: Boolean(record.isPromo),
     promoTag: sanitizeText(record.promoTag, 100) ?? undefined,
     promoDescription: sanitizeText(record.promoDescription, 300) ?? undefined,
+    isFeatured: Boolean(record.isFeatured),
   };
 }
 
