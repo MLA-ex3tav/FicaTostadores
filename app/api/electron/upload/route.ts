@@ -8,10 +8,6 @@ import { electronJson, electronOptionsResponse } from "@/lib/electron-cors";
 import { getBlobErrorMessage } from "@/lib/blob-storage";
 import { detectImageMime } from "@/lib/image-magic-bytes";
 import {
-  optimizeUploadImage,
-  parseUploadImageVariant,
-} from "@/lib/optimize-upload-image";
-import {
   canUploadFiles,
   isAllowedImageUpload,
   saveUploadedImage,
@@ -21,11 +17,13 @@ import {
  * POST /api/electron/upload
  *
  * Sube una imagen de producto desde la app de escritorio (FicaTostadoresAPPv2).
- * Convierte a WebP (variantes "product" 3:2 o "carousel" 5:2) y la guarda en
- * Vercel Blob. Protegido con el secreto compartido (Authorization: Bearer).
+ * La app v2 ya convierte a WebP y recorta en el cliente (canvas), así que aquí
+ * solo validamos y guardamos el archivo en Vercel Blob. Evita re-procesar con
+ * sharp en el runtime serverless de Vercel (evita fallos de SharedArrayBuffer).
+ * Protegido con el secreto compartido (Authorization: Bearer).
  *
- * Body: multipart/form-data con `file` (imagen) y `variant` opcional.
- * Respuesta: { url }
+ * Body: multipart/form-data con `file` (WebP) y `variant` opcional.
+ * Respuesta: { ok, url }
  */
 
 export function OPTIONS() {
@@ -97,13 +95,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const variant = parseUploadImageVariant(formData.get("variant"));
-    const optimizedBuffer = await optimizeUploadImage(buffer, variant);
-    const url = await saveUploadedImage(
-      optimizedBuffer,
-      "image/webp",
-      "image.webp",
-    );
+    // La app v2 ya envía WebP optimizado; guardamos directo en Blob.
+    const url = await saveUploadedImage(buffer, detectedMime, file.name);
 
     return electronJson({ ok: true, url });
   } catch (error) {
