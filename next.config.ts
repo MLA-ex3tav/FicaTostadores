@@ -55,6 +55,7 @@ imageRemotePatterns.push({
 });
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["sharp"],
   env: {
     NEXT_PUBLIC_BLOB_STORE_ID: process.env.BLOB_STORE_ID,
   },
